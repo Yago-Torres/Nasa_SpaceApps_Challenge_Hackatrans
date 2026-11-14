@@ -1,6 +1,54 @@
 """Conservative, human-auditable case investigation in Markdown."""
 from datetime import datetime, timezone
 
+
+def _text(value, limit=600):
+    """Flatten supplied text to one Markdown-safe line (payload comes from the client)."""
+    return ' '.join(str(value).split()).replace('|', '/')[:limit]
+
+
+def _cell(value):
+    return 'no data' if value is None or value == '' else _text(value, 40)
+
+
+def _quality_cell(row):
+    quality = row.get('quality')
+    if not isinstance(quality, dict):
+        return 'not supplied'
+    parts = []
+    for key in ('precipitation', 'max_temperature'):
+        q = quality.get(key) if isinstance(quality.get(key), dict) else {}
+        ref = q.get('reference') if isinstance(q.get('reference'), dict) else {}
+        parts.append(f"{_text(q.get('status', '?'), 20)}, n={_text(ref.get('sample_count', '?'), 6)} ref. years")
+    return ' / '.join(parts)
+
+
+def _climate_method_lines(climate):
+    """ABB-08: state which period and method produced each indicator, when supplied."""
+    lines = []
+    method = climate.get('method') if isinstance(climate.get('method'), dict) else None
+    provenance = climate.get('provenance') if isinstance(climate.get('provenance'), dict) else {}
+    if climate.get('retrieved_at'):
+        lines.append(f"Retrieved at (UTC): {_text(climate['retrieved_at'], 40)}")
+    if provenance.get('dataset_version'):
+        lines.append(f"Source version (as reported): {_text(provenance['dataset_version'], 120)}")
+    spatial = climate.get('spatial_resolution')
+    if isinstance(spatial, dict) and spatial.get('description'):
+        lines.append(f"Spatial resolution: {_text(spatial['description'])}")
+    if method:
+        lines += [f"Anomaly method ({_text(method.get('id', 'unspecified'), 60)}): {_text(method.get('description', ''), 1200)}",
+                  f"Reference window: {_text(method.get('reference_label', ''))}"]
+        aggregations = method.get('aggregations')
+        if isinstance(aggregations, dict):
+            for key, text in aggregations.items():
+                lines.append(f"- {_text(key, 40)}: {_text(text, 300)}")
+    quality = climate.get('quality') if isinstance(climate.get('quality'), dict) else None
+    if quality:
+        lines.append(f"Data quality status: {_text(quality.get('status', 'unknown'), 20)}")
+        for warning in quality.get('warnings') or []:
+            lines.append(f"- Warning: {_text(warning)}")
+    return lines
+
 def build_report(case: dict):
     label=case.get('location_label','Unspecified region')
     climate=case.get('climate') or {}
@@ -14,12 +62,14 @@ def build_report(case: dict):
            'NASA POWER daily point meteorology was analyzed against an explicit short reference period.',
            'This is regional gridded exposure, not a field measurement or causal diagnosis.',
            f"Data SHA-256: `{climate.get('data_sha256','not supplied')}`",
-           f"Reference period: {climate.get('reference_start','?')}–{climate.get('reference_end','?')}",
-           '', '## Monthly meteorological anomalies',
-           '| Month | Rain anomaly (mm) | Max temp anomaly (°C) |',
-           '|---|---:|---:|']
+           f"Reference period: {climate.get('reference_start','?')}–{climate.get('reference_end','?')}"]
+    lines+=_climate_method_lines(climate)
+    lines+=['', '## Monthly meteorological anomalies',
+           '| Month | Rain anomaly (mm) | Max temp anomaly (°C) | Data quality (rain / temp) |',
+           '|---|---:|---:|---|']
     for r in rows:
-        lines.append(f"| {r.get('month','')} | {r.get('precipitation_anomaly_mm','')} | {r.get('max_temperature_anomaly_c','')} |")
+        lines.append(f"| {r.get('month','')} | {_cell(r.get('precipitation_anomaly_mm'))} | "
+                     f"{_cell(r.get('max_temperature_anomaly_c'))} | {_quality_cell(r)} |")
     lines+=['','## Hypotheses, not proven causes',
             'Meteorological anomalies may contribute to agricultural stress; pests, management, soil and irrigation are unmeasured competing explanations.',
             '', '## Crop rotation scenarios',
