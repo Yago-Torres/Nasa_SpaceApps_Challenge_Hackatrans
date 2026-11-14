@@ -59,7 +59,7 @@ Owner: C (frontend). Status of each item is explicit: **IMPLEMENTED** means it e
 and, for OWNER/EDITOR/REVIEWER, generates a new one with `POST` (empty body: the server builds everything from the case; the browser sends
 no scientific data). Each version shows date, author, case version, truncated report and source hashes, the server's change list, and buttons
 to download Markdown, HTML and the JSON snapshot (fetch with the bearer token, saved as a blob) and to call the verify endpoint. A failed
-verification is shown as an error, never hidden. PDF is not offered (note tells users to print the HTML). No sample data is substituted when the
+verification is shown as an error, never hidden. The PDF button appears only for versions whose `formats` include `pdf` (older versions: the note tells users to print the HTML). No sample data is substituted when the
 API fails. The legacy stateless `#/report` page and `POST /api/report` remain unchanged.
 
 ## 5. Running and testing the frontend

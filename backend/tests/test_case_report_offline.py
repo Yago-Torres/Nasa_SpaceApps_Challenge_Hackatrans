@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 
 from agroblackbox.services import case_report as cr
+from agroblackbox.services import case_report_pdf as pdf
 
 
 def snapshot(**over):
@@ -106,3 +107,21 @@ def test_rendering_is_deterministic():
     snap = snapshot(claims=[claim()])
     assert cr.render_markdown(cr.build_blocks(snap)) == cr.render_markdown(cr.build_blocks(copy.deepcopy(snap)))
     assert cr.render_html(cr.build_blocks(snap), "t") == cr.render_html(cr.build_blocks(copy.deepcopy(snap)), "t")
+
+
+def test_pdf_is_a_valid_deterministic_multi_section_document():
+    snap = snapshot(claims=[claim(claim_text="Synthetic " + "long text " * 80, paper_title="Árbol → ⅝ 日本")])
+    blocks = cr.build_blocks(snap)
+    first = pdf.render_pdf(blocks, "Synthetic title")
+    assert first.startswith(b"%PDF-") and first.rstrip().endswith(b"%%EOF") and len(first) > 2000
+    assert first == pdf.render_pdf(copy.deepcopy(blocks), "Synthetic title")        # invariant: no date, no random ID
+    assert first != pdf.render_pdf(cr.build_blocks(snapshot()), "Synthetic title")  # content really changes the bytes
+
+
+def test_pdf_text_never_draws_missing_glyphs_and_escapes_markup():
+    pdf._register()
+    assert pdf._clean("a → b ⅝ ½ — °") == "a -> b 5/8 1/2 — °"
+    assert pdf._clean("日") == "?" and pdf._clean("line\nbreak") == "line\nbreak"
+    # reportlab mini-markup in data must be escaped, not interpreted
+    out = pdf.render_pdf([("h1", "<b>x</b> & <font size=999>"), ("table", ["A"], [["<i>z</i>"]]), ("ul", ["<u>"])], "t")
+    assert out.startswith(b"%PDF-")

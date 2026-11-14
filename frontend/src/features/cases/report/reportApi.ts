@@ -2,7 +2,7 @@ import { ApiError } from '../../../api/client';
 import { clearSession, getSession } from '../../../api/session';
 
 /** Shapes of backend/agroblackbox/api/reports.py (ABB-26). Nothing here is computed in the browser. */
-export type ReportFormat = 'markdown' | 'html' | 'json';
+export type ReportFormat = 'markdown' | 'html' | 'json' | 'pdf';
 export type ReportChangeItem = { section: string; change: 'ADDED' | 'REMOVED' | 'CHANGED'; id: string; label: string };
 export type ReportChanges = {
   initial: boolean; previous_version: number | null; previous_case_version?: number; case_version: number | null; items: ReportChangeItem[];
@@ -10,8 +10,8 @@ export type ReportChanges = {
 export type ReportView = {
   id: string; case_id: string; version: number; generated_at: string; status: 'PRELIMINARY' | 'REVIEWED';
   case_version: number | null; generated_by: { id: string; display_name: string } | null; formats: ReportFormat[];
-  checksum_sha256: string | null; html_sha256: string | null; snapshot_sha256: string | null; sources_sha256: string | null;
-  source_manifest_ids: string[]; changes: ReportChanges | null; limitations: string[]; downloads: Record<ReportFormat, string>;
+  checksum_sha256: string | null; html_sha256: string | null; pdf_sha256?: string | null; snapshot_sha256: string | null; sources_sha256: string | null;
+  source_manifest_ids: string[]; changes: ReportChanges | null; limitations: string[]; downloads: Partial<Record<ReportFormat, string>>;
 };
 export type VerifyResult = { version: number; valid: boolean; checks: Record<string, boolean>; detail: string };
 

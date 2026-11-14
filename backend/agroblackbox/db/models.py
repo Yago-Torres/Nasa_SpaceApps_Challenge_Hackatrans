@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey, ForeignKeyConstraint,
-    Index, Integer, String, Text, UniqueConstraint, Uuid, text,
+    Index, Integer, LargeBinary, String, Text, UniqueConstraint, Uuid, text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -796,6 +796,8 @@ class Report(IdMixin, Base):
     content_markdown: Mapped[str | None] = mapped_column(Text, nullable=True)
     content_html: Mapped[str | None] = mapped_column(Text, nullable=True)
     html_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    content_pdf: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    pdf_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     sources_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     case_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     changes: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
