@@ -159,6 +159,9 @@ export type Paper = {
   doi: string | null;
   openalex_id: string | null;
   kind: 'literature';
+  /** ABB-13 Crossref verification of the DOI (additive field). */
+  doi_status?: DoiStatus;
+  doi_id?: string | null;
   source: string;
   caveat: string;
 };
@@ -1174,5 +1177,344 @@ export type SharedCaseView = {
   evidence_claims: SharedClaim[] | null;
   conclusions: SharedConclusion[] | null;
   comments: SharedComment[] | null;
+  limitations: string[];
+};
+
+/* ── Case evidence: claims, disagreements, applicability, graph and trace (ABB-14/15/16, ABB-23 UI) ──
+ * Transcribed from backend/agroblackbox/api/evidence_dto.py, comparability_dto.py, graph_dto.py and
+ * comparability.py. A claim is reviewed literature only when `is_reviewed` (ACCEPTED); everything else
+ * is shown as not reviewed. DOIs are only ever the backend's registered https://doi.org/ URL. */
+/** schemas.SourceKind (shared 1.0 contract). */
+export type SharedSourceKind = 'OBSERVED' | 'FARMER_REPORTED' | 'LITERATURE_METADATA' | 'LITERATURE_REVIEWED' | 'HYPOTHESIS' | 'MODEL_SCENARIO' | 'ILLUSTRATIVE';
+export type DoiStatus = 'VERIFIED_CROSSREF' | 'METADATA_MISMATCH' | 'NOT_FOUND_IN_CROSSREF' | 'VERIFICATION_UNAVAILABLE' | 'MALFORMED_DOI' | 'NO_DOI';
+export type StudyDesign =
+  | 'META_ANALYSIS' | 'SYSTEMATIC_REVIEW' | 'FIELD_EXPERIMENT' | 'CONTROLLED_EXPERIMENT' | 'OBSERVATIONAL_STUDY'
+  | 'MODELLING_STUDY' | 'NARRATIVE_REVIEW' | 'OTHER' | 'UNKNOWN';
+export type EvidenceBasis = 'METADATA_ONLY' | 'ABSTRACT' | 'FULL_TEXT';
+export type AccessBasis = 'NONE' | 'PUBLIC_ABSTRACT' | 'OPEN_ACCESS_LICENSE' | 'PUBLISHER_FREE_TO_READ' | 'INSTITUTIONAL_SUBSCRIPTION' | 'AUTHOR_PROVIDED_COPY';
+export type ClaimReviewStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CHANGES_REQUESTED';
+export type EffectDirection = 'INCREASE' | 'DECREASE' | 'NO_CLEAR_EFFECT' | 'MIXED' | 'NOT_STATED';
+export type KoppenClass =
+  | 'Af' | 'Am' | 'Aw' | 'As' | 'BWh' | 'BWk' | 'BSh' | 'BSk' | 'Csa' | 'Csb' | 'Csc' | 'Cwa' | 'Cwb' | 'Cwc'
+  | 'Cfa' | 'Cfb' | 'Cfc' | 'Dsa' | 'Dsb' | 'Dsc' | 'Dsd' | 'Dwa' | 'Dwb' | 'Dwc' | 'Dwd' | 'Dfa' | 'Dfb' | 'Dfc'
+  | 'Dfd' | 'ET' | 'EF';
+
+/** POST /api/v1/evidence/papers: exactly one identifier; the server fetches and verifies the metadata. */
+export type PaperRegistration = { doi: string } | { openalex_id: string };
+export type PaperView = {
+  schema_version: '1.0';
+  id: string;
+  source_kind: 'LITERATURE_METADATA';
+  evidence_status: 'BIBLIOGRAPHIC_MATCH_ONLY';
+  title: string;
+  year: number | null;
+  doi: string | null;
+  doi_id: string | null;
+  doi_status: DoiStatus;
+  openalex_id: string | null;
+  authors: { name: string; orcid: string | null }[];
+  venue: string | null;
+  publication_type: string | null;
+  licenses: { value: string; reported_by: 'OpenAlex' | 'Crossref'; content_version: string | null }[];
+  landing_page_url: string | null;
+  is_open_access: boolean | null;
+  metadata_discrepancies: string[];
+  retrievals: { source: 'OpenAlex' | 'Crossref'; endpoint: string; record_id: string | null; retrieved_at: string; http_status: number | null; outcome: string }[];
+  processing_version: string;
+  source_manifest_id: string | null;
+  limitations: string[];
+  source: string;
+  caveat: string;
+};
+export type PaperSummary = {
+  id: string;
+  title: string;
+  year: number | null;
+  doi: string | null;
+  doi_id: string | null;
+  doi_status: DoiStatus;
+  openalex_id: string | null;
+  is_open_access: boolean | null;
+  licenses: string[];
+  caveat: string;
+};
+export type ClaimContextView = {
+  population: string | null;
+  crops: string[];
+  soils: string[];
+  region: string | null;
+  climate: string | null;
+  management: string | null;
+  water_regime: string;
+  soil_texture_classes: string[];
+  soil_ph_min: number | null;
+  soil_ph_max: number | null;
+  geographic_scope: string;
+  countries: string[];
+  climate_classes: string[];
+};
+export type ClaimView = {
+  schema_version: '1.0';
+  id: string;
+  paper_id: string;
+  /** Declared as the shared SourceKind in OpenAPI; a backend validator only ever sends LITERATURE_METADATA or LITERATURE_REVIEWED here. The UI decides on `is_reviewed`. */
+  source_kind: SharedSourceKind;
+  claim_text: string;
+  study_context: string;
+  review_status: ClaimReviewStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  limitations: string[];
+  case_id: string;
+  version: number;
+  is_reviewed: boolean;
+  reviewer: UserSummary | null;
+  created_by: UserSummary | null;
+  created_at: string;
+  updated_at: string;
+  paper: PaperSummary;
+  study_design: StudyDesign;
+  context: ClaimContextView;
+  reported_outcome: {
+    outcome: string | null; comparison: string | null; effect_as_stated: string | null; units_as_stated: string | null;
+    uncertainty_as_stated: string | null; sample_as_stated: string | null;
+  };
+  source_locator: { page: string | null; section: string | null; figure_or_table: string | null };
+  quoted_fragment: string | null;
+  evidence_basis: EvidenceBasis;
+  access_basis: AccessBasis;
+  content_license: string | null;
+  origin: 'MANUAL' | 'PILOT_SEED_UNVERIFIED';
+  origin_ref: string | null;
+  intervention: string | null;
+  comparator: string | null;
+  outcome_variable: string | null;
+  effect_direction: EffectDirection;
+  warnings: string[];
+  can_edit: boolean;
+  can_review: boolean;
+};
+export type ClaimList = { items: ClaimView[]; reviewed_count: number; unreviewed_count: number; limitations: string[] };
+/** POST /cases/{id}/claims. A claim added from a search is never reviewed; ABSTRACT needs PUBLIC_ABSTRACT access or better. */
+export type ClaimCreate = {
+  paper_id: string;
+  claim_text: string;
+  study_context: string;
+  evidence_basis: EvidenceBasis;
+  access_basis?: AccessBasis;
+  limitations: string[];
+  study_design?: StudyDesign;
+};
+export type ClaimEventView = {
+  id: string;
+  claim_id: string;
+  claim_version: number;
+  action: 'CREATED' | 'UPDATED' | 'REVIEWED';
+  actor: UserSummary | null;
+  created_at: string;
+  from_status: ClaimReviewStatus | null;
+  to_status: ClaimReviewStatus;
+  note: string | null;
+  source_consulted: { basis: EvidenceBasis; access_basis: AccessBasis; license: string | null; locator: string | null; consulted_url: string | null } | null;
+  paper_snapshot: Record<string, string | number | boolean | null>;
+  changes: Record<string, JsonValue>;
+};
+
+export type MatchStatus = 'MATCH' | 'PARTIAL' | 'MISMATCH' | 'UNKNOWN';
+export type ComparisonDimension = 'CROPS' | 'WATER_REGIME' | 'SOIL_TEXTURE' | 'SOIL_PH' | 'REGION' | 'CLIMATE' | 'COMPARATOR' | 'STUDY_DESIGN';
+export type DisagreementStatus = 'CANDIDATE' | 'CONFIRMED_CONTRADICTION' | 'NOT_COMPARABLE' | 'INCONCLUSIVE';
+export type DisagreementClaimRef = {
+  claim_id: string;
+  claim_version: number;
+  claim_text: string;
+  intervention: string | null;
+  comparator: string | null;
+  outcome_variable: string | null;
+  effect_direction: EffectDirection;
+  study_design: StudyDesign;
+  review_status: ClaimReviewStatus;
+  is_reviewed: boolean;
+  /** Declared as the shared SourceKind in OpenAPI; a backend validator only ever sends LITERATURE_METADATA or LITERATURE_REVIEWED here. The UI decides on `is_reviewed`. */
+  source_kind: SharedSourceKind;
+  paper: PaperSummary;
+};
+export type DisagreementReviewView = {
+  id: string;
+  decision: Exclude<DisagreementStatus, 'CANDIDATE'>;
+  note: string;
+  reviewer: UserSummary | null;
+  reviewed_at: string;
+  claim_a_version: number;
+  claim_b_version: number;
+  applies_to_current_versions: boolean;
+};
+export type DisagreementView = {
+  schema_version: '1.0';
+  id: string;
+  case_id: string;
+  kind: 'OPPOSITE_DIRECTION' | 'EFFECT_VS_NO_CLEAR_EFFECT';
+  status: DisagreementStatus;
+  matched_on: { intervention?: string; outcome_variable?: string };
+  claim_a: DisagreementClaimRef;
+  claim_b: DisagreementClaimRef;
+  both_claims_reviewed: boolean;
+  comparability_notes: { dimension: ComparisonDimension; status: MatchStatus; claim_a_value: string | null; claim_b_value: string | null; reason: string }[];
+  current_review: DisagreementReviewView | null;
+  reviews: DisagreementReviewView[];
+  warnings: string[];
+  can_review: boolean;
+};
+export type DisagreementList = {
+  schema_version: '1.0';
+  case_id: string;
+  items: DisagreementView[];
+  claims_not_compared: { claim_id: string; reasons: string[] }[];
+  method_version: string;
+  limitations: string[];
+};
+/** POST /cases/{id}/claims/{claim_id}/applicability. Nothing stored; coordinates are never used. */
+export type ApplicabilityRequest = { country_code?: string | null; koppen_climate?: KoppenClass | null };
+export type TransferNote = {
+  dimension: ComparisonDimension;
+  status: MatchStatus;
+  study_value: string | null;
+  case_value: string | null;
+  case_value_source: string | null;
+  reason: string;
+};
+export type ApplicabilityReport = {
+  schema_version: '1.0';
+  case_id: string;
+  claim_id: string;
+  claim_version: number;
+  claim_review_status: ClaimReviewStatus;
+  is_reviewed: boolean;
+  study_design: StudyDesign;
+  paper: PaperSummary;
+  dimensions: TransferNote[];
+  transfer_status: 'DIFFERENCES_FOUND' | 'INSUFFICIENT_DATA' | 'NO_DIFFERENCES_FOUND_IN_COMPARED_DIMENSIONS';
+  differing_dimensions: ComparisonDimension[];
+  unknown_dimensions: ComparisonDimension[];
+  notes: string[];
+  stored: false;
+  method_version: string;
+  limitations: string[];
+};
+
+export type GraphNodeType =
+  | 'SOURCE_MANIFEST' | 'OBSERVATION' | 'ANOMALY' | 'FARMER_REPORT' | 'FIELD' | 'PAPER' | 'EVIDENCE_CLAIM'
+  | 'HYPOTHESIS' | 'CONCLUSION' | 'MISSING_DATA';
+export type GraphNodeKind = 'OBSERVED' | 'FARMER_REPORTED' | 'LITERATURE_METADATA' | 'LITERATURE_REVIEWED' | 'HYPOTHESIS' | 'CONCLUSION' | 'MISSING_DATA';
+export type GraphRelation = 'SUPPORTS' | 'CONTRADICTS' | 'LIMITS' | 'ADDRESSES' | 'DERIVED_FROM' | 'CITES';
+export type GraphEdgeOrigin = 'STRUCTURAL' | 'HYPOTHESIS_LINK' | 'DISAGREEMENT_REVIEW' | 'MANUAL';
+export type GraphEdgeReviewStatus = 'NOT_APPLICABLE' | 'PENDING' | 'EVALUATED' | 'ACCEPTED' | 'CHANGES_REQUESTED' | 'REJECTED';
+/** Never carries request parameters or coordinates. `doi` is the registered https://doi.org/ URL, never inferred. */
+export type GraphProvenance = {
+  source_kind: string;
+  description: string;
+  case_id: string;
+  case_version: number | null;
+  source_manifest_id: string | null;
+  observation_id: string | null;
+  anomaly_id: string | null;
+  claim_id: string | null;
+  paper_id: string | null;
+  hypothesis_id: string | null;
+  conclusion_id: string | null;
+  field_id: string | null;
+  field_label: string | null;
+  region_label: string | null;
+  provider: string | null;
+  dataset: string | null;
+  dataset_version: string | null;
+  source_uri: string | null;
+  retrieved_at: string | null;
+  checksum_sha256: string | null;
+  content_sha256: string | null;
+  processing_version: string | null;
+  revision: number | null;
+  spatial_resolution: Resolution | null;
+  temporal_resolution: Resolution | null;
+  doi: string | null;
+  doi_id: string | null;
+  doi_status: string | null;
+  openalex_id: string | null;
+  origin: string | null;
+  created_by: UserSummary | null;
+  created_at: string | null;
+  reviewed_by: UserSummary | null;
+  reviewed_at: string | null;
+  evaluated_by: UserSummary | null;
+  evaluated_at: string | null;
+};
+export type GraphNode = {
+  id: string;
+  node_type: GraphNodeType;
+  kind: GraphNodeKind;
+  label: string;
+  entity_id: string | null;
+  status: string | null;
+  active: boolean;
+  original_evidence: boolean;
+  linkable: boolean;
+  start: string | null;
+  end: string | null;
+  provenance: GraphProvenance;
+  limitations: string[];
+  details: Record<string, JsonValue>;
+};
+export type GraphEdge = {
+  id: string;
+  from: string;
+  to: string;
+  relation: GraphRelation;
+  origin: GraphEdgeOrigin;
+  note: string | null;
+  review_status: GraphEdgeReviewStatus;
+  record_id: string | null;
+  conclusion_id: string | null;
+  version: number | null;
+  author: UserSummary | null;
+  created_at: string | null;
+  reviewed_by: UserSummary | null;
+  reviewed_at: string | null;
+  review_note: string | null;
+  can_edit: boolean;
+  can_review: boolean;
+};
+export type EvidenceGraph = {
+  case_id: string;
+  case_version: number;
+  generated_at: string;
+  include_superseded: boolean;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  counts: {
+    total_nodes: number; total_edges: number; nodes_by_kind: Record<string, number>; nodes_by_type: Record<string, number>;
+    edges_by_relation: Record<string, number>; edges_by_origin: Record<string, number>;
+  };
+  relations: { relation: GraphRelation; description: string; stored: boolean }[];
+  orphan_references: { referenced_by: string; missing_node: string; relation: string; origin: string }[];
+  limitations: string[];
+};
+export type EvidenceTrace = {
+  case_id: string;
+  generated_at: string;
+  root: GraphNode;
+  complete: boolean;
+  original_evidence: string[];
+  dead_ends: string[];
+  paths: { steps: { node_id: string; edge_id: string | null; relation: GraphRelation | null }[]; ends_at_original_evidence: boolean }[];
+  truncated: boolean;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  limiting_edges: GraphEdge[];
+  contradiction_edges: GraphEdge[];
+  summary: {
+    reaches_observed_data: boolean; reaches_farmer_report: boolean; reaches_literature: boolean;
+    reviewed_claim_ids: string[]; unreviewed_claim_ids: string[]; unevaluated_hypothesis_ids: string[];
+    superseded_node_ids: string[]; missing_data_node_ids: string[];
+  };
+  review_blockers: string[];
   limitations: string[];
 };

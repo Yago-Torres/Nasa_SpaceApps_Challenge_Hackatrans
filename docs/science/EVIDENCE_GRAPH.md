@@ -1,6 +1,6 @@
 # Evidence graph, conclusions and traceability (ABB-16)
 
-Status: **implemented in the case API, pending scientific review (B) and the ABB-23 graph view (C)**. Code: `backend/agroblackbox/services/evidence_graph.py` (assembly, edge rules, trace — pure functions), `backend/agroblackbox/api/evidence_graph.py` (routes), `api/graph_dto.py` (contract), `api/graph_guard.py` (deletion guard). Tests: `backend/tests/test_evidence_graph_offline.py` (no database), `backend/tests/test_evidence_graph_api.py` (PostgreSQL). Migration `f4b81d2c6e93` (after ABB-15 `c4d82e1f9a37`). Applies `SCIENTIFIC_POLICY.md`, `TIMELINE_HYPOTHESES.md`, `EVIDENCE_CLAIMS.md` and `CONTRADICTIONS_APPLICABILITY.md`.
+Status: **implemented in the case API and shown in the case Evidence tab (ABB-23, `frontend/src/features/cases/evidence/`), pending scientific review (B)**. Code: `backend/agroblackbox/services/evidence_graph.py` (assembly, edge rules, trace — pure functions), `backend/agroblackbox/api/evidence_graph.py` (routes), `api/graph_dto.py` (contract), `api/graph_guard.py` (deletion guard). Tests: `backend/tests/test_evidence_graph_offline.py` (no database), `backend/tests/test_evidence_graph_api.py` (PostgreSQL). Migration `f4b81d2c6e93` (after ABB-15 `c4d82e1f9a37`). Applies `SCIENTIFIC_POLICY.md`, `TIMELINE_HYPOTHESES.md`, `EVIDENCE_CLAIMS.md` and `CONTRADICTIONS_APPLICABILITY.md`.
 
 The graph shows **which record refers to which**. An edge is never a causal link, and no node or edge carries a weight, probability, confidence or score. A conclusion is always written by a person; CropStory never generates one.
 
@@ -89,4 +89,4 @@ Manual edges that are not conclusion citations are reviewed one by one with the 
 - Hypothesis evidence links have no per-link author or note in the graph (they are written through the hypotheses API; who changed them is in `case_history`).
 - `incident_notes` (free text written by the team) is shown in the incident node as in the timeline; it is not scanned for personal data.
 - The graph is rebuilt on every request (no cache); fine for case-sized data (tens to hundreds of nodes).
-- No UI yet (ABB-23); the `CONCLUSION` kind is new and needs a label and design in the Field Survey design system.
+- Web view (ABB-23): read-only graph, node provenance and trace; `CONCLUSION` nodes use a plain "Conclusion" badge (not a legend kind). Writing and reviewing conclusions and manual edges are still API-only.
