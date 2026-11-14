@@ -9,3 +9,5 @@
 `UNCERTAINTY_HUNTER.md` defines the gap inventory, local questions with what they could change (never a value-of-information estimate), the link-count ordering with an explicit "no basis to prioritise" result, and reviewable local answers (ABB-19).
 
 `EVIDENCE_GRAPH.md` defines the case evidence graph, human-authored conclusions, edge rules and the trace back to original evidence (ABB-16).
+
+`CASE_REPORT.md` defines the versioned, immutable, hash-verified case report and its Markdown/HTML/JSON exports, what they contain, what is never exported and how integrity is checked (ABB-26).
