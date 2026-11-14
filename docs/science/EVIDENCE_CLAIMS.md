@@ -97,4 +97,4 @@ No code path marks a pilot card as reviewed. A backend copy of the seed is kept 
 - Licence matching compares the licence strings that sources report; it does not interpret licence terms.
 - "Contributor" is defined by the claim's creation and edit events; comments by other means are not tracked.
 - The system cannot verify that a reviewer actually read what they say they read; it records the statement and the person.
-- Claims are not yet linked to hypotheses or the evidence graph (ABB-16), and contradictions/applicability are ABB-15.
+- Claims can be cited by hypotheses (ABB-10) and in the evidence graph (ABB-16, `EVIDENCE_GRAPH.md`); a claim referenced there cannot be deleted (409). Contradictions/applicability are ABB-15.

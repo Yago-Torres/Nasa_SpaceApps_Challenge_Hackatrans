@@ -36,6 +36,7 @@ from ..evidence_seed import PILOT_SEED, seed_claim_content
 from ..services import literature as lit
 from .cases import EDITABLE_STATUSES, EDITOR_ROLES, _load, _record, _require_editable, _require_role, _summary
 from .deps import CurrentPrincipal, DbSession
+from .graph_guard import require_unreferenced
 from .evidence_dto import (
     ClaimContent,
     ClaimContextView,
@@ -528,6 +529,8 @@ def delete_claim(
     if reviewed is not None:
         raise HTTPException(status.HTTP_409_CONFLICT,
                             detail="This claim has review decisions and is kept for audit; edit or reject it instead.")
+    # ABB-16: never leave a hypothesis link or graph edge pointing at a deleted claim.
+    require_unreferenced(db, case_id, f"claim:{claim.id}", "claim", check_hypotheses=True)
     snapshot = {"id": str(claim.id), "paper_id": str(claim.paper_id), "claim_text": claim.claim_text,
                 "review_status": claim.review_status, "version": claim.version}
     _record(db, case, principal.user, "EVIDENCE_CLAIM_DELETED", {"claim": {"before": snapshot, "after": None}},
