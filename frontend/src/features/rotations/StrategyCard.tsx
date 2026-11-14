@@ -14,12 +14,11 @@ function Badge({ children }: { children: string }) {
  * unquantified and needing review, assumptions, and what still needs review before field use.
  * Nothing here is computed in the browser (docs/science/ROTATIONS.md, SCIENTIFIC_POLICY).
  */
-export function StrategyCard({ strategy, position, exposure, tradeOff, isFirstStrategy }: {
+export function StrategyCard({ strategy, position, exposure, tradeOff }: {
   strategy: RotationStrategy;
   position: OrderedPosition | null;
   exposure: StrategyExposure[];
   tradeOff: StrategyTradeOff | null;
-  isFirstStrategy: boolean;
 }) {
   const { t } = useI18n();
   const s = strategy;
@@ -27,10 +26,7 @@ export function StrategyCard({ strategy, position, exposure, tradeOff, isFirstSt
   return (
     <article className="rotation" aria-labelledby={`strategy-${s.id}`}>
       <div className="panel-head">
-        <div>
-          <span className="tag-current">{s.is_current ? t('rot.current') : t('rot.alternative')}</span>
-          <h3 id={`strategy-${s.id}`}>{t(rotEnum(s.strategy_kind))}</h3>
-        </div>
+        <h3 id={`strategy-${s.id}`}>{t(rotEnum(s.strategy_kind))}</h3>
         <EvidenceLabel kind="MODEL_SCENARIO" />
       </div>
 
@@ -68,26 +64,17 @@ export function StrategyCard({ strategy, position, exposure, tradeOff, isFirstSt
         </div>
       )}
 
-      <div className="table-wrap">
+      {/* A list, not a table: a three-column table cannot fit the narrow strategy column without
+          horizontal scrolling, and each detail is a sentence rather than a comparable value. */}
+      <div>
         <h4>{t('rot.card.constraintsTitle')}</h4>
-        <table className="data">
-          <thead>
-            <tr>
-              <th scope="col">{t('rot.card.constraintCol')}</th>
-              <th scope="col">{t('rot.card.statusCol')}</th>
-              <th scope="col">{t('rot.card.detailCol')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {s.constraint_checks.map((c, i) => (
-              <tr key={i}>
-                <td>{t(rotEnum(c.constraint))}</td>
-                <td><Badge>{t(rotEnum(c.status))}</Badge></td>
-                <td>{c.detail}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ul className="list-plain">
+          {s.constraint_checks.map((c, i) => (
+            <li key={i}>
+              <b>{t(rotEnum(c.constraint))}</b> <Badge>{t(rotEnum(c.status))}</Badge> {c.detail}
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div>
@@ -108,7 +95,7 @@ export function StrategyCard({ strategy, position, exposure, tradeOff, isFirstSt
         </ul>
       </div>
 
-      {s.priorities_addressed.length > 0 && !isFirstStrategy && (
+      {s.priorities_addressed.length > 0 && !s.is_current && (
         <div>
           <h4>{t('rot.card.prioritiesTitle')}</h4>
           <ul className="list-plain">
@@ -135,11 +122,21 @@ export function StrategyCard({ strategy, position, exposure, tradeOff, isFirstSt
         </p>
       ))}
 
-      {tradeOff && !isFirstStrategy && (tradeOff.gives_up.length > 0 || tradeOff.gains_vs_current.length > 0) && (
+      {/* Two different comparisons from the backend, kept apart so a gain is never read as a loss:
+          gains_vs_current = more favourable than the current rotation; gives_up = another strategy
+          is more favourable on that criterion (applies to the current rotation too). */}
+      {tradeOff && !s.is_current && tradeOff.gains_vs_current.length > 0 && (
         <div>
-          <h4>{t('rot.card.tradeoffTitle')}</h4>
+          <h4>{t('rot.card.gainsTitle')}</h4>
           <ul className="list-plain">
             {tradeOff.gains_vs_current.map((g, i) => <li key={`g-${i}`}>{g}</li>)}
+          </ul>
+        </div>
+      )}
+      {tradeOff && tradeOff.gives_up.length > 0 && (
+        <div>
+          <h4>{t('rot.card.givesUpTitle')}</h4>
+          <ul className="list-plain">
             {tradeOff.gives_up.map((g, i) => <li key={`u-${i}`}>{g}</li>)}
           </ul>
         </div>

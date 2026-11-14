@@ -48,7 +48,7 @@ export function SensitivityPanel({ rankedPriorities, status, failure, result, on
           </div>
         </div>
         <div className="actions">
-          <Button variant="primary" busy={status === 'loading'} disabled={!a || !b || a === b}
+          <Button variant="secondary" busy={status === 'loading'} disabled={!a || !b || a === b}
             onClick={() => a && b && onRun(a, b)}>
             {status === 'loading' ? t('rot.sens.running') : t('rot.sens.run')}
           </Button>

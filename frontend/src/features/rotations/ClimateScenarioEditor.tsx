@@ -1,4 +1,4 @@
-import { Plus, X } from 'lucide-react';
+import { Check, Plus } from 'lucide-react';
 import { useI18n } from '../../i18n/I18n';
 import type { MessageKey } from '../../i18n/messages';
 import { Button } from '../../design/components';
@@ -41,7 +41,8 @@ export function ClimateScenarioEditor({ scenarios, onChange }: { scenarios: Hypo
       <p className="muted">{t('rot.clim.hint')}</p>
       <div className="actions">
         {PRESETS.map((p) => (
-          <Button key={p.id} variant={active.has(p.id) ? 'primary' : 'secondary'} icon={active.has(p.id) ? <X aria-hidden="true" /> : <Plus aria-hidden="true" />} onClick={() => toggle(p)}>
+          // A toggle, not an action: stays secondary so "Compare strategies" remains the one primary action.
+          <Button key={p.id} variant="secondary" aria-pressed={active.has(p.id)} icon={active.has(p.id) ? <Check aria-hidden="true" /> : <Plus aria-hidden="true" />} onClick={() => toggle(p)}>
             {t(p.labelKey)}
           </Button>
         ))}

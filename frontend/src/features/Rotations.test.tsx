@@ -58,6 +58,7 @@ function fakeResult(priorityCount: number): ScenarioAnalysis {
   };
 }
 
+type FetchFn = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 let fetchMock: ReturnType<typeof vi.fn>;
 let scenarioCalls: number;
 
@@ -157,5 +158,41 @@ describe('Rotations (ABB-24 comparator)', () => {
     const lastCall = fetchMock.mock.calls.filter(([u]) => String(u).includes('/scenarios')).at(-1)!;
     const sentBody = JSON.parse(String(lastCall[1]?.body ?? '{}'));
     expect(sentBody.profile.priorities).toEqual([{ criterion: 'SOIL_COVER', rank: 1 }]);
+  });
+
+  it('says so when the crop catalogue cannot be loaded, without blocking the form', async () => {
+    const base = fetchMock.getMockImplementation() as FetchFn;
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => (
+      String(input).includes('/api/v1/crop-catalog')
+        ? new Response(JSON.stringify({ detail: 'down' }), { status: 503, headers: { 'Content-Type': 'application/json' } })
+        : base(input, init)
+    ));
+    renderScreen();
+    expect(await screen.findByText('Crop catalogue unavailable')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /compare strategies/i })).toBeTruthy();
+  });
+
+  it('marks the previous result as stale when a backend recompute fails, never re-scoring locally', async () => {
+    const user = userEvent.setup();
+    renderScreen();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    await fillTwoSeasons(user);
+    await user.click(screen.getByRole('button', { name: /compare strategies/i }));
+    await screen.findByText('Current rotation identified from two seasons.');
+
+    const base = fetchMock.getMockImplementation() as FetchFn;
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).includes('/api/v1/rotations/scenarios')) {
+        scenarioCalls += 1;
+        return new Response(JSON.stringify({ detail: 'Upstream unavailable' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+      }
+      return base(input, init);
+    });
+    const prioritySection = screen.getByRole('heading', { name: /what matters most to you/i }).closest('section')!;
+    await user.click(within(prioritySection).getByRole('button', { name: 'Soil cover' }));
+
+    expect(await screen.findByText(/does not reflect your latest changes/i, undefined, { timeout: 3000 })).toBeTruthy();
+    expect(screen.getByText('The comparison could not be completed')).toBeTruthy();
+    expect(scenarioCalls).toBe(2);
   });
 });

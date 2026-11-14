@@ -30,6 +30,7 @@ export function Rotations() {
   const state = useRotationsState();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [catalog, setCatalog] = useState<CropCatalogEntry[]>([]);
+  const [catalogFailed, setCatalogFailed] = useState(false);
   const compareAbort = useRef<AbortController | null>(null);
   const sensitivityAbort = useRef<AbortController | null>(null);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -38,7 +39,9 @@ export function Rotations() {
 
   useEffect(() => {
     const controller = new AbortController();
-    rotationsApi.cropCatalog(controller.signal).then((c) => setCatalog(c.entries)).catch(() => undefined);
+    rotationsApi.cropCatalog(controller.signal)
+      .then((c) => { setCatalog(c.entries); setCatalogFailed(false); })
+      .catch(() => { if (!controller.signal.aborted) setCatalogFailed(true); });
     return () => {
       controller.abort();
       compareAbort.current?.abort();
@@ -107,6 +110,8 @@ export function Rotations() {
     <>
       <PageHeader title={t('rot.title')} lead={t('rot.lead')} />
 
+      {catalogFailed && <StatusMessage tone="partial" title={t('rot.catalog.unavailableTitle')}>{t('rot.catalog.unavailableBody')}</StatusMessage>}
+
       <section className="panel" aria-labelledby="rot-crop-heading">
         <div className="section-head">
           <h2 id="rot-crop-heading">{t('rot.crop.sectionTitle')}</h2>
@@ -163,7 +168,8 @@ export function Rotations() {
 
       {state.failure && (
         <StatusMessage tone={state.result ? 'partial' : 'error'} title={t('rot.status.errorTitle')} action={<Button onClick={() => runCompare(false)}>{t('state.retry')}</Button>}>
-          {state.failure}
+          <p>{state.failure}</p>
+          {state.result && <p>{t('rot.status.staleBody')}</p>}
         </StatusMessage>
       )}
       {state.status === 'idle' && <StatusMessage tone="empty" title={t('rot.status.emptyTitle')}>{t('rot.status.emptyBody')}</StatusMessage>}
@@ -194,8 +200,8 @@ export function Rotations() {
 
           {result.comparison.strategies.length > 0 && (
             <div className="rotations">
-              {result.comparison.strategies.map((s, i) => (
-                <StrategyCard key={s.id} strategy={s} isFirstStrategy={i === 0}
+              {result.comparison.strategies.map((s) => (
+                <StrategyCard key={s.id} strategy={s}
                   position={result.ordering?.positions.find((p) => p.strategy_id === s.id) ?? null}
                   exposure={result.exposure.filter((e) => e.strategy_id === s.id)}
                   tradeOff={result.trade_offs.find((to) => to.strategy_id === s.id) ?? null} />

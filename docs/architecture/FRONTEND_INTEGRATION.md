@@ -15,6 +15,7 @@ Owner: C (frontend). Status of each item is explicit: **IMPLEMENTED** means it e
 | Rotations (`#/rotations`) | `GET /api/v1/crop-catalog`, `POST /api/v1/rotations/scenarios`, `/sensitivity` | Backend-returned MODEL_SCENARIO, with declared inputs and limitations |
 | Report (`#/report`) | `POST /api/report` | Preliminary |
 | Cases (`#/cases`, `#/cases/new`, `#/cases/<id>`) | `/api/v1/auth/*`, `/api/v1/cases*` (see §6) | Farmer reported (wizard answers); status/role as returned |
+| Case timeline (`#/cases/<id>/timeline`) | `GET /api/v1/cases/{id}/timeline`, `GET/POST /api/v1/cases/{id}/hypotheses*`, `GET /api/v1/hypothesis-templates` (see §7) | Observed, Farmer reported, Hypothesis and Missing data |
 | Collaboration | none yet | "Not built yet" state, no sample data |
 
 - The frontend computes no statistics. It only scales returned values for drawing (`features/chartScale.ts`).
@@ -29,7 +30,7 @@ Owner: C (frontend). Status of each item is explicit: **IMPLEMENTED** means it e
 | A4 | ~~`/api/v1/cases` CRUD with a `location` object~~ **Done differently in ABB-05/06** (`CaseFieldView` with server-side redaction); the frontend adapted, see §6 | ABB-21 wizard and the "guests never see exact location" acceptance test | ABB-02, ABB-05, ABB-06 |
 | A8 | Optional: case attributes for the wizard answers that today travel in the `incident_notes` block (incident year, symptom months, affected share, water/soil/priorities, crop-row notes) | Lets reviewers and the report read them as typed fields instead of a JSON block | ABB-06, ABB-11 |
 | A9 | Optional: a single request that updates case attributes and one field with one version bump | A title change now sends two PATCHes (case title + field label) | ABB-06 |
-| A5 | Timeline endpoint with layers `observed` / `farmer_reported` / `hypothesis`, each event with `kind`, `start`, `end`, `provenance` | ABB-22 timeline lanes | ABB-10 |
+| A5 | ~~Timeline endpoint with typed layers, dates and provenance~~ **Implemented in ABB-10 and consumed by the case Timeline tab**; see §7 | ABB-22 timeline lanes | ABB-10, ABB-22 |
 | A6 | Decide whether `backend/.cache/` (now in `.gitignore`) should be untracked; one cache file is still versioned | Avoid committing runtime data | ABB-01 |
 | A7 | Generate and publish the OpenAPI schema in CI so the frontend can switch to generated types | Replace hand-written `types.ts` | ABB-02, ABB-29 |
 
@@ -93,3 +94,22 @@ Reading back: `APPROXIMATE`/`EXACT` → Approximate area (an `EXACT` field is no
 **Roles and status.** List columns: Case · Status · Your role · Shared as · Incident year · Updated. Case screens open with the title block (ID, location as this user may see it, status, role, owner, updated). Reviewers and viewers, and cases that are REVIEWED, PUBLISHED or archived, open read-only; their location is exactly what the server returned (rounded cell, region label or "Not shared with you"). Status labels avoid implying scientific validation ("Reviewed by a team reviewer", "Final (team only, not public)").
 
 **Not in this UI yet:** sharing/permissions management, workflow status changes, archive, history view, multiple fields per case, basemap (tile provider decision pending).
+
+## 7. Case timeline and rival hypotheses (IMPLEMENTED, ABB-22)
+
+The case workspace owns a shared tab route: `#/cases/<id>` is Details and
+`#/cases/<id>/timeline` is Timeline. Future ABB-23/25/26 case tabs extend the explicit
+`CASE_TABS` array in `features/Cases.tsx`; they must not add another top-level navigation model.
+
+The Timeline tab loads the role-redacted case, the ABB-10 timeline and its hypothesis list.
+The SVG has separate OBSERVED, FARMER_REPORTED, HYPOTHESIS and MISSING_DATA lanes, keeps
+undated findings outside the axis and provides a table alternative. Selecting a finding shows
+the raw backend value, reference period, QA, provider, dataset/version, spatial and temporal
+resolution, retrieval time, checksum, processing version and every limitation the endpoint
+returns. No coordinate is added to the URL or rendered from a field the API withheld.
+
+Hypotheses remain rival human-evaluated explanations, never probabilities. OWNER/EDITOR may
+add a template or custom statement; OWNER/EDITOR/REVIEWER may set the ABB-10 evaluation status
+with the backend-required note. Catalogue and mutation failures are explicit and retryable.
+Observation evidence IDs are resolved to their anomaly timeline event before opening the
+provenance panel, matching the backend's `to_event_ids` mapping.

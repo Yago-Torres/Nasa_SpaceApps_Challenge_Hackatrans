@@ -1,7 +1,8 @@
 import type {
-  CaseCreate, CaseList, CaseUpdate, CaseView, ClimateResponse, CropCatalog, FieldPatch, LoginRequest, Paper,
+  CaseCreate, CaseList, CaseUpdate, CaseView, ClimateResponse, CropCatalog, FieldPatch, HypothesisCreate, HypothesisList,
+  HypothesisStatusChange, HypothesisTemplateCatalog, HypothesisTemplateRequest, HypothesisView, LoginRequest, Paper,
   RegisterRequest, ReportRequest, ReportResponse, Rotation, RotationCompareRequest, RotationComparison,
-  ScenarioAnalysis, ScenarioAnalysisRequest, SensitivityAnalysis, SensitivityRequest, SessionOut, UserOut,
+  ScenarioAnalysis, ScenarioAnalysisRequest, SensitivityAnalysis, SensitivityRequest, SessionOut, Timeline, UserOut,
 } from './types';
 import { clearSession, getSession } from './session';
 
@@ -92,6 +93,10 @@ export const api = {
   report(body: ReportRequest) {
     return request<ReportResponse>('/api/report', { method: 'POST', json: body });
   },
+  /** GET /api/v1/hypothesis-templates (ABB-10). Static catalogue, not case-bound, no auth required. */
+  hypothesisTemplates(signal?: AbortSignal) {
+    return request<HypothesisTemplateCatalog>('/api/v1/hypothesis-templates', { signal });
+  },
 };
 
 /** /api/v1/auth (ABB-05). */
@@ -128,6 +133,22 @@ export const casesApi = {
   },
   remove(id: string, version: number) {
     return request<void>(`${casePath(id)}?${new URLSearchParams({ version: String(version) })}`, { method: 'DELETE', auth: true });
+  },
+  /** GET /api/v1/cases/{id}/timeline (ABB-10/ABB-22): every member, coordinates redacted server-side. */
+  timeline(id: string, signal?: AbortSignal) {
+    return request<Timeline>(`${casePath(id)}/timeline`, { auth: true, signal });
+  },
+  hypotheses(id: string, signal?: AbortSignal) {
+    return request<HypothesisList>(`${casePath(id)}/hypotheses`, { auth: true, signal });
+  },
+  createHypothesis(id: string, body: HypothesisCreate) {
+    return request<HypothesisView>(`${casePath(id)}/hypotheses`, { method: 'POST', auth: true, json: body });
+  },
+  addHypothesisTemplates(id: string, body: HypothesisTemplateRequest) {
+    return request<HypothesisList>(`${casePath(id)}/hypotheses/templates`, { method: 'POST', auth: true, json: body });
+  },
+  evaluateHypothesis(id: string, hypothesisId: string, body: HypothesisStatusChange) {
+    return request<HypothesisView>(`${casePath(id)}/hypotheses/${encodeURIComponent(hypothesisId)}/status`, { method: 'POST', auth: true, json: body });
   },
 };
 

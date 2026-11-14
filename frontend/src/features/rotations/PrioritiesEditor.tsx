@@ -25,7 +25,7 @@ export function PrioritiesEditor({ priorities, onChange }: { priorities: FarmerP
         <ol className="crop-rows">
           {ranked.map((p, i) => (
             <li key={p.criterion}>
-              <div className="actions">
+              <div className="rot-priority">
                 <b className="num">{t('rot.pri.rank', { n: p.rank })}</b>
                 <span>{t(rotEnum(p.criterion))}</span>
                 <Button variant="text" icon={<ChevronUp aria-hidden="true" />} disabled={i === 0}

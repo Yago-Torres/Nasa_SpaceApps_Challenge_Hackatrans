@@ -1,22 +1,60 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactElement } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useI18n } from '../i18n/I18n';
 import type { MessageKey } from '../i18n/messages';
 import { Button, ButtonLink, PageHeader, StatusMessage } from '../design/components';
-import { hrefFor, useRouteParam } from '../app/routes';
+import { hrefFor, hrefForCaseTab, useCaseTab, useRouteParam } from '../app/routes';
 import { useSession } from '../api/session';
 import { ApiError } from '../api/client';
 import { canEdit, type IncidentCase } from '../cases/model';
 import { caseRepository, legacyBrowserCases } from '../cases/repository';
 import { AuthPanel } from './account/AuthPanel';
 import { IncidentWizard } from './cases/IncidentWizard';
+import { CaseTimeline } from './cases/timeline/CaseTimeline';
 import { sharedAsText } from './cases/CaseTitleBlock';
 import { caseErrorText, isStorageUnavailable } from './cases/caseErrors';
 
-/** Cases list + wizard routes (#/cases, #/cases/new, #/cases/<id>), backed by /api/v1/cases. */
+/**
+ * Case sub-screens, reached as "#/cases/<id>/<tab>" (`parseCaseTab` in app/routes.ts; "details"
+ * is the default and keeps the plain "#/cases/<id>" URL). This is the shared extension point
+ * for case-bound screens: the fixed 7-screen top nav (App.test.tsx) cannot grow, so ABB-23
+ * (Evidence), ABB-25 (Collaboration) and ABB-26 (Report) each add one entry here plus a
+ * `render` function, instead of inventing their own routing or a new top-level nav item.
+ */
+const CASE_TABS = [
+  { id: 'details', label: 'cases.tab.details' as MessageKey, render: (caseId: string) => <IncidentWizard key={caseId} caseId={caseId} /> },
+  { id: 'timeline', label: 'cases.tab.timeline' as MessageKey, render: (caseId: string) => <CaseTimeline key={caseId} caseId={caseId} /> },
+  // ABB-23 (Evidence), ABB-25 (Collaboration), ABB-26 (Report): add { id, label, render } here.
+] as const satisfies readonly { id: string; label: MessageKey; render: (caseId: string) => ReactElement }[];
+
+/** Cases list + wizard routes (#/cases, #/cases/new, #/cases/<id>[/<tab>]), backed by /api/v1/cases. */
 export function Cases() {
   const param = useRouteParam();
-  return param ? <IncidentWizard key={param} caseId={param} /> : <CaseList />;
+  return param ? <CaseWorkspace caseId={param} /> : <CaseList />;
+}
+
+/** A single case: the tab strip (only for an existing case, never "new") plus the active tab's screen. */
+function CaseWorkspace({ caseId }: { caseId: string }) {
+  const { t } = useI18n();
+  const tab = useCaseTab();
+  const isNew = caseId === 'new';
+  const active = CASE_TABS.find((x) => x.id === tab) ?? CASE_TABS[0];
+  return (
+    <>
+      {!isNew && (
+        <nav className="case-tabs" aria-label={t('cases.tabsLabel')}>
+          <ol>
+            {CASE_TABS.map((x) => (
+              <li key={x.id}>
+                <a href={hrefForCaseTab(caseId, x.id)} aria-current={active.id === x.id ? 'page' : undefined}>{t(x.label)}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )}
+      {isNew ? CASE_TABS[0].render(caseId) : active.render(caseId)}
+    </>
+  );
 }
 
 function LegacyNotice() {

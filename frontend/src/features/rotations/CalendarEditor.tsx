@@ -31,7 +31,7 @@ export function CalendarEditor({ rows, onChange, errors, catalog }: {
       </datalist>
       <ol className="crop-rows">
         {rows.map((row, i) => (
-          <li key={row.id}>
+          <li key={row.id} className="rot-row">
             <div className="form-row">
               <Field label={t('rot.cal.label')} list="rot-cal-crop-names" value={row.cropLabel} maxLength={120}
                 error={errors[`cal.${row.id}.cropLabel`] ? t('rot.cal.labelError') : undefined}

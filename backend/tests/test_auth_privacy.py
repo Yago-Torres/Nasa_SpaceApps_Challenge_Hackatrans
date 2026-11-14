@@ -160,9 +160,12 @@ async def test_persistent_routes_return_503_without_database_url(monkeypatch):
             await client.post("/api/v1/auth/login", json={"email": "a@example.test", "password": PASSWORD}),
             await client.get("/api/v1/cases", headers={"Authorization": "Bearer whatever"}),
             await client.get("/api/v1/auth/me"),
+            await client.get("/api/v1/account/export", headers={"Authorization": "Bearer whatever"}),
+            await client.post("/api/v1/account/delete", json={"password": PASSWORD},
+                             headers={"Authorization": "Bearer whatever"}),
         ]
         health = await client.get("/api/health")
-    assert [r.status_code for r in responses] == [503, 503, 503, 503]
+    assert [r.status_code for r in responses] == [503, 503, 503, 503, 503, 503]
     assert all(r.json() == {"detail": STORAGE_UNAVAILABLE} for r in responses)
     assert health.status_code == 200
 

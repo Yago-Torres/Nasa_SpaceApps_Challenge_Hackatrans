@@ -33,7 +33,7 @@ export function CropHistoryEditor({ rows, onChange, errors, catalog }: {
       </datalist>
       <ol className="crop-rows">
         {rows.map((row, i) => (
-          <li key={row.id}>
+          <li key={row.id} className="rot-row">
             <div className="form-row">
               <div className="field">
                 <label htmlFor={`crop-role-${row.id}`}>{t('rot.crop.role')}</label>
