@@ -41,6 +41,20 @@ jobs:
           uv lock --check
           uv sync --locked --extra dev
           uv run --locked --extra dev pytest -q
+      - name: Main journey E2E with SYNTHETIC fixtures (ABB-29, must run, not skip)
+        working-directory: backend
+        run: |
+          uv run --locked --extra dev pytest -q -m e2e -rs | tee e2e.log
+          if grep -qi "skipped" e2e.log; then echo "E2E tests were skipped: TEST_DATABASE_URL missing?"; exit 1; fi
+          grep -Eq "[0-9]+ passed" e2e.log
+      - name: Export the OpenAPI contract
+        working-directory: backend
+        run: uv run --locked python ../scripts/export_openapi.py ../openapi.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openapi-contract
+          path: openapi.json
+          if-no-files-found: error
   web-build:
     name: web-build
     runs-on: ubuntu-latest
@@ -53,9 +67,17 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
         working-directory: frontend
-      - name: Unit and component tests (Vitest)
+      - name: Install uv (to export the backend OpenAPI contract)
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - name: Export the backend OpenAPI contract (ABB-29)
+        run: |
+          uv python install 3.12
+          cd backend && uv sync --locked && uv run --locked python ../scripts/export_openapi.py ../frontend/.openapi.json
+      - name: Unit, component and OpenAPI contract tests (Vitest)
         run: npm test
         working-directory: frontend
+        env:
+          OPENAPI_JSON: .openapi.json
       - run: npm run build
         working-directory: frontend
   context-policy:
