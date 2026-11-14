@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, configure, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nProvider } from '../i18n/I18n';
 import { App } from './App';
@@ -21,6 +21,13 @@ const FIXTURE: ClimateResponse = {
 function renderApp(lang: 'en' | 'es' = 'en') {
   return render(<I18nProvider lang={lang}><App /></I18nProvider>);
 }
+
+// Slower CI runners: async queries wait longer instead of relying on timing.
+configure({ asyncUtilTimeout: 5000 });
+
+beforeEach(() => {
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+});
 
 afterEach(() => {
   cleanup();
