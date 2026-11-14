@@ -125,7 +125,9 @@ def _record(
 ) -> None:
     if bump:
         case.version += 1
-        case.updated_at = utcnow()
+        # Never earlier than created_at: a wall clock that steps back (e.g. WSL2/VM time sync)
+        # would otherwise produce a CaseView that fails its own updated_at >= created_at check.
+        case.updated_at = max(utcnow(), case.created_at)
     db.add(CaseHistory(
         case_id=case.id, version=case.version, action=action, actor_id=actor.id,
         created_at=utcnow(), changes=changes, note=note,

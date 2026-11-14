@@ -73,6 +73,15 @@ Same authentication and 401/403/404/409/422/503 rules as the cases API; requires
 - `GET|POST /api/v1/cases/{case_id}/hypotheses`, `POST …/hypotheses/templates`, `GET|PATCH|DELETE …/hypotheses/{id}`, `POST …/hypotheses/{id}/status` (OWNER/EDITOR/REVIEWER; `OPEN | COMPATIBLE | CONTRADICTED | NOT_EVALUABLE`), `GET /api/v1/hypothesis-templates`.
 - Shared `Hypothesis.status` additively includes `COMPATIBLE | CONTRADICTED | NOT_EVALUABLE` (contract 1.0); the case API never sets SUPPORTED/CHALLENGED/REJECTED. No hypothesis carries a probability or score. Evidence links must reference observations, anomalies or evidence claims of the same case.
 
+## Case evidence graph, conclusions and edges (IMPLEMENTED — ABB-16)
+
+Same authentication and 401/403/404/409/422/503 rules as the cases API; requires migration `f4b81d2c6e93` (after `c4d82e1f9a37`). See `docs/science/EVIDENCE_GRAPH.md`.
+
+- `GET /api/v1/cases/{case_id}/evidence-graph?include_superseded=` → `EvidenceGraphView` {nodes `{id, node_type, kind, label, entity_id, status, active, original_evidence, linkable, start, end, provenance, limitations, details}`, edges `{id, from, to, relation (SUPPORTS|CONTRADICTS|LIMITS|ADDRESSES|DERIVED_FROM|CITES), origin (STRUCTURAL|HYPOTHESIS_LINK|DISAGREEMENT_REVIEW|MANUAL), note, review_status, record_id, conclusion_id, version, author, reviewed_by, reviewed_at, review_note, can_edit, can_review}`, counts, relations, orphan_references, limitations}. `kind` adds `CONCLUSION`. Provenance never carries query parameters or coordinates.
+- `GET …/evidence-graph/trace/{node_id}` → `EvidenceTraceView` (complete, paths, original_evidence, dead_ends, nodes, edges, limiting_edges, contradiction_edges, summary, review_blockers).
+- `GET|POST …/evidence-graph/conclusions`, `GET|PATCH|DELETE …/conclusions/{id}`, `POST …/conclusions/{id}/review` (OWNER/EDITOR/REVIEWER non-contributor; ACCEPTED needs a complete trace, reviewed literature and evaluated hypotheses).
+- `GET|POST …/evidence-graph/edges`, `PATCH|DELETE …/edges/{id}`, `POST …/edges/{id}/review`. Endpoints must exist in the same case (422); DERIVED_FROM/CITES and SUPPORTS/CONTRADICTS into hypotheses cannot be added by hand. Deleting a hypothesis, claim or field that is still referenced returns 409.
+
 ## Proposed release 1.0 routes (NOT IMPLEMENTED)
 
 Formalize versioned `/api/v1` resources through their owning roadmap Issues (cases, observations, timeline, hypotheses and claims are implemented, see above):
