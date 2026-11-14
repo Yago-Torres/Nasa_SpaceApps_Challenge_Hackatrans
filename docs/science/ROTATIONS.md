@@ -45,7 +45,7 @@ The catalogue has no calendars or agronomic parameters. A crop without a farmer-
    - `FAMILY_DIVERSIFICATION`: contains a legume if one is eligible → most families → fewest `TIGHT` → fewest unconfirmed markets → fewest new crops.
    - `CALENDAR_COVER`: most months per year with a crop → shortest longest fallow gap → fewest `TIGHT` → fewest unconfirmed markets → fewest new crops.
    Remaining ties are broken by cycle length and then crop codes. The first year of an alternative is chosen so that it follows the last recorded crop as well as the calendar allows (`entry_transition`).
-   These rules generate options. They do not judge that one strategy is better. Weighting farmer priorities belongs to ABB-18.
+   These rules generate options. They do not judge that one strategy is better. Ordering by farmer priorities is done by ABB-18, which uses a lexicographic rule by rank and no weights (`SCENARIOS_SENSITIVITY.md`).
 
 ## Per-strategy output
 
@@ -82,7 +82,7 @@ The helper `to_shared_rotation` maps a strategy onto the ABB-02 `Rotation` contr
 
 ## Follow-up
 
-- **ABB-18:** priority changes, water and climate scenarios, transparent multi-criteria trade-offs, sensitivity.
+- **ABB-18:** priority changes, water and climate scenarios, transparent multi-criteria trade-offs and sensitivity. Implemented in `POST /api/v1/rotations/scenarios` and `/sensitivity`; see `SCENARIOS_SENSITIVITY.md`.
 - **ABB-24:** comparator UI on `/api/v1/rotations/compare`. It covers request B4 in `FRONTEND_INTEGRATION.md`:
   - `years` and `assumptions`;
   - trade-offs as `possible_benefits`, `risks` and `evidence_refs`;

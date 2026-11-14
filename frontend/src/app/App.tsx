@@ -12,6 +12,7 @@ import { Evidence } from '../features/Evidence';
 import { Rotations } from '../features/Rotations';
 import { Collaboration } from '../features/Collaboration';
 import { Report } from '../features/Report';
+import { AccountStatus } from '../features/account/AccountStatus';
 
 const SCREENS: Record<RouteId, () => ReactElement> = {
   dashboard: Dashboard,
@@ -98,6 +99,7 @@ export function App() {
             ))}
           </ol>
           <div className="bottom">
+            <AccountStatus />
             <div className="lang" role="group" aria-label={t('app.language')}>
               {(['en', 'es'] as Lang[]).map((l) => (
                 <button key={l} type="button" aria-pressed={lang === l} onClick={() => setLang(l)} lang={l}>
