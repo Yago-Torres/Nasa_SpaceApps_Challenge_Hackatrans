@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, configure, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nProvider } from '../../../i18n/I18n';
 import { clearSession, resetSessionCache, setSession } from '../../../api/session';
@@ -49,6 +49,9 @@ function comment(overrides: Partial<CommentView> = {}): CommentView {
 }
 
 const EMPTY_ACTIVITY: ActivityPage = { items: [], total: 0, limit: 25, offset: 0, order: 'desc', sources: ['CASE_HISTORY', 'CLAIM_EVENT', 'DISAGREEMENT_REVIEW', 'COMMENT'] };
+
+// findBy*/waitFor default to 1 s; the full suite under WSL load (and shared CI runners) can exceed that.
+configure({ asyncUtilTimeout: 5000 });
 
 const json = (status: number, data: unknown) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 type Call = { method: string; path: string; body: unknown; auth: string | null };

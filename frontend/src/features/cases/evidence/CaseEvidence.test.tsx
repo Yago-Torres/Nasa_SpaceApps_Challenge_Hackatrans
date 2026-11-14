@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, configure, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nProvider } from '../../../i18n/I18n';
 import { clearSession, resetSessionCache, setSession } from '../../../api/session';
@@ -100,6 +100,9 @@ const DISAGREEMENTS: DisagreementList = {
     warnings: ['Synthetic warning.'], can_review: false,
   }],
 };
+
+// findBy*/waitFor default to 1 s; the full suite under WSL load (and shared CI runners) can exceed that.
+configure({ asyncUtilTimeout: 5000 });
 
 const json = (status: number, data: unknown) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 type Call = { method: string; path: string; body: unknown };
