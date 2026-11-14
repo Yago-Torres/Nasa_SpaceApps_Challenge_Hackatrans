@@ -1,7 +1,7 @@
 """collaboration: invitations, plain-text comments with revisions, consented share links (ABB-25)
 
 Revision ID: a7c2e9d4b158
-Revises: f4b81d2c6e93 (ABB-16 evidence graph)
+Revises: a19f3b7c2d64 (ABB-19 Uncertainty Hunter)
 Create Date: 2026-11-14 23:30:00.000000
 
 Audit stays in the existing ``case_history`` table (invitation and share-link changes are recorded
@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 revision: str = 'a7c2e9d4b158'
-down_revision: Union[str, None] = 'f4b81d2c6e93'
+down_revision: Union[str, None] = 'a19f3b7c2d64'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

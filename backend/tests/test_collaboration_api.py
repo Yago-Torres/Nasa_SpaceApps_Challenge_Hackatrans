@@ -156,7 +156,7 @@ def assert_no_exact_coordinates(payload: str) -> None:
 
 def test_collaboration_migration_downgrades_and_upgrades(api_engine):
     tables = {"case_invitations", "case_comments", "case_comment_revisions", "case_share_links"}
-    command.downgrade(alembic_config(), "f4b81d2c6e93")
+    command.downgrade(alembic_config(), "a19f3b7c2d64")
     assert not tables & set(inspect(api_engine).get_table_names())
     command.upgrade(alembic_config(), "head")
     assert tables <= set(inspect(api_engine).get_table_names())
