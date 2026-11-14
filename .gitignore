@@ -32,3 +32,6 @@ backend/cache/
 .ui-shots/
 # Local NASA POWER response cache written by the backend at runtime
 backend/.cache/
+
+# Windows download metadata (alternate data streams copied as files)
+*:Zone.Identifier
