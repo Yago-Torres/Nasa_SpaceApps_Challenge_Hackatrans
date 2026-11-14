@@ -212,6 +212,18 @@ class Anomaly(VersionedContract):
         return self
 
 
+# ABB-10 (additive, contract 1.0): COMPATIBLE / CONTRADICTED / NOT_EVALUABLE are the
+# evidence-evaluation states used by the case-bound hypothesis API. None of them means a
+# demonstrated cause. The original values stay valid for compatibility; the case API never
+# sets SUPPORTED, CHALLENGED or REJECTED (see docs/science/TIMELINE_HYPOTHESES.md).
+HypothesisStatus = Literal[
+    "OPEN", "SUPPORTED", "CHALLENGED", "REJECTED", "COMPATIBLE", "CONTRADICTED", "NOT_EVALUABLE"
+]
+HYPOTHESIS_STATUSES: tuple[str, ...] = (
+    "OPEN", "SUPPORTED", "CHALLENGED", "REJECTED", "COMPATIBLE", "CONTRADICTED", "NOT_EVALUABLE"
+)
+
+
 class Hypothesis(VersionedContract):
     id: UUID
     case_id: UUID
@@ -221,7 +233,7 @@ class Hypothesis(VersionedContract):
     contradicting_evidence_ids: list[UUID] = PydanticField(default_factory=list)
     missing_evidence: list[str] = PydanticField(default_factory=list)
     limitations: list[str] = PydanticField(min_length=1)
-    status: Literal["OPEN", "SUPPORTED", "CHALLENGED", "REJECTED"] = "OPEN"
+    status: HypothesisStatus = "OPEN"
 
 
 class PaperAuthor(ContractModel):

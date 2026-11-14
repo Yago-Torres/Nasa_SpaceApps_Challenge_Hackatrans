@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey, ForeignKeyConstraint,
-    Integer, String, Text, UniqueConstraint, Uuid, text,
+    Index, Integer, String, Text, UniqueConstraint, Uuid, text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -142,7 +142,32 @@ class SourceManifest(IdMixin, Base):
     spatial_resolution: Mapped[dict[str, Any]] = mapped_column(JSONB)
     temporal_resolution: Mapped[dict[str, Any]] = mapped_column(JSONB)
     limitations: Mapped[list[str]] = mapped_column(JSONB)
-    __table_args__ = (UniqueConstraint("id", "case_id", name="uq_manifest_case"),)
+    # ABB-10 case-bound ingestion. ``query_parameters`` may hold the field's precise
+    # coordinates and is only served to OWNER/EDITOR (see agroblackbox.api.observations).
+    field_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("fields.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    ingested_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=text("now()")
+    )
+    # SHA-256 of {provider, field, event year, reference window}; one active manifest per key.
+    ingestion_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # SHA-256 of the canonical returned values (no coordinates), used to detect re-ingestion
+    # of unchanged data even though the raw-byte checksum changes between retrievals.
+    content_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default=text("1"))
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    superseded_by_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
+    event_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    reference_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    reference_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    details: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
+    __table_args__ = (
+        UniqueConstraint("id", "case_id", name="uq_manifest_case"),
+        CheckConstraint("revision >= 1", name="ck_manifest_revision"),
+        Index("ix_source_manifests_case_ingestion_key", "case_id", "ingestion_key"),
+    )
 
 
 class Observation(IdMixin, Base):
@@ -158,12 +183,56 @@ class Observation(IdMixin, Base):
     temporal_resolution: Mapped[dict[str, Any]] = mapped_column(JSONB)
     quality_flags: Mapped[list[str]] = mapped_column(JSONB, default=list)
     limitations: Mapped[list[str]] = mapped_column(JSONB)
+    # ABB-10: aggregation period of the value and its daily coverage (status, day counts, reason).
+    period_start: Mapped[date | None] = mapped_column(Date, nullable=True)
+    period_end: Mapped[date | None] = mapped_column(Date, nullable=True)
+    coverage: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
     __table_args__ = (
         ForeignKeyConstraint(
             ["source_manifest_id", "case_id"],
             ["source_manifests.id", "source_manifests.case_id"],
             ondelete="RESTRICT",
             name="fk_observation_manifest_same_case",
+        ),
+        CheckConstraint(
+            "period_start IS NULL OR period_end IS NULL OR period_end >= period_start",
+            name="ck_observation_period",
+        ),
+        UniqueConstraint("id", "case_id", name="uq_observation_case"),
+    )
+
+
+class Anomaly(IdMixin, Base):
+    """Descriptive monthly anomaly of one observation against its reference years (ABB-08/10)."""
+    __tablename__ = "anomalies"
+    case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), index=True)
+    observation_id: Mapped[UUID] = mapped_column(Uuid, unique=True)
+    value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    units: Mapped[str] = mapped_column(String(40))
+    method: Mapped[str] = mapped_column(String(300))
+    reference_start: Mapped[date] = mapped_column(Date)
+    reference_end: Mapped[date] = mapped_column(Date)
+    reference_sample_count: Mapped[int] = mapped_column(Integer)
+    reference_status: Mapped[str] = mapped_column(String(16))
+    reference_value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reference_standard_deviation: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reference_minimum: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reference_maximum: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reference_years_excluded: Mapped[list[int]] = mapped_column(JSONB, default=list)
+    quality_flags: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    limitations: Mapped[list[str]] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["observation_id", "case_id"],
+            ["observations.id", "observations.case_id"],
+            ondelete="CASCADE",
+            name="fk_anomaly_observation_same_case",
+        ),
+        CheckConstraint("reference_end >= reference_start", name="ck_anomaly_reference_dates"),
+        CheckConstraint("reference_sample_count >= 0", name="ck_anomaly_sample_count"),
+        CheckConstraint(
+            "reference_status IN ('complete','reduced','insufficient')", name="ck_anomaly_reference_status"
         ),
     )
 
@@ -177,6 +246,29 @@ class Hypothesis(IdMixin, Base):
     contradicting_evidence_ids: Mapped[list[str]] = mapped_column(JSONB, default=list)
     missing_evidence: Mapped[list[str]] = mapped_column(JSONB, default=list)
     limitations: Mapped[list[str]] = mapped_column(JSONB)
+    # ABB-10: rival-hypothesis workflow. No numeric probability or causal score is stored.
+    title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    origin: Mapped[str] = mapped_column(String(16), default="USER", server_default=text("'USER'"))
+    template_code: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    verification_questions: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    evaluation_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evaluated_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    evaluated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default=text("1"))
+    created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=text("now()"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=text("now()"))
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('OPEN','SUPPORTED','CHALLENGED','REJECTED','COMPATIBLE','CONTRADICTED','NOT_EVALUABLE')",
+            name="ck_hypothesis_status",
+        ),
+        CheckConstraint("origin IN ('USER','TEMPLATE')", name="ck_hypothesis_origin"),
+        CheckConstraint("version >= 1", name="ck_hypothesis_version"),
+        UniqueConstraint("case_id", "template_code", name="uq_hypothesis_case_template"),
+    )
 
 
 class Paper(IdMixin, Base):

@@ -52,13 +52,20 @@ Same auth, 503 and error rules as the cases API. See `docs/science/EVIDENCE_CLAI
 - `GET|POST /api/v1/cases/{case_id}/claims`, `GET|PATCH|DELETE /api/v1/cases/{case_id}/claims/{claim_id}`, `POST …/{claim_id}/review`, `GET …/{claim_id}/history`, `POST /api/v1/cases/{case_id}/claims/pilot-import`.
 - `ClaimView` extends the shared `EvidenceClaim` additively (`case_id`, `version`, `is_reviewed`, `reviewer`, `created_by`, `created_at`, `updated_at`, paper summary, `study_design`, `context`, `reported_outcome` as text, `source_locator`, `quoted_fragment`, `evidence_basis`, `access_basis`, `content_license`, `origin`, `origin_ref`, `warnings`, `can_edit`, `can_review`). `source_kind` is `LITERATURE_REVIEWED` only for ACCEPTED claims; `reviewed_by`/`reviewed_at` are the latest decision. Any content edit resets to PENDING. Decisions require a note and `source_consulted`; ACCEPTED requires a FULL_TEXT check with legitimate access and licence, resolved DOI identity, study design and outcome; contributors cannot review their own claims (403).
 
+## Case observations, timeline and hypotheses (IMPLEMENTED — ABB-10)
+
+Same authentication and 401/403/404/409/422/503 rules as the cases API; requires migration `e3a9c71f5b20` (chained after `e3c91f5a7d24`). See `docs/science/TIMELINE_HYPOTHESES.md`.
+
+- `POST /api/v1/cases/{case_id}/observations/nasa-power` (OWNER/EDITOR), body `{field_id?, event_year?, reference_start?, reference_end?}`; coordinates are never accepted from the client (the field's stored location is used server-side). Returns `IngestionResult`: 201 new data, 200 `created=false` when identical, 502 on upstream failure with nothing stored.
+- `GET /api/v1/cases/{case_id}/observations?include_superseded=` → `{items: IngestionView[]}` (`SourceManifestView`, `ObservationView` with `AnomalyView` and `departure`). For REVIEWER/VIEWER, `query_parameters` latitude/longitude are `"REDACTED"` and upstream messages are withheld.
+- `GET /api/v1/cases/{case_id}/timeline` → `Timeline`: events with `kind` OBSERVED | FARMER_REPORTED | HYPOTHESIS | MISSING_DATA, `event_type`, `start`, `end`, `provenance`, `limitations`, and the descriptive severity rule `abb10-departure-vs-reference-sd-1`.
+- `GET|POST /api/v1/cases/{case_id}/hypotheses`, `POST …/hypotheses/templates`, `GET|PATCH|DELETE …/hypotheses/{id}`, `POST …/hypotheses/{id}/status` (OWNER/EDITOR/REVIEWER; `OPEN | COMPATIBLE | CONTRADICTED | NOT_EVALUABLE`), `GET /api/v1/hypothesis-templates`.
+- Shared `Hypothesis.status` additively includes `COMPATIBLE | CONTRADICTED | NOT_EVALUABLE` (contract 1.0); the case API never sets SUPPORTED/CHALLENGED/REJECTED. No hypothesis carries a probability or score. Evidence links must reference observations, anomalies or evidence claims of the same case.
+
 ## Proposed release 1.0 routes (NOT IMPLEMENTED)
 
-Formalize versioned `/api/v1` resources through their owning roadmap Issues (`/api/v1/cases` is implemented, see above):
-- `/api/v1/cases/{case_id}/observations` — evidence source manifest, jobs, quality flags.
-- `/api/v1/cases/{case_id}/timeline` — observed, local and hypothetical event layers.
+Formalize versioned `/api/v1` resources through their owning roadmap Issues (cases, observations, timeline, hypotheses and claims are implemented, see above):
 - `/api/v1/evidence/search` — DOI discovery (today `GET /api/literature`); `/api/v1/evidence/findings` is superseded by the ABB-14 claims routes above.
-- `/api/v1/cases/{case_id}/hypotheses` — supporting, contradictory and missing evidence.
 - `/api/v1/cases/{case_id}/rotations/compare` — three+ feasible options with explicit scenarios (the stateless `/api/v1/rotations/compare` exists; the case-bound route waits for persisted profiles, ABB-06).
 - `/api/v1/cases/{case_id}/reviews` — reviewer comments and decisions with access control.
 - `/api/v1/cases/{case_id}/reports` — versioned human-readable case reports.
