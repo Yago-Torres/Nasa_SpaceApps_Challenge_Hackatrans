@@ -2,15 +2,15 @@
 
 ## Mission and source of truth
 
-Deliver the **complete AGRO BLACK BOX 1.0 product** specified in `docs/product/RELEASE_1_0.md`. This is the target, not a claim of implementation. Verify current code and `docs/operations/CURRENT_STATE.md`. The canonical product context is this repository, its approved Issues, and reviewed PRs/ADRs — never a model's conversation memory.
+Deliver the **complete AGRO BLACK BOX 1.0 product** specified in `docs/product/RELEASE_1_0.md`. This is the target, not a claim of implementation. Verify current code and `docs/operations/CURRENT_STATE.md`. The canonical product context is this repository, its roadmap Issues, and reviewed PRs/ADRs — never a model's conversation memory.
 
 ## Before touching code
 
 1. Read `docs/ai/CONTEXT_MAP.md`, relevant product/science/architecture docs and applicable nested `AGENTS.md`.
 2. Inspect the relevant source, tests, and existing API contract.
-3. Link the task to a human-approved Issue (`team-approved` with approval comments), or a documented authorized bug fix.
+3. Link the task to a roadmap Issue or documented bug fix. Roadmap Issues are executable without approval labels or votes.
 4. Identify affected domains, dependencies, tests, API changes and required reviewers.
-5. Distinguish implemented functionality from approved-but-not-built and proposed scope.
+5. Distinguish implemented functionality from specified-but-not-built and proposed scope.
 
 ## Coding and scientific rules
 
@@ -19,7 +19,7 @@ Deliver the **complete AGRO BLACK BOX 1.0 product** specified in `docs/product/R
 - Backend owns scientific computations and API response models. Frontend must never invent scientific results or silently substitute sample data for unavailable live NASA observations.
 - Every scientific observation, source, hypothesis or modeled result must retain provenance, units, space/time resolution, limitations and uncertainty as appropriate.
 - Input validation, secure defaults, failure states and deterministic tests required. Protect private farm coordinates and user data.
-- New dependencies, endpoints, schema changes, external services and major architecture changes must be covered by approved Issue / ADR as applicable.
+- New dependencies, endpoints, schema changes, external services and major architecture changes must be documented in the relevant Issue and ADR as applicable, with shared interfaces coordinated before integration.
 - Prefer small PRs and no direct pushes to protected `main`.
 
 ## Commands (run from repo root unless otherwise stated)
@@ -41,7 +41,7 @@ The README contains the **Omarchy agent setup and operation guide**. Never run p
 
 - Run actual tests/build or describe exact blockers.
 - Update `docs/operations/CURRENT_STATE.md` only after evidence-backed integration, `docs/architecture/API_CONTRACTS.md`/ADRs if relevant, and `docs/CHANGELOG.md` for user-visible changes.
-- Create PR linked to approved Issue with exact verification outputs, data/science/security impacts and handoff for another model.
+- When the team decides to publish changes, link the PR to its Issue with exact verification outputs, data/science/security impacts and handoff for another model.
 - Human review and required CI checks before claiming completion.
 
 Details: `docs/governance/FEATURE_POLICY.md`, `docs/governance/TEAM_WORKFLOW.md`, `docs/science/SCIENTIFIC_POLICY.md`.

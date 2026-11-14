@@ -1,10 +1,10 @@
 # Feature ID — title
 
-- Linked approved GitHub Issue:
-- Team approval comments:
+- Linked roadmap GitHub Issue:
+- Coordination / review notes:
 - Owner (one implementer):
 - Domain steward reviewer:
-- Status: PROPOSED | APPROVED | IN PROGRESS | IN REVIEW | COMPLETE
+- Status: BACKLOG | READY | IN PROGRESS | IN REVIEW | COMPLETE
 - Product requirement `F-XX`:
 
 ## Problem, persona and award relevance

@@ -1,6 +1,6 @@
 # Branch / model handoff (place in Issue/PR comment)
 
-- GitHub Issue / approval comments:
+- GitHub Issue / coordination notes:
 - Branch name and commit hash:
 - Verified implemented changes (not planned):
 - Files affected:

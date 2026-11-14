@@ -1,6 +1,6 @@
 # Product release 1.0 — complete required scope
 
-**Target definition, not a claim of completion.** All items in this document are intended to be delivered before designating a stable full 1.0 release. A group-approved feature may change details with an ADR and updated acceptance criteria.
+**Target definition, not a claim of completion.** All items in this document are intended to be delivered before designating a stable full 1.0 release. A documented roadmap change may change details with an ADR and updated acceptance criteria.
 
 | ID | Module | Required acceptance criteria | Status (source: CURRENT_STATE) |
 |---|---|---|---|

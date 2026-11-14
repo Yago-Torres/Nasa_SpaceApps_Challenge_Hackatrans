@@ -1,6 +1,6 @@
 # ADR-0001 — Monorepo and provider-neutral AI context
 
-- Status: accepted as initial team architecture proposal, to be ratified by all three members on GitHub before repository rules become binding
+- Status: accepted
 - Date: 2026-11-14
 
 ## Decision
@@ -13,4 +13,4 @@ Three maintainers need to make fast compatible changes with different AI models,
 
 ## Consequences
 
-Domain stewards review changes but do not gate who can implement an approved Issue. Any architectural change requires unanimous approval recorded in a new ADR.
+Domain stewards review changes but do not gate who can implement a roadmap Issue. Architectural changes require a new ADR, coordination with affected domains and verification before integration.

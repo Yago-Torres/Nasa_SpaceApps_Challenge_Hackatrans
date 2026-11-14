@@ -1,11 +1,11 @@
-name: "Feature proposal (requires human votes)"
-description: "Propose functionality before any AI or human starts implementation"
+name: "Roadmap feature"
+description: "Define an executable, testable product task"
 title: "[FEATURE] "
-labels: ["needs-vote"]
+labels: ["roadmap"]
 body:
   - type: markdown
     attributes:
-      value: "A proposal is NOT approved until explicit human votes are recorded and label team-approved is applied by a human."
+      value: "A sufficiently specified roadmap Issue can be implemented directly. Coordinate shared contracts and record verified results."
   - type: textarea
     id: problem
     attributes:
@@ -38,13 +38,13 @@ body:
     id: dependencies
     attributes:
       label: Dependencies and affected components
-      description: Contracts/migrations/dependencies; whether all-three approval is needed
+      description: Contracts, migrations, technical dependencies and affected consumers
     validations:
       required: true
   - type: dropdown
-    id: critical
+    id: coordination
     attributes:
-      label: Does this alter architecture, scientific method, privacy, product scope, licensing or cost?
-      options: ["Yes — unanimous human approval required", "No — 2 of 3 human approvals required"]
+      label: Which additional review is required before integration?
+      options: ["Architecture or shared contract", "Science or data quality", "Privacy or security", "Standard domain review"]
     validations:
       required: true

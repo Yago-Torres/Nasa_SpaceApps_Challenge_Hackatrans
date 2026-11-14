@@ -8,7 +8,7 @@ AGRO BLACK BOX investiga incidentes agrícolas mediante datos de observación de
 
 ## 1. Contexto obligatorio para personas y agentes IA
 
-El repositorio y las Issues aprobadas en GitHub constituyen la fuente de verdad. **No dependáis de la memoria de una conversación de Claude o ChatGPT.**
+El repositorio y las Issues del roadmap en GitHub constituyen la fuente de verdad. **No dependáis de la memoria de una conversación de Claude o ChatGPT.**
 
 Leed, en este orden:
 
@@ -18,12 +18,12 @@ Leed, en este orden:
 4. `docs/operations/CURRENT_STATE.md`.
 5. `docs/architecture/ARCHITECTURE.md` y `docs/architecture/API_CONTRACTS.md`.
 6. `docs/governance/FEATURE_POLICY.md` y `docs/science/SCIENTIFIC_POLICY.md`.
-7. La GitHub Issue aprobada y el código/tests actuales de los módulos afectados.
+7. La GitHub Issue activa y el código/tests actuales de los módulos afectados.
 
 **Inicio de una sesión IA:**
 
 ```text
-Actúa como desarrollador de AGRO BLACK BOX. Lee AGENTS.md, CLAUDE.md (si estás en Claude), docs/ai/CONTEXT_MAP.md, el alcance 1.0, CURRENT_STATE, las reglas de aprobación y los contratos pertinentes. Identifica la Issue aprobada, qué está implementado y qué falta. No inventes datos ni funcionalidades. Antes de editar, presenta archivos afectados, dependencias y tests previstos. Implementa solo el alcance aprobado y al final documenta la verificación y el traspaso a otro agente.
+Actúa como desarrollador de AGRO BLACK BOX. Lee AGENTS.md, CLAUDE.md (si estás en Claude), docs/ai/CONTEXT_MAP.md, el alcance 1.0, CURRENT_STATE, el flujo de trabajo y los contratos pertinentes. Identifica la Issue activa, qué está implementado y qué falta. No inventes datos ni funcionalidades. Antes de editar, presenta archivos afectados, dependencias y tests previstos. Implementa solo el alcance de la Issue y al final documenta la verificación y el traspaso a otro agente.
 ```
 
 ## 2. Stack y gestor de dependencias
@@ -46,15 +46,15 @@ Requisitos: `git`, `uv`, Node.js 24 y npm. En WSL2 guardad el repositorio bajo `
 # Desde la raíz del repositorio: preparar dependencias Python con uv
 cd backend
 uv python install 3.12        # Solo hace falta la primera vez
-uv sync --extra dev           # Resuelve e instala dependencias de desarrollo
-uv run uvicorn agroblackbox.app:app --reload --port 8000
+uv sync --locked --extra dev  # Instala exactamente backend/uv.lock
+uv run --locked uvicorn agroblackbox.app:app --reload --port 8000
 ```
 
 En **otra terminal**, desde la raíz del repositorio:
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -67,13 +67,13 @@ Comprobaciones locales:
 ```bash
 # Desde la raíz
 uv run --no-project python scripts/check_context.py
-cd backend && uv run --extra dev pytest -q
+cd backend && uv lock --check && uv run --locked --extra dev pytest -q
 cd ../frontend && npm run build
 ```
 
-**Bloqueo de dependencias:** la primera ejecución online de `uv sync --extra dev` genera `backend/uv.lock`. **Incluid ese archivo en el primer commit/PR que lo produzca**; no se debe ignorar. Después, para comprobar que el lockfile está actualizado: `cd backend && uv lock --check`; y para instalaciones estrictas: `uv sync --locked --extra dev`. El archivo no se ha generado en este paquete porque el entorno de empaquetado no pudo resolver PyPI.
+**Bloqueo de dependencias:** `backend/uv.lock` y `frontend/package-lock.json` están versionados y son obligatorios. Comprobad Python con `cd backend && uv lock --check` e instalad mediante `uv sync --locked --extra dev`. En frontend usad `npm ci`; no sustituyáis los locks por resoluciones flotantes durante CI.
 
-El `compose.yaml` define servicios de PostgreSQL y Redis para el desarrollo de 1.0; la base de código actual todavía no los utiliza. Levantadlos **solo** para una Issue aprobada que los requiera.
+El `compose.yaml` define servicios de PostgreSQL y Redis para el desarrollo de 1.0; la base de código actual todavía no los utiliza. Levantadlos **solo** para una Issue activa que los requiera.
 
 ## 4. Guía específica para agentes IA en Omarchy (Arch Linux)
 
@@ -96,7 +96,7 @@ Omarchy está basado en Arch y utiliza **mise** para gestionar herramientas de d
 
 3. Si falta Node 24, utilizar `mise use -g node@24` tras confirmarlo con la persona. Para Python, es `uv python install 3.12`, no `pip`, `virtualenv` ni activación manual.
 4. Clonar el repositorio con `gh repo clone <ORG>/agro-black-box` (después de `gh auth login`) o `git clone <URL>`. Nunca guardar credenciales en los archivos del proyecto.
-5. Ejecutar el backend con `cd backend && uv sync --extra dev && uv run uvicorn agroblackbox.app:app --reload --port 8000` y el frontend con `cd frontend && npm install && npm run dev`.
+5. Ejecutar el backend con `cd backend && uv sync --locked --extra dev && uv run --locked uvicorn agroblackbox.app:app --reload --port 8000` y el frontend con `cd frontend && npm ci && npm run dev`.
 6. Si la Issue necesita PostgreSQL/Redis, Omarchy suele incluir Docker y Compose. Utilizar `sudo docker compose up -d` desde la raíz **solo tras consentimiento**. La pertenencia al grupo `docker` implica privilegios equivalentes a root; no cambiarla automáticamente.
 
 Documentación del sistema: [Omarchy — Development Tools](https://omarchy.org/manual/development-tools/). Gestor Python: [uv — Working on projects](https://docs.astral.sh/uv/guides/projects/).
@@ -104,9 +104,9 @@ Documentación del sistema: [Omarchy — Development Tools](https://omarchy.org/
 ### Reglas operativas para Claude Code y ChatGPT/Codex en Omarchy
 
 - **Primero leer el contexto**, luego la Issue y el código; nunca asumir que una instrucción de chat anterior sigue vigente si contradice el repositorio.
-- Trabajar únicamente en la rama de la Issue: `feat/<numero>-<descripcion>`; no modificar `main` directamente.
+- Trabajar en el árbol actual sin crear ramas, commits, pushes o PRs automáticamente; los humanos deciden cuándo publicar cambios.
 - No ejecutar `sudo`, `pacman`, `yay`, `mise use -g`, `omarchy update`, cambios de grupo, scripts remotos, `gh auth login` ni instalaciones globales sin autorización humana explícita.
-- Para dependencias Python usar `uv add`/`uv remove` **dentro de `backend/`** solo cuando la dependencia haya sido aprobada. Actualizar y revisar `pyproject.toml` **y** `uv.lock` en la misma PR.
+- Para dependencias Python usar `uv add`/`uv remove` **dentro de `backend/`** solo cuando la Issue activa las requiera. Actualizar y revisar `pyproject.toml` **y** `uv.lock` juntos.
 - Preferir `uv run` para comandos y tests; no usar `source .venv/bin/activate`, `python -m venv`, `pip install` o herramientas Python globales.
 - Mantener los datos locales o privados fuera de Git; no exponer claves, coordenadas privadas ni registros personales a servicios externos sin autorización.
 - Al terminar: ejecutar tests, actualizar `CURRENT_STATE.md` únicamente con funcionalidades probadas y dejar un handoff siguiendo `docs/ai/HANDOFF_TEMPLATE.md`.
@@ -115,21 +115,21 @@ Documentación del sistema: [Omarchy — Development Tools](https://omarchy.org/
 ### Prompt corto de arranque en Omarchy
 
 ```text
-Estamos en Omarchy (Arch Linux). Usa mise para runtimes del sistema cuando esté autorizado y uv para todas las dependencias y ejecuciones Python en backend/. No uses pip ni gestiones entornos Python manualmente. Lee AGENTS.md, docs/ai/CONTEXT_MAP.md, CURRENT_STATE y la Issue aprobada; inspecciona los tests. No ejecutes comandos privilegiados ni cambies herramientas globales sin mi aprobación. Tras implementar la Issue, ejecuta los checks y prepara un resumen verificable para la PR.
+Estamos en Omarchy (Arch Linux). Usa mise para runtimes del sistema cuando esté autorizado y uv para todas las dependencias y ejecuciones Python en backend/. No uses pip ni gestiones entornos Python manualmente. Lee AGENTS.md, docs/ai/CONTEXT_MAP.md, CURRENT_STATE y la Issue activa; inspecciona los tests. No ejecutes comandos privilegiados ni cambies herramientas globales sin mi autorización. Tras implementar la Issue, ejecuta los checks y prepara un resumen verificable para el handoff o PR.
 ```
 
 ## 5. Equipo, gobierno de features y GitHub
 
 | Steward técnico | Revisión preferente de | ¿Puede implementar funcionalidades de otro dominio? |
 |---|---|---|
-| Persona A | NASA / observaciones / métricas | **Sí**, si la Issue ha sido aprobada |
-| Persona B | Evidencias científicas / rotaciones | **Sí**, si la Issue ha sido aprobada |
-| Persona C | Frontend / integración / autenticación | **Sí**, si la Issue ha sido aprobada |
+| Persona A | NASA / observaciones / métricas | **Sí**, desde una Issue del roadmap |
+| Persona B | Evidencias científicas / rotaciones | **Sí**, desde una Issue del roadmap |
+| Persona C | Frontend / integración / autenticación | **Sí**, desde una Issue del roadmap |
 
-- Toda feature requiere una **GitHub Feature Issue** y aprobación humana explícita de **2 de 3** integrantes. Para cambios en metodología científica, arquitectura, privacidad, licencias o seguridad, **3 de 3**.
+- Toda feature se vincula a una **GitHub Roadmap Issue** con alcance y criterios verificables; no requiere votos ni etiquetas de aprobación para comenzar.
 - El dominio indica quién revisa, no quién tiene permiso exclusivo para programar.
-- Una tarea tiene un implementador, una rama corta, una PR y al menos un revisor humano. CI debe pasar antes de merge.
-- Las IA **no votan**, no aprueban features y no sustituyen la revisión humana.
+- Una tarea tiene un implementador principal y coordinación explícita cuando toca contratos o archivos compartidos. Los humanos deciden cuándo crear rama y PR; CI debe pasar antes de integrar.
+- Las IA implementan y verifican el alcance de la Issue, pero no sustituyen la revisión técnica, científica o de seguridad.
 - Las decisiones duraderas se guardan en Issues/ADRs, no en memorias de chat.
 
 Consultar `docs/governance/GITHUB_SETUP.md`, `FEATURE_POLICY.md`, `TEAM_WORKFLOW.md` y `docs/ai/HANDOFF_TEMPLATE.md`.

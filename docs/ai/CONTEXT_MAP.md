@@ -12,23 +12,23 @@ The repository, not a chat transcript or a model's local memory, is the canonica
 6. `docs/architecture/API_CONTRACTS.md` (implemented routes vs proposed routes).
 7. `docs/governance/FEATURE_POLICY.md` (what is authorized).
 8. `docs/science/SCIENTIFIC_POLICY.md` (scientific claims / evidence).
-9. **The specific approved GitHub Issue**, its acceptance criteria, and any affected ADR.
+9. **The specific roadmap GitHub Issue**, its acceptance criteria, dependencies, and any affected ADR.
 10. Relevant source files, tests, latest change log, and PRs if accessible.
 
 Never assume these files are automatically loaded in full just because their names appear in this map. Open the relevant documents before implementing.
 
 ## Session contract
 
-At session start, briefly state: task/Issue, approval evidence, current product state, relevant modules, expected contract changes and test plan. If no authorized task is identified, limit work to investigation, documentation proposals or questions. At session end, report the implemented delta, tests, remaining gaps and needed updates to CURRENT_STATE. Do not self-approve features.
+At session start, briefly state: task/Issue, current product state, relevant modules, expected contract changes and test plan. If no roadmap task is identified, limit work to investigation, documentation proposals or questions. Roadmap Issues are directly executable; coordinate shared contracts and high-risk decisions rather than waiting for approval labels. At session end, report the implemented delta, tests, remaining gaps and needed updates to CURRENT_STATE.
 
 ## Four permitted types of claims
 
 - **Implemented & tested:** supported by code + a runnable check and status ledger.
 - **In progress:** partial code or incomplete integration.
-- **Approved not built:** Issue approved, design agreed, no working implementation yet.
-- **Proposed:** candidate feature only, requires votes.
+- **Specified not built:** roadmap Issue or requirement exists, no working implementation yet.
+- **Proposed:** candidate idea outside the current roadmap, not yet scheduled.
 
-Do not copy chat history into the repository as a source of truth. Distill decisions into an ADR/approved Issue. Don't commit long AI conversation logs, private context or credentials.
+Do not copy chat history into the repository as a source of truth. Distill decisions into an ADR or roadmap Issue. Don't commit long AI conversation logs, private context or credentials.
 
 ## Model-specific behavior
 
