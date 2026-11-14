@@ -238,7 +238,7 @@ describe('CaseTimeline (ABB-22)', () => {
     // Shared case error copy deliberately turns 503 into the actionable storage message
     // instead of exposing the backend detail verbatim.
     expect(alert.textContent).toContain('Case storage is not available on this server');
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     expect(screen.queryByText('Every starting template has been added.')).toBeNull();
   });
 
