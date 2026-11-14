@@ -10,6 +10,8 @@
 - `GET /api/rotations/demo` — three illustrative rotations, not water/yield forecasts.
 - `POST /api/report` — Markdown case note from submitted payload; preliminary and not independently validated.
 
+Frontend consumers, screens and the interface fields the UI requests from A and B: `docs/architecture/FRONTEND_INTEGRATION.md`.
+
 ## Proposed release 1.0 API (NOT IMPLEMENTED)
 
 Formalize versioned `/api/v1` resources and schema generation through approved contracts:

@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AGRO BLACK BOX</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#fdfefd">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,400..800;1,400..800&family=Atkinson+Hyperlegible+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@1,8..60,400..600&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<style>
+/* Reference page for the Field Survey design system: the public landing page with a
+   working example case. All colours come from tokens.css. Motion follows references/motion.md. */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; accent-color: var(--c-may-ink); scrollbar-color: var(--rule-2) var(--surface-sunken); scroll-padding-top: 5rem; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+body { margin: 0; background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: var(--text-md); line-height: var(--leading-body); caret-color: var(--c-may-ink); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--surface); z-index: 20; }
+::selection { background: var(--highlight); color: var(--ink); }
+h1, h2, h3, h4 { margin: 0; line-height: var(--leading-tight); text-wrap: balance; }
+p { margin: 0; max-width: var(--measure); text-wrap: pretty; }
+a { color: var(--ink-link); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--font-mono); font-size: 0.875em; overflow-wrap: anywhere; }
+.voice { font-family: var(--font-serif); font-style: italic; line-height: var(--leading-serif); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.wrap { max-width: var(--content-max); margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+svg.sym { width: .85em; height: .85em; flex: none; }
+.skip { position: absolute; left: 1rem; top: -4rem; background: var(--surface); padding: var(--space-2) var(--space-3); z-index: 60; }
+.skip:focus { top: 1rem; }
+
+/* Links with drawn underline */
+.u { color: inherit; text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 100% / 0 1.5px no-repeat; transition: background-size var(--dur-2) var(--ease-out), color var(--dur-1) var(--ease-out); padding-bottom: 2px; }
+.u:hover { background-size: 100% 1.5px; color: var(--ink-link); }
+.ul { text-underline-offset: .2em; text-decoration-thickness: 1px; transition: text-decoration-thickness var(--dur-1); }
+.ul:hover { text-decoration-thickness: 2px; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: var(--tap); padding: 0 var(--space-5);
+  border-radius: var(--radius-m); border: 1px solid transparent; cursor: pointer; font: var(--weight-bold) var(--text-md)/1 var(--font-sans);
+  touch-action: manipulation; white-space: nowrap; text-decoration: none; position: relative;
+  transition: background-color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out), transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
+.btn svg { width: 1.1em; height: 1.1em; transition: transform var(--dur-2) var(--ease-out); }
+.btn:hover { transform: translateY(var(--lift)); box-shadow: var(--shadow-hover); }
+.btn:hover .go { transform: translateX(3px); }
+.btn:active { transform: translateY(0) scale(.98); box-shadow: none; transition-duration: var(--dur-press); }
+.btn--primary { background: var(--action); color: var(--action-ink); border-color: var(--action-edge); }
+.btn--primary:hover { background: var(--action-hover); }
+.btn--secondary { background: var(--action-2); color: var(--action-2-ink); border-color: var(--action-2-edge); }
+.btn--secondary:hover { background: var(--surface-tint); }
+.btn--text { background: none; color: var(--ink-link); padding-inline: var(--space-2); font-weight: var(--weight-medium); min-height: 36px; }
+.btn--text:hover { box-shadow: none; transform: none; text-decoration: underline; text-underline-offset: .2em; }
+.btn--icon { padding: 0; width: var(--tap); }
+.btn[aria-busy="true"] { cursor: progress; transform: none; box-shadow: none; }
+.btn[aria-busy="true"] .go { display: none; }
+.spin { width: 1em; height: 1em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; opacity: .6; } }
+
+/* Evidence labels */
+.ev { display: inline-flex; align-items: center; gap: .4em; font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.ev--observed { color: var(--ev-observed); } .ev--farmer { color: var(--ev-farmer); } .ev--literature { color: var(--ev-literature); }
+.ev--hypothesis { color: var(--ev-hypothesis); } .ev--model { color: var(--ev-model); } .ev--illustrative { color: var(--ev-illustrative); } .ev--missing { color: var(--ev-missing); }
+
+/* ── Header ── */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: var(--z-sticky); background: var(--surface); border-bottom: 1px solid transparent; transition: border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
+.top.is-stuck { border-bottom-color: var(--rule); box-shadow: 0 6px 18px -14px rgb(20 32 25 / .4); }
+.top .wrap { display: flex; align-items: center; gap: var(--space-5); min-height: 4rem; }
+.brand { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-heavy); color: var(--c-calpoly); text-decoration: none; white-space: nowrap; }
+.brand svg { width: 1.6rem; height: 1.6rem; }
+.top nav { display: flex; gap: var(--space-5); margin-left: var(--space-4); }
+.top nav a { white-space: nowrap; }
+.top .right { margin-left: auto; display: flex; align-items: center; gap: var(--space-3); }
+.lang { display: inline-flex; border: 1px solid var(--rule-2); border-radius: var(--radius-m); overflow: hidden; }
+.lang button { min-height: 36px; min-width: 44px; border: 0; background: var(--surface); color: var(--ink-2); font: var(--weight-bold) var(--text-sm) var(--font-sans); cursor: pointer; transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out); }
+.lang button:hover { background: var(--surface-tint); color: var(--ink); }
+.lang button[aria-pressed="true"] { background: var(--c-calpoly); color: var(--ink-on-shell); }
+.menu-btn { display: none; }
+@media (max-width: 52rem) {
+  .menu-btn { display: inline-flex; }
+  .top nav { position: absolute; inset: 100% 0 auto; margin: 0; flex-direction: column; gap: 0; background: var(--surface); border-bottom: 1px solid var(--rule);
+    padding: var(--space-2) max(16px, env(safe-area-inset-right, 0px)) var(--space-4) max(16px, env(safe-area-inset-left, 0px));
+    visibility: hidden; opacity: 0; transform: translateY(-6px); transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out), visibility 0s linear var(--dur-2); }
+  .top nav a { padding: var(--space-3) 0; border-bottom: 1px solid var(--rule); background: none; }
+  .top.menu-open nav { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
+  .top .cta-top { display: none; }
+}
+
+/* ── Hero ── */
+.hero { background: var(--surface-sky); overflow: hidden; }
+.hero .wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: var(--space-7); align-items: stretch; padding-block: var(--space-8) 0; }
+.hero .wrap > div:first-child { padding-bottom: var(--space-8); }
+.hero h1 { font-size: var(--text-display); font-weight: var(--weight-heavy); letter-spacing: -.025em; line-height: 1.02; max-width: 13ch; }
+.hero .lead { margin-top: var(--space-5); font-size: var(--text-lg); color: var(--ink-2); max-width: 44ch; }
+.start { margin-top: var(--space-6); background: var(--surface); border: 1px solid var(--rule-2); border-radius: var(--radius-m); padding: var(--space-5); display: grid; gap: var(--space-4); max-width: 30rem; box-shadow: var(--shadow-float); }
+.start h2 { font-size: var(--text-lg); font-weight: var(--weight-bold); }
+.start .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-3); }
+.start .note { font-size: var(--text-sm); color: var(--ink-2); }
+.art { position: relative; min-height: 28rem; }
+.art img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 55%; border-radius: var(--radius-l) var(--radius-l) 0 0; }
+@media (max-width: 60rem) {
+  .hero .wrap { grid-template-columns: minmax(0, 1fr); padding-top: var(--space-6); }
+  .start { max-width: none; }
+  .hero .wrap > div:first-child { padding-bottom: 0; }
+  .art { min-height: 0; aspect-ratio: 4 / 3; }
+}
+
+/* Fields */
+.field { display: grid; gap: var(--space-1); min-width: 0; align-content: start; }
+.field label { font-weight: var(--weight-bold); font-size: var(--text-sm); }
+.field .ctl { display: flex; min-height: var(--tap); background: var(--surface); border: 1px solid var(--rule-2); border-radius: var(--radius-s); transition: border-color var(--dur-1) var(--ease-out); }
+.field .ctl:hover { border-color: var(--rule-3); }
+.field .ctl:focus-within { outline: 3px solid var(--focus); outline-offset: 1px; border-color: var(--focus); }
+.field input { flex: 1; min-width: 0; width: 100%; border: 0; background: none; font: inherit; color: var(--ink); padding: 0 var(--space-3); outline: none; font-variant-numeric: tabular-nums; }
+.field .unit { display: grid; place-items: center; padding: 0 var(--space-3); color: var(--ink-3); font-size: var(--text-sm); border-left: 1px solid var(--rule); }
+.field .hint { color: var(--ink-3); font-size: var(--text-sm); }
+.field .err { display: none; color: var(--error-ink); font-size: var(--text-sm); font-weight: var(--weight-bold); gap: var(--space-2); align-items: baseline; }
+.field.bad .ctl { border: 2px solid var(--error-ink); }
+.field.bad .err { display: flex; }
+.field.bad .hint { display: none; }
+@media (max-width: 26rem) { .start .pair { grid-template-columns: minmax(0, 1fr); } }
+
+/* ── Sections ── */
+.sec { padding-block: var(--space-9) var(--space-8); }
+.sec + .sec { border-top: 1px solid var(--rule); }
+.sec-head { display: grid; gap: var(--space-3); margin-bottom: var(--space-7); max-width: 44rem; }
+.sec-head h2 { font-size: var(--text-3xl); font-weight: var(--weight-heavy); letter-spacing: -.015em; }
+.sec-head p { color: var(--ink-2); font-size: var(--text-lg); }
+
+/* How it works: a real sequence */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-6); counter-reset: step; position: relative; }
+.steps li { display: grid; gap: var(--space-3); align-content: start; }
+.ph { margin: 0; overflow: hidden; border-radius: var(--radius-m); aspect-ratio: 4 / 3; background: var(--surface-tint); max-width: 100%; }
+.ph img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform var(--dur-3) var(--ease-out); }
+.steps li:hover .ph img { transform: scale(1.03); }
+.steps .n { display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--c-calpoly); color: var(--ink-on-shell); font-size: var(--text-sm); font-weight: var(--weight-bold); }
+.steps h3 { font-size: var(--text-lg); font-weight: var(--weight-bold); display: flex; gap: var(--space-2); align-items: center; }
+.steps p { color: var(--ink-2); font-size: var(--text-md); }
+@media (max-width: 60rem) { .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 34rem) { .steps { grid-template-columns: minmax(0, 1fr); } .steps li { grid-template-columns: 7rem minmax(0, 1fr); column-gap: var(--space-4); } .steps .ph { grid-row: span 2; } }
+
+/* ── Example case ── */
+.case { background: var(--surface-sunken); }
+.flag { display: flex; gap: var(--space-2); align-items: baseline; padding: var(--space-3) var(--space-4); background: var(--error-bg); color: var(--error-ink); border-radius: var(--radius-m); font-size: var(--text-sm); margin-bottom: var(--space-5); max-width: none; }
+.titleblock { margin: 0; display: grid; grid-template-columns: minmax(16rem, 2.2fr) repeat(3, minmax(9rem, 1fr)); background: var(--surface); border: 1px solid var(--rule-3); border-bottom: 2px solid var(--ink); border-radius: var(--radius-s) var(--radius-s) 0 0; }
+.titleblock > div { padding: var(--space-3) var(--space-4); border-right: 1px solid var(--rule-3); min-width: 0; }
+.titleblock > div:nth-child(-n+4) { border-bottom: 1px solid var(--rule-3); }
+.titleblock > div:nth-child(4), .titleblock > div:nth-child(7) { border-right: 0; }
+.titleblock .name { grid-row: span 2; display: grid; align-content: start; gap: var(--space-2); border-bottom: 0 !important; }
+.titleblock h3 { font-size: var(--text-2xl); font-weight: var(--weight-heavy); letter-spacing: -.01em; }
+.titleblock .name p { color: var(--ink-2); font-size: var(--text-sm); }
+.titleblock dt { font-size: var(--text-xs); color: var(--ink-3); }
+.titleblock dd { margin: 2px 0 0; font-size: var(--text-sm); font-weight: var(--weight-medium); display: flex; gap: var(--space-2); align-items: center; }
+@media (max-width: 60rem) {
+  .titleblock { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .titleblock .name { grid-column: 1 / -1; grid-row: auto; border-right: 0; border-bottom: 1px solid var(--rule-3) !important; }
+  .titleblock > div { border-bottom: 1px solid var(--rule-3); border-right: 1px solid var(--rule-3); }
+  .titleblock > div:nth-child(odd):not(.name) { border-right: 0; }
+  .titleblock > div:nth-child(6), .titleblock > div:nth-child(7) { border-bottom: 0; }
+}
+
+.panel { background: var(--surface); border: 1px solid var(--rule-3); border-top: 0; border-radius: 0 0 var(--radius-s) var(--radius-s); }
+.tabs { display: flex; gap: var(--space-1); padding: 0 var(--space-4); border-bottom: 1px solid var(--rule); position: relative; overflow-x: auto; }
+.tabs button { min-height: var(--tap); padding: 0 var(--space-4); border: 0; background: none; color: var(--ink-2); font: var(--weight-bold) var(--text-md) var(--font-sans); cursor: pointer; white-space: nowrap; border-radius: var(--radius-s) var(--radius-s) 0 0; transition: color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out); }
+.tabs button:hover { color: var(--ink); background: var(--surface-sunken); }
+.tabs button[aria-selected="true"] { color: var(--ink); }
+.tabs .bar { position: absolute; bottom: -1px; left: 0; height: 3px; width: var(--w, 0); transform: translateX(var(--x, 0)); background: var(--c-may); border-radius: 2px; transition: transform var(--dur-2) var(--ease-out), width var(--dur-2) var(--ease-out); }
+.tabpanel { padding: var(--space-6) var(--space-5); }
+.tabpanel[hidden] { display: none; }
+.tabpanel:focus-visible { outline-offset: -3px; }
+.head-row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-2); }
+.head-row h4 { font-size: var(--text-xl); font-weight: var(--weight-bold); }
+.scope { color: var(--ink-2); font-size: var(--text-sm); margin-bottom: var(--space-5); }
+
+.chart-wrap { position: relative; }
+.chart { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: var(--font-sans); font-size: 12px; fill: var(--viz-axis); font-variant-numeric: tabular-nums; }
+.chart .grid { stroke: var(--viz-grid); }
+.chart .zero { stroke: var(--viz-zero); stroke-width: 1.5; }
+.chart .event { fill: var(--viz-event); }
+.chart .bar-g { cursor: default; outline: none; }
+.chart .bar-g rect.hit { fill: transparent; }
+.chart .bar-g:hover rect.hit, .chart .bar-g:focus-visible rect.hit { fill: var(--surface-tint); }
+.chart .bar-g:focus-visible rect.hit { stroke: var(--focus); stroke-width: 2; }
+.chart .b { transform-box: fill-box; transition: opacity var(--dur-1) var(--ease-out); }
+.chart.grow .b.neg { animation: growdown var(--dur-4) var(--ease-out) both; animation-delay: calc(var(--i) * 30ms); transform-origin: top; }
+.chart.grow .b.pos { animation: growup var(--dur-4) var(--ease-out) both; animation-delay: calc(var(--i) * 30ms); transform-origin: bottom; }
+.chart.grow.horiz .b.neg { animation-name: growleft; transform-origin: right; }
+.chart.grow.horiz .b.pos { animation-name: growright; transform-origin: left; }
+@keyframes growdown { from { transform: scaleY(0); } } @keyframes growup { from { transform: scaleY(0); } }
+@keyframes growleft { from { transform: scaleX(0); } } @keyframes growright { from { transform: scaleX(0); } }
+.chart .gap { fill: none; stroke: var(--ev-missing); stroke-dasharray: 2 3; }
+.tip { position: absolute; pointer-events: none; background: var(--c-calpoly); color: var(--ink-on-shell); padding: var(--space-2) var(--space-3); border-radius: var(--radius-s); font-size: var(--text-sm); white-space: nowrap; transform: translate(-50%, calc(-100% - 8px)); opacity: 0; transition: opacity var(--dur-1) var(--ease-out); }
+.tip.on { opacity: 1; }
+.heat { display: grid; grid-template-columns: 4.5rem repeat(12, minmax(0, 1fr)); gap: 2px; font-size: var(--text-xs); margin-top: var(--space-4); }
+.heat > span { padding: var(--space-2) 0; text-align: center; font-variant-numeric: tabular-nums; border-radius: 2px; }
+.heat .lbl { text-align: left; color: var(--ink-2); }
+.t0 { background: var(--viz-cold-1); } .t1 { background: var(--viz-hot-1); } .t2 { background: var(--viz-hot-2); } .t3 { background: var(--viz-hot-3); color: var(--c-white); }
+.tn { background: var(--surface-sunken); color: var(--ev-missing); outline: 1px dashed var(--ev-missing); outline-offset: -1px; }
+@media (max-width: 40rem) { .heat { grid-template-columns: repeat(6, minmax(0, 1fr)); } .heat .lbl { grid-column: 1 / -1; } }
+.caption { color: var(--ink-2); font-size: var(--text-sm); margin-top: var(--space-3); }
+.tools { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); }
+table.data { width: 100%; border-collapse: collapse; font-size: var(--text-sm); margin-top: var(--space-4); }
+table.data th, table.data td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--rule); text-align: right; font-variant-numeric: tabular-nums; }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data thead th { border-bottom: 1.5px solid var(--rule-3); color: var(--ink-2); }
+table.data tbody tr { transition: background-color var(--dur-1) var(--ease-out); }
+table.data tbody tr:hover { background: var(--surface-sunken); }
+
+/* Hypotheses */
+.hyps { display: grid; gap: var(--space-3); }
+.hyp { border: 1px solid var(--rule-2); border-radius: var(--radius-m); transition: border-color var(--dur-1) var(--ease-out); }
+.hyp:hover { border-color: var(--rule-3); }
+.hyp > button { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; text-align: left; padding: var(--space-4); border: 0; background: none; cursor: pointer; font: inherit; color: inherit; border-radius: var(--radius-m); }
+.hyp > button:hover { background: var(--surface-sunken); }
+.hyp h5 { font-size: var(--text-lg); font-weight: var(--weight-bold); margin: 0; }
+.hyp .meta { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin-top: var(--space-1); color: var(--ink-2); font-size: var(--text-sm); }
+.hyp .chev { width: 1.25rem; height: 1.25rem; transition: transform var(--dur-3) var(--ease-out); }
+.hyp[data-open] .chev { transform: rotate(180deg); }
+.hyp .body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--dur-3) var(--ease-out); }
+.hyp[data-open] .body { grid-template-rows: 1fr; }
+.hyp .body > div { overflow: hidden; }
+.hyp .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-5); padding: 0 var(--space-4) var(--space-4); border-top: 1px solid var(--rule); padding-top: var(--space-4); }
+.hyp h6 { margin: 0 0 var(--space-2); font-size: var(--text-sm); color: var(--ink-2); }
+.hyp ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); font-size: var(--text-sm); }
+.hyp li { display: flex; gap: var(--space-2); align-items: baseline; }
+@media (max-width: 44rem) { .hyp .cols { grid-template-columns: minmax(0, 1fr); } }
+
+/* Sources */
+.src-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: var(--space-5); align-items: start; }
+@media (max-width: 52rem) { .src-grid { grid-template-columns: minmax(0, 1fr); } }
+.label { background: var(--surface); border: 1px solid var(--rule-2); border-radius: var(--radius-s); }
+.label header { display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--rule-2); }
+.label dl { margin: 0; padding: var(--space-3) var(--space-4); display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-2) var(--space-4); font-size: var(--text-sm); align-items: baseline; }
+.label dt { color: var(--ink-3); } .label dd { margin: 0; min-width: 0; display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+.label .lim { grid-column: 1 / -1; color: var(--ink-2); border-top: 1px solid var(--rule); padding-top: var(--space-3); display: block; }
+.slips { display: grid; gap: var(--space-3); }
+.slip { background: var(--surface); border: 1px solid var(--rule-2); border-radius: var(--radius-l); padding: var(--space-4) var(--space-5); display: grid; gap: var(--space-2); }
+.slip blockquote { margin: 0; font-size: var(--text-lg); }
+.slip .who { font-size: var(--text-xs); color: var(--ink-3); display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; }
+.slip .who b { color: var(--ink-2); }
+.slip .who .ev { font-size: inherit; }
+.case-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); padding: var(--space-5); border-top: 1px solid var(--rule); }
+
+/* Legend */
+.legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: var(--space-5) var(--space-6); }
+.legend li { display: grid; gap: var(--space-1); align-content: start; }
+.legend .ev { font-size: var(--text-md); font-weight: var(--weight-bold); }
+.legend p { color: var(--ink-2); font-size: var(--text-sm); }
+
+/* Sources & solarpunk band */
+.band { background: var(--c-calpoly); color: var(--ink-on-shell); }
+.band .wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-7); padding-block: var(--space-8); align-items: center; }
+.band h2 { font-size: var(--text-3xl); font-weight: var(--weight-heavy); letter-spacing: -.015em; color: var(--c-white); }
+.band p { color: var(--ink-on-shell-2); font-size: var(--text-lg); margin-top: var(--space-4); }
+.band-ph { margin-top: var(--space-6); aspect-ratio: 16 / 9; background: var(--surface-shell-active); }
+.band .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.band .list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-4); padding: var(--space-4) 0; border-bottom: 1px solid var(--surface-shell-hover); align-items: baseline; }
+.band .list b { color: var(--c-white); display: block; }
+.band .list span { color: var(--ink-on-shell-2); font-size: var(--text-sm); }
+.band .state { font-size: var(--text-sm); font-weight: var(--weight-bold); white-space: nowrap; }
+.band .state.live { color: var(--c-yellowgreen); }
+.band :focus-visible { outline-color: var(--focus-on-shell); }
+@media (max-width: 52rem) { .band .wrap { grid-template-columns: minmax(0, 1fr); } }
+
+/* Footer */
+footer { padding-block: var(--space-6) calc(var(--space-6) + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--rule); color: var(--ink-2); font-size: var(--text-sm); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-6); align-items: center; }
+footer .brand { font-size: var(--text-md); }
+footer .credit { flex-basis: 100%; color: var(--ink-3); font-size: var(--text-xs); }
+
+/* Toast */
+.toasts { position: fixed; z-index: var(--z-toast); left: 50%; bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: grid; gap: var(--space-2); width: min(30rem, calc(100vw - 32px)); }
+.toast { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-3); align-items: start; background: var(--c-calpoly); color: var(--ink-on-shell); padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4); border-radius: var(--radius-m); box-shadow: var(--shadow-float); font-size: var(--text-sm);
+  animation: toast-in var(--dur-2) var(--ease-out); }
+.toast svg { width: 1.1rem; height: 1.1rem; margin-top: .1rem; color: var(--c-yellowgreen); }
+.toast button { background: none; border: 0; color: var(--ink-on-shell-2); cursor: pointer; min-width: 32px; min-height: 32px; border-radius: var(--radius-s); }
+.toast button:hover { color: var(--c-white); background: var(--surface-shell-hover); }
+.toast.out { opacity: 0; transform: translateY(6px); transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="s-observed" viewBox="0 0 12 12"><rect x="1" y="1" width="10" height="10" fill="currentColor"/></symbol>
+  <symbol id="s-farmer" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="currentColor"/></symbol>
+  <symbol id="s-literature" viewBox="0 0 12 12"><path d="M6 1 11.2 10.5H.8z" fill="currentColor"/></symbol>
+  <symbol id="s-hypothesis" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.2 1.6"/></symbol>
+  <symbol id="s-model" viewBox="0 0 12 12"><rect x="1.2" y="1.2" width="9.6" height="9.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 7.5 7.5 1.5M1.5 11 11 1.5M5 11 11 5" stroke="currentColor" stroke-width="1.2"/></symbol>
+  <symbol id="s-illustrative" viewBox="0 0 12 12"><path d="M6 .8 11.2 6 6 11.2.8 6z" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+  <symbol id="s-missing" viewBox="0 0 12 12"><rect x="1.2" y="1.2" width="9.6" height="9.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="1.4 1.6"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3zM12 10v5M12 18h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v6M12 7.5h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 15V5a1 1 0 0 1 1-1h9" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z" fill="currentColor"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-mark" viewBox="0 0 24 24"><rect x="2.5" y="2.5" width="19" height="19" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2.5 15c4-1 6-5 9.5-5s5.5 3 9.5 2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16.5" cy="7.5" r="2.2" fill="currentColor"/></symbol>
+</svg>
+
+<a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="#main"><svg aria-hidden="true"><use href="#i-mark"/></svg><span translate="no">AGRO BLACK BOX</span></a>
+    <nav id="site-nav" aria-label="Site">
+      <a class="u" href="#how" data-i18n="nav.how">How it works</a>
+      <a class="u" href="#example" data-i18n="nav.example">Example case</a>
+      <a class="u" href="#labels" data-i18n="nav.labels">Evidence labels</a>
+      <a class="u" href="#sources" data-i18n="nav.sources">Data sources</a>
+    </nav>
+    <div class="right">
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" data-lang="en" aria-pressed="true">EN</button>
+        <button type="button" data-lang="es" aria-pressed="false">ES</button>
+      </div>
+      <a class="btn btn--secondary cta-top" href="#start" data-i18n="nav.cta">Start</a>
+      <button class="btn btn--secondary btn--icon menu-btn" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Menu"><svg aria-hidden="true"><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="h1">
+    <div class="wrap">
+      <div>
+        <h1 id="h1" data-i18n="hero.h1">Investigate a failed harvest with NASA Earth data</h1>
+        <p class="lead" data-i18n="hero.lead">Enter where and when it happened. You get the weather record for that place against earlier years, the explanations that fit, and what each one still needs before anyone can call it a cause.</p>
+        <form class="start" id="start" novalidate>
+          <h2 data-i18n="form.title">Start an investigation</h2>
+          <div class="pair">
+            <div class="field" data-min="-90" data-max="90">
+              <label for="lat" data-i18n="form.lat">Latitude</label>
+              <div class="ctl"><input id="lat" name="latitude" inputmode="decimal" autocomplete="off" value="41.6" aria-describedby="lat-e"><span class="unit" aria-hidden="true">°</span></div>
+              <span class="err" id="lat-e"><svg class="sym" aria-hidden="true"><use href="#i-alert"/></svg><span data-i18n="form.latErr">Use a number from −90 to 90.</span></span>
+            </div>
+            <div class="field" data-min="-180" data-max="180">
+              <label for="lon" data-i18n="form.lon">Longitude</label>
+              <div class="ctl"><input id="lon" name="longitude" inputmode="decimal" autocomplete="off" value="-0.9" aria-describedby="lon-e"><span class="unit" aria-hidden="true">°</span></div>
+              <span class="err" id="lon-e"><svg class="sym" aria-hidden="true"><use href="#i-alert"/></svg><span data-i18n="form.lonErr">Use a number from −180 to 180.</span></span>
+            </div>
+          </div>
+          <div class="field" data-min="1981" data-max="2025" data-int>
+            <label for="yr" data-i18n="form.year">Year of the incident</label>
+            <div class="ctl"><input id="yr" name="year" inputmode="numeric" autocomplete="off" value="2022" aria-describedby="yr-h yr-e"></div>
+            <span class="hint" id="yr-h" data-i18n="form.yearHint">NASA POWER covers 1981 to 2025.</span>
+            <span class="err" id="yr-e"><svg class="sym" aria-hidden="true"><use href="#i-alert"/></svg><span data-i18n="form.yearErr">Choose a year from 1981 to 2025.</span></span>
+          </div>
+          <button class="btn btn--primary" type="submit" id="go"><span data-i18n="form.submit">Investigate with NASA data</span><svg class="go" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+          <p class="note" data-i18n="form.note">If you share the case, other people only see the location rounded to 0.1°.</p>
+        </form>
+      </div>
+      <div class="art">
+        <img src="images/torus-interior-davis-1975.jpg" width="1587" height="1214" fetchpriority="high"
+             alt="Painting of the inside of a ring-shaped space settlement: a river, trees, fields and low houses under a curved glass roof." data-i18n-alt="alt.hero">
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="how" aria-labelledby="h-how">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="h-how" data-i18n="how.h">From a bad harvest to a better plan</h2>
+        <p data-i18n="how.p">Four steps. Each one keeps track of where every piece of evidence came from.</p>
+      </div>
+      <ol class="steps">
+        <li><figure class="ph"><img src="images/torus-valley-guidice-1975.jpg" width="807" height="627" loading="lazy" alt="" ></figure><h3><span class="n">1</span><span data-i18n="how.1h">Describe the incident</span></h3><p data-i18n="how.1p">Where, when, what you grew and what you saw. Your words stay marked as yours.</p></li>
+        <li><figure class="ph"><img src="images/torus-wheel-guidice-1975.jpg" width="947" height="1216" loading="lazy" alt="" style="object-position: 50% 60%"></figure><h3><span class="n">2</span><span data-i18n="how.2h">Read the NASA record</span></h3><p data-i18n="how.2p">Daily rain and temperature for that place since 1981, compared with earlier years.</p></li>
+        <li><figure class="ph"><img src="images/torus-terraces-guidice-1975.jpg" width="807" height="627" loading="lazy" alt=""></figure><h3><span class="n">3</span><span data-i18n="how.3h">Weigh the explanations</span></h3><p data-i18n="how.3p">Each possible cause with the evidence for it, against it, and what would settle it.</p></li>
+        <li><figure class="ph"><img src="images/farm-modules-guidice-1977.jpg" width="769" height="497" loading="lazy" alt=""></figure><h3><span class="n">4</span><span data-i18n="how.4h">Compare rotations</span></h3><p data-i18n="how.4p">Your current rotation and at least two alternatives, then a report you can share.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="sec case" id="example" aria-labelledby="h-ex">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="h-ex" data-i18n="ex.h">What a case looks like</h2>
+        <p data-i18n="ex.p">An example with invented values, so you can see how the evidence is laid out.</p>
+      </div>
+      <p class="flag"><svg class="sym" aria-hidden="true"><use href="#s-illustrative"/></svg><span><b data-i18n="ex.flagB">Illustrative case.</b> <span data-i18n="ex.flag">Every value below is invented for this page. The app only shows data returned by NASA POWER and OpenAlex.</span></span></p>
+
+      <dl class="titleblock">
+        <div class="name"><h3 data-i18n="tb.name">Wheat loss, north plot</h3><p data-i18n="tb.sum">Yellowing from the field edges in May; yield about half of the usual, reported by the farmer.</p></div>
+        <div><dt data-i18n="tb.case">Case</dt><dd class="mono">ABB-0007</dd></div>
+        <div><dt data-i18n="tb.loc">Location</dt><dd data-i18n="tb.locV">Zaragoza, ES · rounded to 0.1°</dd></div>
+        <div><dt data-i18n="tb.status">Status</dt><dd><svg class="sym ev--hypothesis" aria-hidden="true"><use href="#s-hypothesis"/></svg><span data-i18n="tb.statusV">Investigating</span></dd></div>
+        <div><dt data-i18n="tb.scale">Data scale</dt><dd data-i18n="tb.scaleV">0.5° × 0.625° grid cell</dd></div>
+        <div><dt data-i18n="tb.period">Period</dt><dd class="num" data-i18n="tb.periodV">2022 against 2010–2021</dd></div>
+        <div><dt data-i18n="tb.rev">Reviewer</dt><dd data-i18n="tb.revV">Not assigned</dd></div>
+      </dl>
+
+      <div class="panel">
+        <div class="tabs" role="tablist" aria-label="Case sections">
+          <button role="tab" id="t-w" aria-controls="p-w" aria-selected="true" data-i18n="tab.w">Weather</button>
+          <button role="tab" id="t-h" aria-controls="p-h" aria-selected="false" tabindex="-1" data-i18n="tab.h">Explanations</button>
+          <button role="tab" id="t-s" aria-controls="p-s" aria-selected="false" tabindex="-1" data-i18n="tab.s">Sources</button>
+          <span class="bar" aria-hidden="true"></span>
+        </div>
+
+        <div class="tabpanel" role="tabpanel" id="p-w" aria-labelledby="t-w" tabindex="0">
+          <div class="head-row">
+            <h4 data-i18n="w.h">Rain in 2022, against 2010–2021</h4>
+            <span class="ev ev--observed"><svg class="sym" aria-hidden="true"><use href="#s-observed"/></svg><span data-i18n="w.ev">Observed · NASA POWER</span></span>
+          </div>
+          <p class="scope" data-i18n="w.scope">Regional gridded weather for the cell around the field, not a reading taken in the field.</p>
+          <figure style="margin:0">
+            <div class="chart-wrap" id="chart-wrap"><div class="tip" id="tip" role="status" aria-live="polite"></div></div>
+            <div class="heat" id="heat" role="list"></div>
+            <figcaption class="caption" data-i18n="w.cap">Bars: rain difference from the 2010–2021 monthly average, brown drier, teal wetter. Row: maximum-temperature difference in °C. One scale, zero line drawn, missing month marked.</figcaption>
+          </figure>
+          <div class="tools"><button class="btn btn--text" type="button" id="tbl-btn" aria-expanded="false" aria-controls="tbl" data-i18n="w.table">Show as table</button></div>
+          <div id="tbl" hidden></div>
+        </div>
+
+        <div class="tabpanel" role="tabpanel" id="p-h" aria-labelledby="t-h" tabindex="0" hidden>
+          <div class="head-row"><h4 data-i18n="h.h">Explanations that fit so far</h4></div>
+          <p class="scope" data-i18n="h.scope">None of these is a conclusion. Open one to see what supports it, what argues against it and what would settle it.</p>
+          <div class="hyps">
+            <div class="hyp" data-open>
+              <button type="button" aria-expanded="true" aria-controls="hb1">
+                <span><h5 data-i18n="h.1">Drought stress during grain fill</h5><span class="meta"><span class="ev ev--hypothesis"><svg class="sym" aria-hidden="true"><use href="#s-hypothesis"/></svg><span data-i18n="ev.hyp">Hypothesis</span></span><span data-i18n="h.1m">2 for · 1 against · 1 missing</span></span></span>
+                <svg class="chev" aria-hidden="true"><use href="#i-down"/></svg>
+              </button>
+              <div class="body" id="hb1"><div><div class="cols">
+                <div><h6 data-i18n="h.for">Supports it</h6><ul>
+                  <li><svg class="sym ev--observed" aria-hidden="true"><use href="#s-observed"/></svg><span data-i18n="h.1f1">Rain 142 mm below average, April–June</span></li>
+                  <li><svg class="sym ev--literature" aria-hidden="true"><use href="#s-literature"/></svg><span><span data-i18n="h.1f2">Reviewed study on</span> <span class="voice">Triticum durum</span> <span data-i18n="h.1f2b">under spring drought</span></span></li></ul></div>
+                <div><h6 data-i18n="h.against">Argues against</h6><ul><li><svg class="sym ev--farmer" aria-hidden="true"><use href="#s-farmer"/></svg><span data-i18n="h.1a1">Low ground held water in March</span></li></ul></div>
+                <div><h6 data-i18n="h.settle">Would settle it</h6><ul><li><svg class="sym ev--missing" aria-hidden="true"><use href="#s-missing"/></svg><span data-i18n="h.1s1">Soil moisture reading, May</span></li></ul></div>
+              </div></div></div>
+            </div>
+            <div class="hyp">
+              <button type="button" aria-expanded="false" aria-controls="hb2">
+                <span><h5 data-i18n="h.2">Waterlogging, then root disease</h5><span class="meta"><span class="ev ev--hypothesis"><svg class="sym" aria-hidden="true"><use href="#s-hypothesis"/></svg><span data-i18n="ev.hyp">Hypothesis</span></span><span data-i18n="h.2m">1 for · 1 against · 1 missing</span></span></span>
+                <svg class="chev" aria-hidden="true"><use href="#i-down"/></svg>
+              </button>
+              <div class="body" id="hb2"><div><div class="cols">
+                <div><h6 data-i18n="h.for">Supports it</h6><ul><li><svg class="sym ev--farmer" aria-hidden="true"><use href="#s-farmer"/></svg><span data-i18n="h.2f1">Damage started on the lower ground</span></li></ul></div>
+                <div><h6 data-i18n="h.against">Argues against</h6><ul><li><svg class="sym ev--observed" aria-hidden="true"><use href="#s-observed"/></svg><span data-i18n="h.2a1">March rain 32 mm below average</span></li></ul></div>
+                <div><h6 data-i18n="h.settle">Would settle it</h6><ul><li><svg class="sym ev--missing" aria-hidden="true"><use href="#s-missing"/></svg><span data-i18n="h.2s1">Root sample from the affected strip</span></li></ul></div>
+              </div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabpanel" role="tabpanel" id="p-s" aria-labelledby="t-s" tabindex="0" hidden>
+          <div class="src-grid">
+            <article class="label">
+              <header><b>NASA POWER</b><span class="ev ev--observed"><svg class="sym" aria-hidden="true"><use href="#s-observed"/></svg><span data-i18n="ev.obs">Observed</span></span></header>
+              <dl>
+                <dt data-i18n="s.product">Product</dt><dd data-i18n="s.productV">Daily point, meteorology</dd>
+                <dt data-i18n="s.vars">Variables</dt><dd class="mono">PRECTOTCORR, T2M_MAX</dd>
+                <dt data-i18n="s.cell">Grid cell</dt><dd class="num">41.6, −0.9 · 0.5° × 0.625°</dd>
+                <dt data-i18n="s.ret">Retrieved</dt><dd class="num">14 Nov 2026, 10:12 UTC</dd>
+                <dt data-i18n="s.sum">Checksum</dt><dd><span class="mono">3f9a1c…c21e</span><button class="btn btn--text" type="button" id="copy" data-copy="3f9a1c0d77e2b4a95f61c8e0d2a7b3f4c9e1d6a8b2f5c7e9a0d3b6f8c1e4c21e"><svg aria-hidden="true" style="width:1em;height:1em"><use href="#i-copy"/></svg><span data-i18n="s.copy">Copy</span></button></dd>
+                <dd class="lim" data-i18n="s.lim">A 12-year reference is short. Anomalies describe the weather; they don't show what damaged the crop.</dd>
+              </dl>
+            </article>
+            <div class="slips">
+              <article class="slip">
+                <blockquote class="voice" data-i18n="s.q1">“The north plot sits lower and held water in March. That's where it started.”</blockquote>
+                <p class="who"><span class="ev ev--farmer"><svg class="sym" aria-hidden="true"><use href="#s-farmer"/></svg><span data-i18n="ev.farm">Farmer reported</span></span><span aria-hidden="true">·</span><b data-i18n="s.owner">Case owner</b><span aria-hidden="true">·</span><span>12 Nov 2026</span></p>
+              </article>
+              <article class="slip">
+                <blockquote class="voice" data-i18n="s.q2">“Waterlogging doesn't fit a drought-only story. A May soil moisture reading would separate the two.”</blockquote>
+                <p class="who"><b data-i18n="s.agro">Agronomist, community reviewer</b><span aria-hidden="true">·</span><span>13 Nov 2026</span><span aria-hidden="true">·</span><span data-i18n="s.obj">objection</span></p>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div class="case-actions">
+          <button class="btn btn--primary" type="button" id="next"><span data-i18n="ex.next">Continue to evidence</span><svg class="go" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+          <button class="btn btn--secondary" type="button" id="measure" data-i18n="ex.measure">Add a local measurement</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="labels" aria-labelledby="h-lab">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="h-lab" data-i18n="lab.h">How each piece of evidence is marked</h2>
+        <p data-i18n="lab.p">The same symbols appear on every screen and in the report, so a satellite reading is never mistaken for a field measurement.</p>
+      </div>
+      <ul class="legend">
+        <li><span class="ev ev--observed"><svg class="sym" aria-hidden="true"><use href="#s-observed"/></svg><span data-i18n="ev.obs">Observed</span></span><p data-i18n="lab.obs">Retrieved from NASA or another measured source.</p></li>
+        <li><span class="ev ev--farmer"><svg class="sym" aria-hidden="true"><use href="#s-farmer"/></svg><span data-i18n="ev.farm">Farmer reported</span></span><p data-i18n="lab.farm">Told by the person who works the field.</p></li>
+        <li><span class="ev ev--literature"><svg class="sym" aria-hidden="true"><use href="#s-literature"/></svg><span data-i18n="ev.lit">Reviewed literature</span></span><p data-i18n="lab.lit">A study a person has checked, with its DOI.</p></li>
+        <li><span class="ev ev--hypothesis"><svg class="sym" aria-hidden="true"><use href="#s-hypothesis"/></svg><span data-i18n="ev.hyp">Hypothesis</span></span><p data-i18n="lab.hyp">A possible explanation, with evidence for and against.</p></li>
+        <li><span class="ev ev--model"><svg class="sym" aria-hidden="true"><use href="#s-model"/></svg><span data-i18n="ev.model">Model scenario</span></span><p data-i18n="lab.model">Computed from stated assumptions; not an outcome.</p></li>
+        <li><span class="ev ev--illustrative"><svg class="sym" aria-hidden="true"><use href="#s-illustrative"/></svg><span data-i18n="ev.ill">Illustrative</span></span><p data-i18n="lab.ill">An example for learning. Never real data.</p></li>
+        <li><span class="ev ev--missing"><svg class="sym" aria-hidden="true"><use href="#s-missing"/></svg><span data-i18n="ev.miss">Missing data</span></span><p data-i18n="lab.miss">Something the investigation still needs.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="band" id="sources" aria-labelledby="h-src">
+    <div class="wrap">
+      <div>
+        <h2 id="h-src" data-i18n="src.h">Open data from orbit, read with the people on the ground</h2>
+        <p data-i18n="src.p">Every number on screen links back to the request that produced it. Studies only count as evidence after a person has checked them.</p>
+        <figure class="ph band-ph"><img src="images/bernal-sphere-guidice-1976.jpg" width="906" height="647" loading="lazy" alt="Painting of a spherical space settlement with farming rings and solar mirrors." data-i18n-alt="alt.band"></figure>
+      </div>
+      <ul class="list">
+        <li><div><b>NASA POWER</b><span data-i18n="src.power">Daily weather since 1981, about 50 km grid</span></div><span class="state live" data-i18n="src.live">Connected</span></li>
+        <li><div><b>OpenAlex</b><span data-i18n="src.oa">Search for scientific studies and DOIs</span></div><span class="state live" data-i18n="src.live">Connected</span></li>
+        <li><div><b>NASA GPM</b><span data-i18n="src.gpm">Satellite rainfall, finer in time</span></div><span class="state" data-i18n="src.planned">Planned</span></li>
+        <li><div><b>NASA HLS</b><span data-i18n="src.hls">Landsat and Sentinel-2 surface reflectance, 30 m</span></div><span class="state" data-i18n="src.planned">Planned</span></li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="brand"><svg aria-hidden="true"><use href="#i-mark"/></svg><span translate="no">AGRO BLACK BOX</span></span>
+    <span data-i18n="foot.1">NASA Space Apps Challenge 2026. No NASA endorsement implied.</span>
+    <a class="ul" href="system.html" data-i18n="foot.ds">Design system</a>
+    <span class="credit" data-i18n="foot.art">Art: Don Davis and Rick Guidice for NASA Ames Research Center, 1975–1977. Public domain.</span>
+  </div>
+</footer>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+
+  // ── i18n ──
+  const ES = {
+    'skip': 'Saltar al contenido', 'nav.how': 'Cómo funciona', 'nav.example': 'Caso de ejemplo', 'nav.labels': 'Etiquetas de evidencia', 'nav.sources': 'Fuentes de datos', 'nav.cta': 'Empezar',
+    'hero.h1': 'Investiga una cosecha fallida con datos de la NASA',
+    'hero.lead': 'Indica dónde y cuándo ocurrió. Verás el registro meteorológico de ese lugar comparado con años anteriores, las explicaciones que encajan y lo que le falta a cada una antes de poder llamarla causa.',
+    'form.title': 'Empezar una investigación', 'form.lat': 'Latitud', 'form.lon': 'Longitud', 'form.latErr': 'Usa un número entre −90 y 90.', 'form.lonErr': 'Usa un número entre −180 y 180.',
+    'form.year': 'Año del incidente', 'form.yearHint': 'NASA POWER cubre de 1981 a 2025.', 'form.yearErr': 'Elige un año entre 1981 y 2025.', 'form.submit': 'Investigar con datos de la NASA',
+    'form.note': 'Si compartes el caso, los demás solo ven la ubicación redondeada a 0,1°.',
+    'how.h': 'De una mala cosecha a un plan mejor', 'how.p': 'Cuatro pasos. En cada uno queda registrado de dónde sale cada evidencia.',
+    'how.1h': 'Describe el incidente', 'how.1p': 'Dónde, cuándo, qué cultivabas y qué viste. Tus palabras quedan marcadas como tuyas.',
+    'how.2h': 'Lee el registro de la NASA', 'how.2p': 'Lluvia y temperatura diarias de ese lugar desde 1981, comparadas con años anteriores.',
+    'how.3h': 'Sopesa las explicaciones', 'how.3p': 'Cada posible causa con la evidencia a favor, en contra y lo que la confirmaría.',
+    'how.4h': 'Compara rotaciones', 'how.4p': 'Tu rotación actual y al menos dos alternativas, y después un informe para compartir.',
+    'ex.h': 'Así se ve un caso', 'ex.p': 'Un ejemplo con valores inventados para que veas cómo se presenta la evidencia.',
+    'ex.flagB': 'Caso ilustrativo.', 'ex.flag': 'Todos los valores de abajo son inventados para esta página. La aplicación solo muestra datos devueltos por NASA POWER y OpenAlex.',
+    'tb.name': 'Pérdida de trigo, parcela norte', 'tb.sum': 'Amarilleo desde los bordes en mayo; cosecha de más o menos la mitad de lo normal, según el agricultor.',
+    'tb.case': 'Caso', 'tb.loc': 'Ubicación', 'tb.locV': 'Zaragoza, ES · redondeada a 0,1°', 'tb.status': 'Estado', 'tb.statusV': 'En investigación', 'tb.scale': 'Escala de datos', 'tb.scaleV': 'Celda de 0,5° × 0,625°',
+    'tb.period': 'Periodo', 'tb.periodV': '2022 frente a 2010–2021', 'tb.rev': 'Revisor', 'tb.revV': 'Sin asignar',
+    'tab.w': 'Tiempo', 'tab.h': 'Explicaciones', 'tab.s': 'Fuentes',
+    'w.h': 'Lluvia en 2022 frente a 2010–2021', 'w.ev': 'Observado · NASA POWER', 'w.scope': 'Meteorología regional en malla para la celda que rodea la parcela, no una medición tomada en la parcela.',
+    'w.cap': 'Barras: diferencia de lluvia con la media mensual de 2010–2021, marrón más seco, verde azulado más húmedo. Fila: diferencia de temperatura máxima en °C. Una sola escala, línea de cero visible, mes sin datos marcado.',
+    'w.table': 'Ver como tabla', 'w.chart': 'Ocultar tabla',
+    'h.h': 'Explicaciones que encajan por ahora', 'h.scope': 'Ninguna es una conclusión. Abre una para ver qué la apoya, qué la contradice y qué la confirmaría.',
+    'h.1': 'Estrés hídrico durante el llenado del grano', 'h.1m': '2 a favor · 1 en contra · 1 pendiente', 'h.for': 'La apoya', 'h.against': 'La contradice', 'h.settle': 'La confirmaría',
+    'h.1f1': 'Lluvia 142 mm por debajo de la media, abril–junio', 'h.1f2': 'Estudio revisado sobre', 'h.1f2b': 'con sequía primaveral', 'h.1a1': 'La parte baja acumuló agua en marzo', 'h.1s1': 'Medición de humedad del suelo, mayo',
+    'h.2': 'Encharcamiento y después enfermedad de raíz', 'h.2m': '1 a favor · 1 en contra · 1 pendiente', 'h.2f1': 'El daño empezó en la parte baja', 'h.2a1': 'Lluvia de marzo 32 mm por debajo de la media', 'h.2s1': 'Muestra de raíz de la franja afectada',
+    's.product': 'Producto', 's.productV': 'Punto diario, meteorología', 's.vars': 'Variables', 's.cell': 'Celda', 's.ret': 'Descargado', 's.sum': 'Huella', 's.copy': 'Copiar',
+    's.lim': 'Una referencia de 12 años es corta. Las anomalías describen el tiempo; no muestran qué dañó el cultivo.',
+    's.q1': '«La parcela norte está más baja y acumuló agua en marzo. Ahí empezó.»', 's.owner': 'Titular del caso',
+    's.q2': '«El encharcamiento no encaja con una historia solo de sequía. Una medición de humedad en mayo separaría las dos.»', 's.agro': 'Agrónoma, revisora de la comunidad', 's.obj': 'objeción',
+    'ex.next': 'Continuar a la evidencia', 'ex.measure': 'Añadir una medición local',
+    'lab.h': 'Cómo se marca cada evidencia', 'lab.p': 'Los mismos símbolos aparecen en todas las pantallas y en el informe, para que una lectura de satélite nunca se confunda con una medición de campo.',
+    'ev.obs': 'Observado', 'ev.farm': 'Reportado por el agricultor', 'ev.lit': 'Literatura revisada', 'ev.hyp': 'Hipótesis', 'ev.model': 'Escenario modelado', 'ev.ill': 'Ilustrativo', 'ev.miss': 'Dato ausente',
+    'lab.obs': 'Obtenido de la NASA u otra fuente medida.', 'lab.farm': 'Contado por quien trabaja la parcela.', 'lab.lit': 'Un estudio que una persona ha comprobado, con su DOI.', 'lab.hyp': 'Una posible explicación, con evidencia a favor y en contra.',
+    'lab.model': 'Calculado a partir de supuestos explícitos; no es un resultado.', 'lab.ill': 'Un ejemplo para aprender. Nunca datos reales.', 'lab.miss': 'Algo que la investigación todavía necesita.',
+    'src.h': 'Datos abiertos desde la órbita, leídos con quien trabaja la tierra', 'src.p': 'Cada número en pantalla enlaza con la consulta que lo produjo. Un estudio solo cuenta como evidencia cuando una persona lo ha comprobado.',
+    'src.power': 'Tiempo diario desde 1981, malla de unos 50 km', 'src.oa': 'Búsqueda de estudios científicos y DOI', 'src.gpm': 'Lluvia por satélite, con más detalle temporal', 'src.hls': 'Reflectancia de superficie Landsat y Sentinel-2, 30 m',
+    'src.live': 'Conectado', 'src.planned': 'Previsto', 'foot.1': 'NASA Space Apps Challenge 2026. Sin respaldo de la NASA.', 'foot.ds': 'Sistema de diseño', 'foot.art': 'Arte: Don Davis y Rick Guidice para el NASA Ames Research Center, 1975–1977. Dominio público.',
+    'alt.hero': 'Pintura del interior de un asentamiento espacial en forma de anillo: un río, árboles, campos y casas bajas bajo un techo curvo de cristal.', 'alt.band': 'Pintura de un asentamiento espacial esférico con anillos de cultivo y espejos solares.',
+  };
+  const T = {
+    en: { busy: 'Checking location…', demo: 'Preview page: the app calls NASA POWER here. Showing the illustrative case instead.', copied: 'Checksum copied.', copyFail: 'Copy blocked here. Select the value and copy it by hand.',
+      next: 'In the app this opens the Evidence step.', measure: 'In the app this opens a form for your own reading, marked Farmer reported.', fix: 'Fix the highlighted fields to continue.', dismiss: 'Dismiss',
+      pause: 'Pause animation', play: 'Play animation', months: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      full: ['January','February','March','April','May','June','July','August','September','October','November','December'], below: 'mm below average', above: 'mm above average', nodata: 'no data',
+      tmax: 'Max temp. °C', month: 'Month', rain: 'Rain difference (mm)', temp: 'Max temp. difference (°C)', zero: '0 mm', event: 'Damage reported, April–June',
+      chartTitle: 'Monthly rain difference, 2022', chartDesc: 'Rain was below the 2010–2021 average from February to August, lowest in April at 58 mm below; April to June together 142 mm below. September has no data.' },
+    es: { busy: 'Comprobando ubicación…', demo: 'Página de muestra: la aplicación consulta NASA POWER aquí. Se muestra el caso ilustrativo.', copied: 'Huella copiada.', copyFail: 'Aquí no se puede copiar. Selecciona el valor y cópialo a mano.',
+      next: 'En la aplicación esto abre el paso de Evidencia.', measure: 'En la aplicación esto abre un formulario para tu propia medición, marcada como Reportado por el agricultor.', fix: 'Corrige los campos marcados para continuar.', dismiss: 'Cerrar',
+      pause: 'Pausar animación', play: 'Reanudar animación', months: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+      full: ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'], below: 'mm por debajo de la media', above: 'mm por encima de la media', nodata: 'sin datos',
+      tmax: 'Temp. máx. °C', month: 'Mes', rain: 'Diferencia de lluvia (mm)', temp: 'Diferencia de temp. máx. (°C)', zero: '0 mm', event: 'Daño notificado, abril–junio',
+      chartTitle: 'Diferencia mensual de lluvia, 2022', chartDesc: 'La lluvia estuvo por debajo de la media de 2010–2021 de febrero a agosto, con el mínimo en abril, 58 mm por debajo; de abril a junio, 142 mm por debajo. Septiembre no tiene datos.' },
+  };
+  let lang = 'en';
+  const nodes = [...document.querySelectorAll('[data-i18n]')];
+  const EN = new Map(nodes.map((n) => [n, n.textContent]));
+  const fmt = (v, d = 0) => new Intl.NumberFormat(lang === 'es' ? 'es-ES' : 'en-GB', { minimumFractionDigits: d, maximumFractionDigits: d, signDisplay: 'exceptZero' }).format(v).replace('-', '−');
+  function setLang(l) {
+    lang = l;
+    document.documentElement.lang = l;
+    nodes.forEach((n) => { const k = n.dataset.i18n; n.textContent = l === 'es' && ES[k] ? ES[k] : EN.get(n); });
+    document.querySelectorAll('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === l)));
+    tblBtn.textContent = l === 'es' ? (tblOpen ? ES['w.chart'] : ES['w.table']) : (tblOpen ? 'Hide table' : 'Show as table');
+    document.querySelectorAll('[data-i18n-alt]').forEach((n) => { n.dataset.altEn ??= n.alt; n.alt = l === 'es' ? ES[n.dataset.i18nAlt] : n.dataset.altEn; });
+    renderChart(false); renderHeat(); renderTable(); moveBar();
+    try { localStorage.setItem('abb-lang', l); } catch (e) {}
+  }
+  document.querySelectorAll('.lang button').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.lang)));
+
+  // ── Toasts ──
+  const toasts = document.getElementById('toasts');
+  function toast(msg, icon = 'i-info') {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = `<svg aria-hidden="true"><use href="#${icon}"/></svg><span></span><button type="button" aria-label="${T[lang].dismiss}"><svg aria-hidden="true" style="width:1rem;height:1rem;color:currentColor"><use href="#i-x"/></svg></button>`;
+    el.querySelector('span').textContent = msg;
+    const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 220); };
+    el.querySelector('button').addEventListener('click', close);
+    let timer = setTimeout(close, 6000);
+    el.addEventListener('mouseenter', () => clearTimeout(timer));
+    el.addEventListener('mouseleave', () => { timer = setTimeout(close, 3000); });
+    toasts.appendChild(el);
+  }
+
+  // ── Sticky header and mobile menu ──
+  const top = document.getElementById('top');
+  addEventListener('scroll', () => top.classList.toggle('is-stuck', scrollY > 8), { passive: true });
+  const menuBtn = top.querySelector('.menu-btn');
+  menuBtn.addEventListener('click', () => { const o = top.classList.toggle('menu-open'); menuBtn.setAttribute('aria-expanded', String(o)); });
+  top.querySelectorAll('nav a').forEach((a) => a.addEventListener('click', () => { top.classList.remove('menu-open'); menuBtn.setAttribute('aria-expanded', 'false'); }));
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && top.classList.contains('menu-open')) { top.classList.remove('menu-open'); menuBtn.setAttribute('aria-expanded', 'false'); menuBtn.focus(); } });
+
+  // ── Form validation ──
+  const form = document.getElementById('start');
+  const go = document.getElementById('go');
+  function check(field) {
+    const input = field.querySelector('input');
+    const raw = input.value.trim().replace('−', '-').replace(',', '.');
+    const v = Number(raw);
+    const ok = raw !== '' && Number.isFinite(v) && v >= +field.dataset.min && v <= +field.dataset.max && (!('int' in field.dataset) || Number.isInteger(v));
+    field.classList.toggle('bad', !ok);
+    input.setAttribute('aria-invalid', String(!ok));
+    return ok;
+  }
+  form.querySelectorAll('.field').forEach((f) => {
+    const input = f.querySelector('input');
+    input.addEventListener('blur', () => { if (input.value !== '') check(f); });
+    input.addEventListener('input', () => { if (f.classList.contains('bad')) check(f); });
+  });
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const fields = [...form.querySelectorAll('.field')];
+    const bad = fields.filter((f) => !check(f));
+    if (bad.length) { bad[0].querySelector('input').focus(); toast(T[lang].fix, 'i-alert'); return; }
+    const label = go.querySelector('span');
+    const prev = label.textContent;
+    go.setAttribute('aria-busy', 'true'); go.disabled = true;
+    go.insertAdjacentHTML('afterbegin', '<span class="spin" aria-hidden="true"></span>');
+    label.textContent = T[lang].busy;
+    setTimeout(() => {
+      go.removeAttribute('aria-busy'); go.disabled = false; go.querySelector('.spin').remove(); label.textContent = prev;
+      toast(T[lang].demo, 'i-info');
+      selectTab(document.getElementById('t-w'));
+      document.getElementById('example').scrollIntoView({ block: 'start' });
+      renderChart(true);
+    }, 1100);
+  });
+
+  // ── Tabs (ARIA tabs with arrow keys) ──
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  const bar = document.querySelector('.tabs .bar');
+  function moveBar() { const t = tabs.find((x) => x.getAttribute('aria-selected') === 'true'); bar.style.setProperty('--x', t.offsetLeft + 'px'); bar.style.setProperty('--w', t.offsetWidth + 'px'); }
+  function selectTab(t, focus) {
+    tabs.forEach((x) => { const on = x === t; x.setAttribute('aria-selected', String(on)); x.tabIndex = on ? 0 : -1; document.getElementById(x.getAttribute('aria-controls')).hidden = !on; });
+    if (focus) t.focus();
+    moveBar();
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => selectTab(t));
+    t.addEventListener('keydown', (e) => {
+      const k = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+      if (k) { e.preventDefault(); selectTab(tabs[(i + k + tabs.length) % tabs.length], true); }
+      if (e.key === 'Home') { e.preventDefault(); selectTab(tabs[0], true); }
+      if (e.key === 'End') { e.preventDefault(); selectTab(tabs[tabs.length - 1], true); }
+    });
+  });
+  addEventListener('resize', moveBar);
+  document.fonts?.ready.then(moveBar);
+
+  // ── Chart (illustrative values) ──
+  const RAIN = [8, -6, -32, -58, -53, -31, -13, -7, null, 18, 26, 3];
+  const TMAX = [-0.4, -0.2, 0.6, 0.9, 2.4, 3.0, 3.1, 1.8, null, 0.7, -0.3, 0.2];
+  const wrap = document.getElementById('chart-wrap');
+  const tip = document.getElementById('tip');
+  const NS = 'http://www.w3.org/2000/svg';
+  const fillFor = (v) => v == null ? 'none' : v <= -40 ? 'var(--viz-dry-3)' : v <= -20 ? 'var(--viz-dry-2)' : v < 0 ? 'var(--viz-dry-1)' : v < 15 ? 'var(--viz-wet-1)' : v < 40 ? 'var(--viz-wet-2)' : 'var(--viz-wet-3)';
+  const say = (i) => RAIN[i] == null ? `${T[lang].full[i]}: ${T[lang].nodata}` : `${T[lang].full[i]}: ${Math.abs(RAIN[i])} ${RAIN[i] < 0 ? T[lang].below : T[lang].above}`;
+  function el(tag, attrs, parent) { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent && parent.appendChild(n); return n; }
+  function renderChart(grow) {
+    wrap.querySelector('svg')?.remove();
+    const horiz = wrap.clientWidth < 560;
+    const L = T[lang];
+    const W = horiz ? 360 : 720, H = horiz ? 430 : 262;
+    const svg = el('svg', { class: 'chart' + (horiz ? ' horiz' : ''), viewBox: `0 0 ${W} ${H}`, role: 'group', 'aria-labelledby': 'c-t c-d' });
+    el('title', { id: 'c-t' }, svg).textContent = L.chartTitle;
+    el('desc', { id: 'c-d' }, svg).textContent = L.chartDesc;
+    const max = 60;
+    if (!horiz) {
+      const x0 = 56, x1 = 712, y0 = 130, k = 100 / max, slot = (x1 - x0) / 12;
+      [-60, -30, 30, 60].forEach((v) => el('line', { class: 'grid', x1: x0, x2: x1, y1: y0 - v * k, y2: y0 - v * k }, svg));
+      el('rect', { class: 'event', x: x0 + slot * 3, y: 24, width: slot * 3, height: 212 }, svg);
+      el('text', { x: x0 + slot * 3 + 6, y: 17, style: 'fill: var(--ink-2)' }, svg).textContent = L.event;
+      [60, 30, 0, -30, -60].forEach((v) => el('text', { x: 48, y: y0 - v * k + 4, 'text-anchor': 'end' }, svg).textContent = v === 0 ? L.zero : fmt(v));
+      RAIN.forEach((v, i) => {
+        const g = el('g', { class: 'bar-g', tabindex: '0', role: 'img', 'aria-label': say(i), 'data-i': i }, svg);
+        el('rect', { class: 'hit', x: x0 + slot * i + 2, y: 24, width: slot - 4, height: 212, rx: 3 }, g);
+        const bx = x0 + slot * i + (slot - 34) / 2;
+        if (v == null) { el('rect', { class: 'gap', x: bx, y: y0 - 20, width: 34, height: 40 }, g); el('text', { x: bx + 17, y: y0 + 4, 'text-anchor': 'middle', style: 'fill: var(--ev-missing)' }, g).textContent = 'n/a'; }
+        else el('rect', { class: 'b ' + (v < 0 ? 'neg' : 'pos'), style: `--i:${i}`, x: bx, y: v < 0 ? y0 : y0 - v * k, width: 34, height: Math.abs(v) * k, fill: fillFor(v) }, g);
+        el('text', { x: x0 + slot * i + slot / 2, y: 256, 'text-anchor': 'middle' }, g).textContent = L.months[i];
+      });
+      el('line', { class: 'zero', x1: x0, x2: x1, y1: y0, y2: y0 }, svg);
+    } else {
+      const xz = 196, k = 140 / max, y0 = 34, slot = 32;
+      [-60, -30, 30, 60].forEach((v) => el('line', { class: 'grid', x1: xz + v * k, x2: xz + v * k, y1: y0 - 6, y2: y0 + slot * 12 }, svg));
+      el('rect', { class: 'event', x: 40, y: y0 + slot * 3, width: W - 40, height: slot * 3 }, svg);
+      el('text', { x: W, y: 14, 'text-anchor': 'end', style: 'fill: var(--ink-2)' }, svg).textContent = L.event;
+      [-60, 0, 60].forEach((v) => el('text', { x: xz + v * k, y: y0 + slot * 12 + 18, 'text-anchor': 'middle' }, svg).textContent = v === 0 ? L.zero : fmt(v));
+      RAIN.forEach((v, i) => {
+        const g = el('g', { class: 'bar-g', tabindex: '0', role: 'img', 'aria-label': say(i), 'data-i': i }, svg);
+        const y = y0 + slot * i;
+        el('rect', { class: 'hit', x: 0, y: y + 2, width: W, height: slot - 4, rx: 3 }, g);
+        el('text', { x: 0, y: y + slot / 2 + 4 }, g).textContent = L.months[i];
+        if (v == null) { el('rect', { class: 'gap', x: xz - 20, y: y + 7, width: 40, height: slot - 14 }, g); el('text', { x: xz + 28, y: y + slot / 2 + 4, style: 'fill: var(--ev-missing)' }, g).textContent = 'n/a'; }
+        else {
+          el('rect', { class: 'b ' + (v < 0 ? 'neg' : 'pos'), style: `--i:${i}`, x: v < 0 ? xz + v * k : xz, y: y + 7, width: Math.abs(v) * k, height: slot - 14, fill: fillFor(v) }, g);
+          el('text', { x: v < 0 ? xz + v * k - 6 : xz + v * k + 6, y: y + slot / 2 + 4, 'text-anchor': v < 0 ? 'end' : 'start' }, g).textContent = fmt(v);
+        }
+      });
+      el('line', { class: 'zero', x1: xz, x2: xz, y1: y0 - 6, y2: y0 + slot * 12 }, svg);
+    }
+    wrap.insertBefore(svg, tip);
+    if (grow && !reduce.matches) requestAnimationFrame(() => svg.classList.add('grow'));
+    svg.querySelectorAll('.bar-g').forEach((g) => {
+      const show = () => {
+        const r = g.querySelector('.hit').getBoundingClientRect(), w = wrap.getBoundingClientRect();
+        tip.textContent = say(+g.dataset.i);
+        tip.style.left = Math.min(Math.max(r.left - w.left + r.width / 2, 80), w.width - 80) + 'px';
+        tip.style.top = (r.top - w.top + (horiz ? 0 : 20)) + 'px';
+        tip.classList.add('on');
+      };
+      g.addEventListener('mouseenter', show); g.addEventListener('focus', show);
+      g.addEventListener('mouseleave', () => tip.classList.remove('on')); g.addEventListener('blur', () => tip.classList.remove('on'));
+    });
+  }
+  function renderHeat() {
+    const h = document.getElementById('heat');
+    h.setAttribute('aria-label', T[lang].temp);
+    h.innerHTML = `<span class="lbl" role="listitem">${T[lang].tmax}</span>` + TMAX.map((v, i) => {
+      const c = v == null ? 'tn' : v < 0 ? 't0' : v < 1.5 ? 't1' : v < 2.8 ? 't2' : 't3';
+      const txt = v == null ? 'n/a' : fmt(v, 1);
+      return `<span class="${c}" role="listitem" aria-label="${T[lang].full[i]} ${v == null ? T[lang].nodata : txt + ' °C'}">${txt}</span>`;
+    }).join('');
+  }
+  let tblOpen = false;
+  const tblBtn = document.getElementById('tbl-btn');
+  const tbl = document.getElementById('tbl');
+  function renderTable() {
+    const L = T[lang];
+    tbl.innerHTML = `<table class="data"><caption class="sr-only">${L.chartTitle}</caption><thead><tr><th scope="col">${L.month}</th><th scope="col">${L.rain}</th><th scope="col">${L.temp}</th></tr></thead><tbody>` +
+      RAIN.map((v, i) => `<tr><th scope="row">${L.full[i]}</th><td>${v == null ? L.nodata : fmt(v)}</td><td>${TMAX[i] == null ? L.nodata : fmt(TMAX[i], 1)}</td></tr>`).join('') + '</tbody></table>';
+  }
+  tblBtn.addEventListener('click', () => {
+    tblOpen = !tblOpen; tbl.hidden = !tblOpen; tblBtn.setAttribute('aria-expanded', String(tblOpen));
+    tblBtn.textContent = lang === 'es' ? (tblOpen ? ES['w.chart'] : ES['w.table']) : (tblOpen ? 'Hide table' : 'Show as table');
+  });
+  let lastW = 0;
+  new ResizeObserver(() => { const w = wrap.clientWidth; if (Math.abs(w - lastW) > 40 && w > 0) { lastW = w; renderChart(false); } }).observe(wrap);
+
+  // Grow bars once, the first time the example comes into view.
+  new IntersectionObserver((es, o) => { if (es[0].isIntersecting) { renderChart(true); o.disconnect(); } }, { threshold: 0.35 }).observe(wrap);
+
+  // ── Disclosures ──
+  document.querySelectorAll('.hyp > button').forEach((b) => b.addEventListener('click', () => {
+    const h = b.parentElement; const open = !h.hasAttribute('data-open');
+    h.toggleAttribute('data-open', open); b.setAttribute('aria-expanded', String(open));
+  }));
+
+  // ── Copy, next, measure ──
+  document.getElementById('copy').addEventListener('click', (e) => {
+    const v = e.currentTarget.dataset.copy;
+    navigator.clipboard?.writeText(v).then(() => toast(T[lang].copied, 'i-check'), () => toast(T[lang].copyFail, 'i-alert')) ?? toast(T[lang].copyFail, 'i-alert');
+  });
+  document.getElementById('next').addEventListener('click', () => toast(T[lang].next));
+  document.getElementById('measure').addEventListener('click', () => toast(T[lang].measure));
+
+  // ── Init ──
+  renderHeat(); renderTable(); moveBar();
+  try { const saved = localStorage.getItem('abb-lang'); if (saved === 'es') setLang('es'); } catch (e) {}
+})();
+</script>
+</body>
+</html>

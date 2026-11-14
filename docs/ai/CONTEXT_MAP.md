@@ -14,6 +14,7 @@ The repository, not a chat transcript or a model's local memory, is the canonica
 8. `docs/science/SCIENTIFIC_POLICY.md` (scientific claims / evidence).
 9. **The specific roadmap GitHub Issue**, its acceptance criteria, dependencies, and any affected ADR.
 10. Relevant source files, tests, latest change log, and PRs if accessible.
+11. **Frontend/UI tasks:** `.claude/skills/agro-design-system/SKILL.md` and the references it points to (mandatory), then `.claude/skills/agro-ui-review/SKILL.md` before handoff.
 
 Never assume these files are automatically loaded in full just because their names appear in this map. Open the relevant documents before implementing.
 

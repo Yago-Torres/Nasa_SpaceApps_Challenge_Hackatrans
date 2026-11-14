@@ -24,6 +24,7 @@ Closes #___
 - [ ] Frontend build/typecheck or explicit reason not applicable
 - [ ] Context policy check
 - [ ] Integration failure/empty-state checked
+- [ ] UI changes follow `.claude/skills/agro-design-system` and the `agro-ui-review` checklist was run (screenshots, contrast, impeccable detector), or explicit reason not applicable
 
 ## Documentation / handoff
 
