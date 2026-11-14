@@ -1,6 +1,6 @@
 # ADR-0004 — Authentication, case permissions and server-side location privacy
 
-- Status: proposed (implemented on branch `feat/5-6-auth-cases`; requires human review)
+- Status: accepted for ABB-05/ABB-06 (2026-11-14). Accepted by the coordinating agent acting for A, B and C on the user's instruction while the other members were offline; security limitations listed below remain open for ABB-28 and a human security review.
 - Date: 2026-11-14
 - Related GitHub Issues: ABB-05 / #5 (accounts, permissions), ABB-06 / #6 (cases and parcels); context ABB-21 / #21, ABB-28 / #28
 - Reviewers / coordination notes: C implements; A reviews API contracts and migration; B reviews that workflow states do not overstate scientific review. The frontend HTTP adapter (`frontend/src/cases/repository.ts`) is separate work.
