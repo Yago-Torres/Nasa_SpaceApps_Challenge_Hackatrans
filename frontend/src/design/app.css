@@ -340,3 +340,40 @@ table.data tbody tr:hover { background: var(--surface-sunken); }
 .account-link:hover { text-decoration-thickness: 2px; }
 .account-link:disabled { cursor: progress; opacity: .7; }
 .account-link svg { width: 1.1em; height: 1.1em; }
+
+/* ── Case tabs (ABB-22 extension point: Cases.tsx CASE_TABS) ── */
+.case-tabs { margin: 0 0 var(--space-5); border-bottom: 1px solid var(--rule-2); }
+.case-tabs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.case-tabs a { display: inline-flex; min-height: var(--tap); align-items: center; margin-bottom: -1px; padding: 0 var(--space-2); border-bottom: 3px solid transparent;
+  color: var(--ink-2); font-weight: var(--weight-medium); text-decoration: none; transition: color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out); }
+.case-tabs a:hover { color: var(--ink); border-bottom-color: var(--rule-3); }
+.case-tabs a[aria-current="page"] { color: var(--ink); font-weight: var(--weight-bold); border-bottom-color: var(--action-edge); }
+
+/* ── Forensic timeline chart (ABB-22) ── */
+.tl-chart-figure { margin: 0; display: grid; gap: var(--space-3); }
+.tl-chart .tl-grid { stroke: var(--viz-grid); }
+.tl-chart .tl-axis { font-family: var(--font-sans); font-size: 11px; fill: var(--viz-axis); font-variant-numeric: tabular-nums; }
+.tl-chart .tl-lane-label { font-family: var(--font-sans); font-size: var(--text-sm); fill: var(--ink-2); }
+.tl-chart .tl-hit { fill: transparent; }
+.tl-mark { outline: none; cursor: pointer; }
+.tl-mark:hover .tl-hit, .tl-mark:focus-visible .tl-hit { fill: var(--surface-tint); }
+.tl-mark:focus-visible .tl-hit { stroke: var(--focus); stroke-width: 2; }
+.tl-undated { display: grid; gap: var(--space-1); }
+.tl-undated-item, .tl-table-select { display: inline-flex; align-items: center; min-height: var(--tap); border: 0; background: none; padding: 0; color: var(--ink-link); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; cursor: pointer; font: inherit; text-align: left; }
+.tl-undated-item:hover, .tl-table-select:hover { text-decoration-thickness: 2px; }
+.tl-undated-item[aria-pressed="true"] { font-weight: var(--weight-bold); }
+
+/* ── Hypotheses table (components.md §10) ── */
+table.data.hyp-table th[scope="row"] { vertical-align: top; }
+table.data.hyp-table td { vertical-align: top; text-align: left; }
+table.data.hyp-table th[scope="row"] p, table.data.hyp-table td p { margin: 0 0 var(--space-1); }
+.tl-eval-form { display: grid; gap: var(--space-2); max-width: 22rem; }
+.tl-eval-form select { min-height: var(--tap); border: 1px solid var(--rule-2); border-radius: var(--radius-s); background: var(--surface); font: inherit; padding: 0 var(--space-2); }
+@media (max-width: 48rem) {
+  table.data.hyp-table { min-width: 0; }
+  table.data.hyp-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  table.data.hyp-table, table.data.hyp-table tbody, table.data.hyp-table tr, table.data.hyp-table th, table.data.hyp-table td { display: block; }
+  table.data.hyp-table tr { padding: var(--space-3) 0; border-bottom: 1px solid var(--rule-2); }
+  table.data.hyp-table th, table.data.hyp-table td { border: 0; padding: var(--space-1) 0; }
+  table.data.hyp-table td[data-label]::before { content: attr(data-label) ": "; color: var(--ink-3); display: block; }
+}

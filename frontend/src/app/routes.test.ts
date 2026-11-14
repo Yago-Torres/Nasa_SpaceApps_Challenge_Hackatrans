@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseHash, ROUTES } from './routes';
+import { hrefForCaseTab, parseCaseTab, parseHash, parseParam, ROUTES } from './routes';
 import { validateInput } from './investigation';
 
 describe('routes', () => {
@@ -11,6 +11,27 @@ describe('routes', () => {
     expect(parseHash('#report?x=1')).toBe('report');
     expect(parseHash('#/nope')).toBe('dashboard');
     expect(parseHash('')).toBe('dashboard');
+  });
+});
+
+describe('case tab routing (ABB-22 extension point)', () => {
+  it('keeps parseParam reading the case id unchanged with a third segment present', () => {
+    expect(parseParam('#/cases/abc-123/timeline')).toBe('abc-123');
+    expect(parseParam('#/cases/abc-123')).toBe('abc-123');
+    expect(parseParam('#/cases/new')).toBe('new');
+  });
+  it('defaults the case tab to "details" when no third segment is present', () => {
+    expect(parseCaseTab('#/cases/abc-123')).toBe('details');
+    expect(parseCaseTab('#/cases/new')).toBe('details');
+    expect(parseCaseTab('#/cases')).toBe('details');
+  });
+  it('reads the third segment as the tab id, ignoring a query string', () => {
+    expect(parseCaseTab('#/cases/abc-123/timeline')).toBe('timeline');
+    expect(parseCaseTab('#/cases/abc-123/timeline?x=1')).toBe('timeline');
+  });
+  it('hrefForCaseTab keeps "details" at the canonical two-segment URL and adds a third segment otherwise', () => {
+    expect(hrefForCaseTab('abc-123', 'details')).toBe('#/cases/abc-123');
+    expect(hrefForCaseTab('abc-123', 'timeline')).toBe('#/cases/abc-123/timeline');
   });
 });
 

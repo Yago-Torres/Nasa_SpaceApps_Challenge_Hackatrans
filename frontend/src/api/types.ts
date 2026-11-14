@@ -289,3 +289,181 @@ export type HistoryEntry = {
   changes: Record<string, unknown>;
   note: string | null;
 };
+
+/* ── Case timeline and hypotheses, /api/v1/cases/{id}/{timeline,hypotheses} (ABB-10/ABB-22) ──
+ * Transcribed from backend/agroblackbox/api/forensics_dto.py. Field names are kept snake_case
+ * to match the wire format, as the rest of this file does for CaseView etc. The frontend never
+ * computes severity, anomalies or statistics here: it only renders what the backend returned
+ * (docs/science/TIMELINE_HYPOTHESES.md; frontend/AGENTS.md). */
+
+export type TimelineKind = 'OBSERVED' | 'FARMER_REPORTED' | 'HYPOTHESIS' | 'MISSING_DATA';
+export type TimelineEventType =
+  | 'CLIMATE_ANOMALY' | 'INCIDENT_PERIOD' | 'CROP_HISTORY' | 'HYPOTHESIS'
+  | 'DATA_GAP' | 'NO_OBSERVATIONS' | 'NO_LOCAL_MEASUREMENTS';
+export type Severity = 'WITHIN_REFERENCE_SPREAD' | 'MODERATE_DEPARTURE' | 'LARGE_DEPARTURE' | 'NOT_CLASSIFIED';
+export type Direction = 'ABOVE_REFERENCE' | 'BELOW_REFERENCE' | 'EQUAL_TO_REFERENCE';
+export type EvaluationStatus = 'OPEN' | 'COMPATIBLE' | 'CONTRADICTED' | 'NOT_EVALUABLE';
+
+/** Descriptive label from rule `rule_id` (e.g. abb10-departure-vs-reference-sd-1); never a probability. */
+export type DepartureView = {
+  rule_id: string;
+  severity: Severity;
+  direction: Direction | null;
+  departure_in_reference_sd: number | null;
+  outside_reference_range: boolean | null;
+  reason: string | null;
+};
+
+export type ObservedValue = {
+  variable: string;
+  variable_label: string;
+  source_parameter: string;
+  value: number | null;
+  units: string;
+  reference_value: number | null;
+  anomaly: number | null;
+  reference_start: number;
+  reference_end: number;
+  reference_sample_count: number;
+  reference_standard_deviation: number | null;
+  reference_minimum: number | null;
+  reference_maximum: number | null;
+};
+
+export type TimelineDataQuality = {
+  status: 'complete' | 'partial' | 'missing';
+  reference_status: 'complete' | 'reduced' | 'insufficient';
+  flags: string[];
+  reason: string | null;
+};
+
+export type HypothesisLinks = {
+  status: string;
+  supporting_event_ids: string[];
+  contradicting_event_ids: string[];
+  evidence_not_on_timeline: string[];
+};
+
+/** Provenance of one timeline event. Never carries request coordinates (ADR-0004). */
+export type TimelineProvenance = {
+  source_kind: string;
+  description: string;
+  case_id: string;
+  case_version: number | null;
+  source_manifest_id: string | null;
+  observation_id: string | null;
+  anomaly_id: string | null;
+  hypothesis_id: string | null;
+  field_id: string | null;
+  field_label: string | null;
+  provider: string | null;
+  dataset: string | null;
+  dataset_version: string | null;
+  source_uri: string | null;
+  retrieved_at: string | null;
+  checksum_sha256: string | null;
+  processing_version: string | null;
+  spatial_resolution: Resolution | null;
+  temporal_resolution: Resolution | null;
+};
+
+export type TimelineEvent = {
+  id: string;
+  kind: TimelineKind;
+  event_type: TimelineEventType;
+  start: string | null;
+  end: string | null;
+  title: string;
+  description: string;
+  overlaps_incident: boolean | null;
+  observed?: ObservedValue | null;
+  departure?: DepartureView | null;
+  data_quality?: TimelineDataQuality | null;
+  hypothesis?: HypothesisLinks | null;
+  crops?: string[];
+  provenance: TimelineProvenance;
+  limitations: string[];
+};
+
+export type TimelineLayer = { kind: TimelineKind; description: string; event_count: number };
+
+/** GET /api/v1/cases/{id}/timeline */
+export type Timeline = {
+  case_id: string;
+  case_version: number;
+  generated_at: string;
+  incident_start: string;
+  incident_end: string | null;
+  layers: TimelineLayer[];
+  events: TimelineEvent[];
+  severity_rule: Record<string, unknown>;
+  limitations: string[];
+};
+
+export type EvidenceRef = {
+  id: string;
+  evidence_type: 'ANOMALY' | 'OBSERVATION' | 'EVIDENCE_CLAIM' | 'LOCAL_ANSWER';
+  kind: string;
+  label: string;
+  start?: string | null;
+  end?: string | null;
+  active: boolean;
+};
+
+export type VerificationQuestionView = { question: string; why_it_matters: string };
+
+/** `HypothesisView`: shared `Hypothesis` plus case-API fields. No probability or score field exists. */
+export type HypothesisView = {
+  id: string;
+  case_id: string;
+  statement: string;
+  supporting_evidence_ids: string[];
+  contradicting_evidence_ids: string[];
+  missing_evidence: string[];
+  limitations: string[];
+  status: EvaluationStatus | 'SUPPORTED' | 'CHALLENGED' | 'REJECTED';
+  title: string | null;
+  origin: 'USER' | 'TEMPLATE';
+  template_code: string | null;
+  verification_questions: VerificationQuestionView[];
+  evaluation_note: string | null;
+  evaluated_by: UserSummary | null;
+  evaluated_at: string | null;
+  version: number;
+  created_by: UserSummary | null;
+  created_at: string;
+  updated_at: string;
+  evidence: EvidenceRef[];
+};
+
+export type HypothesisList = { items: HypothesisView[]; limitations: string[] };
+
+export type HypothesisTemplateView = {
+  code: string;
+  source_kind: 'HYPOTHESIS';
+  title: string;
+  statement: string;
+  related_variables: string[];
+  missing_evidence: string[];
+  verification_questions: VerificationQuestionView[];
+  limitations: string[];
+};
+
+export type HypothesisTemplateCatalog = { items: HypothesisTemplateView[]; limitations: string[] };
+
+/** POST /api/v1/cases/{id}/hypotheses. New hypotheses are always OPEN. */
+export type HypothesisCreate = {
+  title?: string | null;
+  statement: string;
+  supporting_evidence_ids?: string[];
+  contradicting_evidence_ids?: string[];
+  missing_evidence?: string[];
+  limitations?: string[];
+  verification_questions?: { question: string; why_it_matters: string }[];
+};
+
+/** POST /api/v1/cases/{id}/hypotheses/templates */
+export type HypothesisTemplateRequest = { codes?: string[] | null };
+
+/** POST /api/v1/cases/{id}/hypotheses/{hid}/status. A note is required for every status but OPEN. */
+export type HypothesisStatusChange = { version: number; status: EvaluationStatus; note?: string | null };
