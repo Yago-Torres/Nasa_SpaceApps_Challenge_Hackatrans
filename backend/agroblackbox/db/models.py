@@ -443,6 +443,90 @@ class ClaimDisagreementReview(IdMixin, Base):
     )
 
 
+UNCERTAINTY_ANSWER_ORIGINS = ("FARMER_REPORTED", "LOCAL_MEASUREMENT", "FIELD_RECORD", "ADVISOR_REPORT")
+UNCERTAINTY_ANSWER_STATUSES = ("ANSWERED", "REVIEWED", "REJECTED", "SUPERSEDED")
+UNCERTAINTY_EVENT_ACTIONS = ("ANSWERED", "REVIEWED", "REJECTED", "DISMISSED", "REOPENED")
+UNCERTAINTY_QUESTION_STATUSES = ("OPEN", "ANSWERED", "REVIEWED", "DISMISSED")
+
+
+class UncertaintyAnswer(IdMixin, Base):
+    """Local answer to an Uncertainty Hunter question (ABB-19). Always FARMER_REPORTED evidence.
+
+    Content is immutable: a correction is a new answer that supersedes the previous one, which is
+    kept. Only the review fields and ``status`` change. Answers never overwrite scientific records.
+    At most one ANSWERED/REVIEWED answer per question and case.
+    """
+    __tablename__ = "uncertainty_answers"
+    case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), index=True)
+    question_id: Mapped[str] = mapped_column(String(40), index=True)
+    question_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    value_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    value_number: Mapped[float | None] = mapped_column(Float, nullable=True)
+    unit: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    observed_from: Mapped[date | None] = mapped_column(Date, nullable=True)
+    observed_to: Mapped[date | None] = mapped_column(Date, nullable=True)
+    origin: Mapped[str] = mapped_column(String(32))
+    method: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_reference: Mapped[str | None] = mapped_column(Text, nullable=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(16), default="ANSWERED")
+    answered_by: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), index=True)
+    answered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    reviewed_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    superseded_by_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default=text("1"))
+    __table_args__ = (
+        CheckConstraint(_in("origin", UNCERTAINTY_ANSWER_ORIGINS), name="ck_uncertainty_answer_origin"),
+        CheckConstraint(_in("status", UNCERTAINTY_ANSWER_STATUSES), name="ck_uncertainty_answer_status"),
+        CheckConstraint("value_text IS NOT NULL OR value_number IS NOT NULL", name="ck_uncertainty_answer_value"),
+        CheckConstraint("value_number IS NULL OR unit IS NOT NULL", name="ck_uncertainty_answer_unit"),
+        CheckConstraint("observed_from IS NULL OR observed_to IS NULL OR observed_to >= observed_from",
+                        name="ck_uncertainty_answer_period"),
+        CheckConstraint("reviewed_by IS NULL OR reviewed_by != answered_by", name="ck_uncertainty_answer_no_self_review"),
+        CheckConstraint(
+            "status NOT IN ('REVIEWED','REJECTED') OR "
+            "(reviewed_by IS NOT NULL AND reviewed_at IS NOT NULL AND review_note IS NOT NULL)",
+            name="ck_uncertainty_answer_review_complete"),
+        CheckConstraint("status != 'SUPERSEDED' OR superseded_at IS NOT NULL", name="ck_uncertainty_answer_superseded"),
+        CheckConstraint("version >= 1", name="ck_uncertainty_answer_version"),
+        Index("uq_uncertainty_answer_current", "case_id", "question_id", unique=True,
+              postgresql_where=text("status IN ('ANSWERED','REVIEWED')")),
+    )
+
+
+class UncertaintyQuestionEvent(IdMixin, Base):
+    """Append-only history of an Uncertainty Hunter question in a case (ABB-19).
+
+    ``to_status`` is the question's resolution after the event; the latest event gives the current
+    resolution (no event = OPEN). The question text is kept in ``question_snapshot`` because questions
+    are computed and may change or disappear later.
+    """
+    __tablename__ = "uncertainty_question_events"
+    case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), index=True)
+    question_id: Mapped[str] = mapped_column(String(40), index=True)
+    action: Mapped[str] = mapped_column(String(16))
+    answer_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("uncertainty_answers.id", ondelete="CASCADE"), nullable=True, index=True)
+    actor_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    from_status: Mapped[str] = mapped_column(String(16))
+    to_status: Mapped[str] = mapped_column(String(16))
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    question_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    changes: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    __table_args__ = (
+        CheckConstraint(_in("action", UNCERTAINTY_EVENT_ACTIONS), name="ck_uncertainty_event_action"),
+        CheckConstraint(_in("from_status", UNCERTAINTY_QUESTION_STATUSES), name="ck_uncertainty_event_from_status"),
+        CheckConstraint(_in("to_status", UNCERTAINTY_QUESTION_STATUSES), name="ck_uncertainty_event_to_status"),
+        CheckConstraint("action = 'ANSWERED' OR note IS NOT NULL", name="ck_uncertainty_event_note"),
+        CheckConstraint("action NOT IN ('ANSWERED','REVIEWED','REJECTED') OR answer_id IS NOT NULL",
+                        name="ck_uncertainty_event_answer"),
+    )
+
+
 class Rotation(IdMixin, Base):
     __tablename__ = "rotations"
     case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), index=True)

@@ -5,3 +5,5 @@
 `EVIDENCE_CLAIMS.md` defines the structured claim record, licence/access rules and the human review protocol (ABB-14).
 
 `CONTRADICTIONS_APPLICABILITY.md` defines candidate disagreements between claims (human-confirmed) and per-dimension transferability notes without any applicability score (ABB-15).
+
+`UNCERTAINTY_HUNTER.md` defines the gap inventory, local questions with what they could change (never a value-of-information estimate), the link-count ordering with an explicit "no basis to prioritise" result, and reviewable local answers (ABB-19).

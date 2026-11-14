@@ -6,7 +6,7 @@ Rules (docs/science/TIMELINE_HYPOTHESES.md):
 - COMPATIBLE needs at least one supporting evidence link, CONTRADICTED at least one
   contradicting link, NOT_EVALUABLE at least one missing-evidence entry; every status
   change other than OPEN needs a note.
-- Evidence links must reference evidence of the same case (observations, anomalies or
+- Evidence links must reference evidence of the same case (observations, anomalies, ABB-19 local answers or
   evidence claims); unknown or foreign ids are rejected (422).
 - OWNER/EDITOR create, edit and delete; OWNER/EDITOR/REVIEWER change the status; VIEWER reads.
   Changes need the case to be DRAFT/INVESTIGATING and not archived, carry the hypothesis
@@ -23,7 +23,9 @@ from fastapi import APIRouter, HTTPException, Query, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from ..db.models import Anomaly, EvidenceClaim, Hypothesis, Observation, SourceManifest, User, utcnow
+from ..db.models import (
+    Anomaly, EvidenceClaim, Hypothesis, Observation, SourceManifest, UncertaintyAnswer, User, utcnow,
+)
 from ..services.forensics import (
     HYPOTHESIS_LIMITATION,
     HYPOTHESIS_TEMPLATES,
@@ -103,6 +105,14 @@ def resolve_evidence(db: Session, case_id: UUID, ids: Iterable[UUID]) -> dict[UU
             id=claim.id, evidence_type="EVIDENCE_CLAIM",
             kind="LITERATURE_REVIEWED" if reviewed else "LITERATURE_METADATA",
             label=claim.claim_text[:160], active=True)
+    # ABB-19 local answers: FARMER_REPORTED evidence; superseded answers stay linkable but inactive.
+    for answer in db.scalars(select(UncertaintyAnswer).where(
+            UncertaintyAnswer.case_id == case_id, UncertaintyAnswer.id.in_(wanted - found.keys()))):
+        value = answer.value_text if answer.value_text is not None else f"{answer.value_number:g} {answer.unit}"
+        found[answer.id] = EvidenceRef(
+            id=answer.id, evidence_type="LOCAL_ANSWER", kind="FARMER_REPORTED",
+            label=f"Local answer ({answer.question_id}, {answer.status}): {value}"[:160],
+            start=answer.observed_from, end=answer.observed_to, active=answer.status != "SUPERSEDED")
     return found
 
 

@@ -208,7 +208,7 @@ class VerificationQuestionView(schemas.ContractModel):
 
 class EvidenceRef(schemas.ContractModel):
     id: UUID
-    evidence_type: Literal["ANOMALY", "OBSERVATION", "EVIDENCE_CLAIM"]
+    evidence_type: Literal["ANOMALY", "OBSERVATION", "EVIDENCE_CLAIM", "LOCAL_ANSWER"]
     kind: str = PydanticField(description="Source classification, e.g. OBSERVED or LITERATURE_METADATA")
     label: str
     start: date | None = None
