@@ -53,6 +53,15 @@ Owner: C (frontend). Status of each item is explicit: **IMPLEMENTED** means it e
 - Hypotheses never carry a confidence percentage unless a validated method exists (SCIENTIFIC_POLICY).
 - UI work itself must follow `.claude/skills/agro-design-system` (mandatory, see `AGENTS.md`).
 
+## 4.1 Case report tab (IMPLEMENTED, ABB-26)
+
+`#/cases/<id>/report` (tab "Report"/"Informe", `features/cases/report/*`) lists the stored versions from `GET /api/v1/cases/{id}/reports`
+and, for OWNER/EDITOR/REVIEWER, generates a new one with `POST` (empty body: the server builds everything from the case; the browser sends
+no scientific data). Each version shows date, author, case version, truncated report and source hashes, the server's change list, and buttons
+to download Markdown, HTML and the JSON snapshot (fetch with the bearer token, saved as a blob) and to call the verify endpoint. A failed
+verification is shown as an error, never hidden. PDF is not offered (note tells users to print the HTML). No sample data is substituted when the
+API fails. The legacy stateless `#/report` page and `POST /api/report` remain unchanged.
+
 ## 5. Running and testing the frontend
 
 ```bash
@@ -96,15 +105,6 @@ Reading back: `APPROXIMATE`/`EXACT` → Approximate area (an `EXACT` field is no
 **Roles and status.** List columns: Case · Status · Your role · Shared as · Incident year · Updated. Case screens open with the title block (ID, location as this user may see it, status, role, owner, updated). Reviewers and viewers, and cases that are REVIEWED, PUBLISHED or archived, open read-only; their location is exactly what the server returned (rounded cell, region label or "Not shared with you"). Status labels avoid implying scientific validation ("Reviewed by a team reviewer", "Final (team only, not public)").
 
 **Not in this UI yet:** sharing/permissions management, workflow status changes, archive, history view, multiple fields per case, basemap (tile provider decision pending).
-
-## 6.1 Case report tab (IMPLEMENTED, ABB-26)
-
-`#/cases/<id>/report` (tab "Report"/"Informe", `features/cases/report/*`) lists the stored versions from `GET /api/v1/cases/{id}/reports`
-and, for OWNER/EDITOR/REVIEWER, generates a new one with `POST` (empty body: the server builds everything from the case; the browser sends
-no scientific data). Each version shows date, author, case version, truncated report and source hashes, the server's change list, and buttons
-to download Markdown, HTML and the JSON snapshot (fetch with the bearer token, saved as a blob) and to call the verify endpoint. A failed
-verification is shown as an error, never hidden. PDF is not offered (note tells users to print the HTML). No sample data is substituted when the
-API fails. The legacy stateless `#/report` page and `POST /api/report` remain unchanged.
 
 ## 7. Case timeline and rival hypotheses (IMPLEMENTED, ABB-22)
 
