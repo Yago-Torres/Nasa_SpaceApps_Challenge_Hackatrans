@@ -10,6 +10,7 @@
 - `GET /api/rotations/demo` — three illustrative rotations, not water/yield forecasts.
 - `GET /api/v1/crop-catalog` (ABB-11) — `CropCatalog`: crop identity entries (code, EN/ES names, scientific name, family, group, derived `is_legume`), all `review_status=PENDING`, `agronomic_parameters=null`.
 - `POST /api/v1/farm-profiles/assess` (ABB-11) — body `FarmProfile` (soil observations with `origin` `LOCAL_MEASUREMENT | FARMER_ESTIMATE | REGIONAL_ESTIMATE | UNKNOWN`, crop history, farmer `local_calendar`, constraints, ordinal priorities); returns `FarmProfileAssessment` (`source_kind=FARMER_REPORTED`, per-section `PROVIDED | PARTIAL | MISSING`, `issues[]` with `severity` `ERROR | WARNING | MISSING_DATA`, `code`, `path`, `message`, `consequence`, and `rotation_input_status`). Stateless: nothing is stored. Structural errors return 422; agronomic inconsistencies return 200 with `ERROR` issues. See `docs/science/FARM_PROFILE.md`.
+- `POST /api/v1/rotations/compare` (ABB-17) — body `RotationCompareRequest` {`profile`: `FarmProfile`, optional `horizon_years` 2–10}. Returns `RotationComparison` (`source_kind=MODEL_SCENARIO`, `status` `COMPARED | FEWER_ALTERNATIVES | INSUFFICIENT_INPUT | BLOCKED_BY_PROFILE_ERRORS`, `explanation[]`, `strategies[]` with the current rotation first, `candidate_screening[]` with exclusion/not-evaluable reasons, `incompatible_transitions[]`, `profile_issues`, `rule_set_version`, `catalog_version`, `limitations`). Each `RotationStrategy` has `strategy_kind` `CURRENT | MINIMAL_CHANGE | FAMILY_DIVERSIFICATION | CALENDAR_COVER`, `cycle`, `years`, `transitions[]` (`COMPATIBLE | TIGHT | INCOMPATIBLE | NOT_EVALUABLE` with fallow-gap months), `constraint_checks[]` (`SATISFIED | VIOLATED | REVIEW_REQUIRED | NOT_EVALUABLE`), a descriptive `comparison`, `priorities_addressed[]`, `possible_benefits[]`, `risks[]`, `assumptions[]`, `conditions_requiring_review[]`, `limitations[]`, `evidence_refs[]` (unreviewed literature metadata) and `verified_impact: null`. Stateless; 422 for unknown fields or out-of-range values; no yield, water, income or score fields. See `docs/science/ROTATIONS.md`.
 - `POST /api/report` — Markdown case note from submitted payload; preliminary and not independently validated.
 
 Frontend consumers, screens and the interface fields the UI requests from A and B: `docs/architecture/FRONTEND_INTEGRATION.md`.
@@ -44,7 +45,7 @@ Formalize versioned `/api/v1` resources through their owning roadmap Issues:
 - `/api/v1/cases/{case_id}/timeline` — observed, local and hypothetical event layers.
 - `/api/v1/evidence/search` and `/api/v1/evidence/findings` — DOI discovery and human-verified findings.
 - `/api/v1/cases/{case_id}/hypotheses` — supporting, contradictory and missing evidence.
-- `/api/v1/cases/{case_id}/rotations/compare` — three+ feasible options with explicit scenarios.
+- `/api/v1/cases/{case_id}/rotations/compare` — three+ feasible options with explicit scenarios (the stateless `/api/v1/rotations/compare` exists; the case-bound route waits for persisted profiles, ABB-06).
 - `/api/v1/cases/{case_id}/reviews` — reviewer comments and decisions with access control.
 - `/api/v1/cases/{case_id}/reports` — versioned human-readable case reports.
 

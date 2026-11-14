@@ -46,4 +46,4 @@ Priorities are **ordinal ranks**, not numeric weights, to avoid false precision.
 - No persistence or case linkage yet (ABB-03/ABB-06); `case_id` and `field_id` are optional references.
 - The catalogue needs human taxonomic review, plus reviewed calendar or parameter sources before any are added.
 - Soil properties use fixed units with no conversion; regional soil products are not fetched automatically.
-- Consecutive-crop rules (family repetition, legume benefit, calendar gaps between crops) belong to ABB-17.
+- Consecutive-crop rules (family repetition, legume presence, calendar gaps between crops) are applied by ABB-17; see `ROTATIONS.md`.
