@@ -6,7 +6,7 @@ Status labels follow `docs/ai/CONTEXT_MAP.md`: only what a runnable check suppor
 
 | Check | What it proves | Where | Runs in CI |
 |---|---|---|---|
-| Main journey E2E (API level) | creation → NASA POWER → evidence (paper, claim, independent review) → hypothesis → conclusion with a complete evidence trail → 3 rotation alternatives → REVIEWER closes review → versioned, verifiable report with no private data | `backend/tests/test_e2e_main_journey.py` (`-m e2e`) | yes, own step that fails if the tests are skipped |
+| Main journey E2E (API level) | creation → NASA POWER → evidence (paper, claim, independent review) → hypothesis → conclusion with a complete evidence trail → 3 rotation alternatives → REVIEWER closes review → versioned, verifiable report (Markdown, HTML, JSON and PDF) with no private data | `backend/tests/test_e2e_main_journey.py` (`-m e2e`) | yes, own step that fails if the tests are skipped |
 | Pinned failures of that journey | NASA 503 / 429 / invalid JSON → 502 with a generic message and no stored data; a month with only NASA fill values is `NOT_CLASSIFIED`, never a number; roles hold from ingestion to report; account delete leaves no case/observation rows | same file | yes |
 | OpenAPI vs `frontend/src/api/types.ts` | field existence, nullability, primitive kinds and enum values for every type whose name is also an OpenAPI schema (~130 types); every `/api/...` path the frontend calls exists | `frontend/src/api/contract.test.ts` | yes (`web-build` exports the schema with `scripts/export_openapi.py`) |
 | Real-source smoke test | the real NASA POWER, Crossref and OpenAlex still answer in the shape the code needs | `backend/tests/test_real_sources_smoke.py` (`-m real_network`) | **never** (manual) |
@@ -43,7 +43,7 @@ A frontend type is a *request* when its name ends in Create, Update, Patch, Requ
 - Request: a field optional/nullable in the frontend that the backend requires or rejects; a frontend union value the backend does not accept.
 - Not checked: whether a response field the schema marks optional is always present (the OpenAPI document is generated in input mode, so defaulted fields are not `required`), and whether a field is read at the right place.
 - `Paper` and `Rotation` in `types.ts` describe the legacy untyped endpoints (`/api/literature`, `/api/rotations/demo`); the OpenAPI schemas of the same name are the v1 contracts, so they are listed in `NOT_COMPARED` with that reason.
-- `KNOWN_DRIFT` documents accepted mismatches. The test fails on a new mismatch **and** on a stale entry. Result at ABB-29: no known drift; the checker found none on `main` at `94b0b8c`.
+- `KNOWN_DRIFT` documents accepted mismatches. The test fails on a new mismatch **and** on a stale entry. Result at ABB-29: no known drift; the checker found none on `main` at `5b65438`.
 - Negative control: with the schema altered (extra enum value, removed field, newly required field) the test fails with one precise message per change.
 
 ## Known gaps (not detected or not covered)

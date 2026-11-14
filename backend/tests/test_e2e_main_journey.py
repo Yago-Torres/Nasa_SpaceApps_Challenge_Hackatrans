@@ -14,6 +14,7 @@ a month without usable data, permissions, and the private-data guarantees.
 """
 from __future__ import annotations
 
+import hashlib
 import os
 from pathlib import Path
 
@@ -220,6 +221,10 @@ async def test_main_journey_from_case_creation_to_verifiable_report(client, nasa
     for kind in ("MINIMAL_CHANGE", "FAMILY_DIVERSIFICATION", "CALENDAR_COVER"):
         assert kind in md
     assert_no_private_data("report markdown", md)
+    pdf = await client.get(f"{V1}/cases/{cid}/reports/1/download", params={"format": "pdf"}, headers=reviewer)
+    assert pdf.status_code == 200 and pdf.headers["content-type"].startswith("application/pdf")
+    assert pdf.content.startswith(b"%PDF") and pdf.headers["x-report-sha256"] == meta["pdf_sha256"]
+    assert hashlib.sha256(pdf.content).hexdigest() == meta["pdf_sha256"]
     for fmt in ("html", "json"):
         body = await client.get(f"{V1}/cases/{cid}/reports/1/download", params={"format": fmt}, headers=owner)
         assert body.status_code == 200
