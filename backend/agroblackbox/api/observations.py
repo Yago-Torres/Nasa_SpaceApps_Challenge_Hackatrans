@@ -39,7 +39,7 @@ from ..services.forensics import (
 from ..services.metrics import METHOD_ID, MIN_REFERENCE_YEARS, VARIABLES, analyze_power, reference_label
 from .cases import EDITOR_ROLES, _json, _load, _record, _require_editable, _require_role, _summary
 from .deps import CurrentPrincipal, DbSession
-from .evidence_dto import (
+from .forensics_dto import (
     AnomalyView,
     DepartureView,
     IngestionResult,

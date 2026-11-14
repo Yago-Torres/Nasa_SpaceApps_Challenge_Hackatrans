@@ -1,7 +1,7 @@
 """case-bound observations, anomalies and rival hypotheses (ABB-10)
 
 Revision ID: e3a9c71f5b20
-Revises: b7e2d4a91c03
+Revises: e3c91f5a7d24 (ABB-14 evidence claims; chained after it to keep a single head)
 Create Date: 2026-11-14 21:00:00.000000
 """
 from typing import Sequence, Union
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 revision: str = 'e3a9c71f5b20'
-down_revision: Union[str, None] = 'b7e2d4a91c03'
+down_revision: Union[str, None] = 'e3c91f5a7d24'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

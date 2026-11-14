@@ -26,7 +26,7 @@ from sqlalchemy import func, inspect, select, text
 
 from agroblackbox.api.deps import get_session_factory
 from agroblackbox.app import app
-from agroblackbox.db.models import Anomaly, CaseHistory, Observation, SourceManifest
+from agroblackbox.db.models import Anomaly, CaseHistory, EvidenceClaim, Observation, Paper, SourceManifest
 from agroblackbox.db.session import create_database_engine, session_factory
 from agroblackbox.services import power
 
@@ -185,7 +185,7 @@ def by_month(items, variable):
 # ── migration ────────────────────────────────────────────────────────────────
 
 def test_abb10_migration_downgrades_and_upgrades(api_engine):
-    command.downgrade(alembic_config(), "b7e2d4a91c03")
+    command.downgrade(alembic_config(), "e3c91f5a7d24")  # ABB-14 evidence claims, the parent revision
     inspector = inspect(api_engine)
     assert "anomalies" not in inspector.get_table_names()
     assert "version" not in {c["name"] for c in inspector.get_columns("hypotheses")}
@@ -564,6 +564,36 @@ async def test_rival_hypotheses_workflow_with_evidence_links(client, nasa):
     assert actions.count("HYPOTHESIS_EVALUATED") == 3 and actions.count("HYPOTHESIS_UPDATED") == 2
     reset = [h for h in history if h["action"] == "HYPOTHESIS_UPDATED" and h["note"]]
     assert reset and reset[0]["changes"]["status"] == {"before": "CONTRADICTED", "after": "OPEN"}
+
+
+@pytest.mark.asyncio
+async def test_hypothesis_can_cite_a_case_evidence_claim_but_not_another_cases(client, factory):
+    owner = await account(client, "owner@example.test")
+    case = await new_case(client, owner)
+    other = await new_case(client, owner, title="SYNTHETIC second case")
+    with factory.begin() as session:
+        paper = Paper(title="Synthetic bibliographic fixture", doi_status="NO_DOI", bibliographic_metadata={},
+                      limitations=["Synthetic fixture; not a real paper"])
+        session.add(paper)
+        session.flush()
+        claims = [EvidenceClaim(case_id=case_id, paper_id=paper.id, claim_text="Synthetic claim, not reviewed.",
+                                study_context="Synthetic context", review_status="PENDING",
+                                limitations=["Synthetic fixture"]) for case_id in (case["id"], other["id"])]
+        session.add_all(claims)
+        session.flush()
+        own_claim, foreign_claim = (str(c.id) for c in claims)
+    foreign = await client.post(f"{V1}/cases/{case['id']}/hypotheses", headers=owner, json={
+        "statement": "Synthetic hypothesis", "supporting_evidence_ids": [foreign_claim]})
+    assert foreign.status_code == 422
+    cited = await client.post(f"{V1}/cases/{case['id']}/hypotheses", headers=owner, json={
+        "statement": "Synthetic hypothesis", "supporting_evidence_ids": [own_claim]})
+    assert cited.status_code == 201, cited.text
+    assert cited.json()["evidence"] == [{"id": own_claim, "evidence_type": "EVIDENCE_CLAIM",
+                                         "kind": "LITERATURE_METADATA", "label": "Synthetic claim, not reviewed.",
+                                         "start": None, "end": None, "active": True}]
+    timeline = (await client.get(f"{V1}/cases/{case['id']}/timeline", headers=owner)).json()
+    event = next(e for e in timeline["events"] if e["kind"] == "HYPOTHESIS")
+    assert event["hypothesis"]["evidence_not_on_timeline"] == [own_claim]
 
 
 @pytest.mark.asyncio

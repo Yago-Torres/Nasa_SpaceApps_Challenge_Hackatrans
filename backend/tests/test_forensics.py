@@ -9,7 +9,7 @@ import pytest
 from pydantic import ValidationError
 
 from agroblackbox.api.deps import STORAGE_UNAVAILABLE, get_session_factory
-from agroblackbox.api.evidence_dto import (
+from agroblackbox.api.forensics_dto import (
     HypothesisCreate,
     HypothesisStatusChange,
     HypothesisTemplateRequest,

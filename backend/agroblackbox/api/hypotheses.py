@@ -33,7 +33,7 @@ from ..services.forensics import (
 from ..services.metrics import VARIABLES
 from .cases import EDITOR_ROLES, _load, _record, _require_editable, _require_role, _summary
 from .deps import CurrentPrincipal, DbSession
-from .evidence_dto import (
+from .forensics_dto import (
     EvidenceRef,
     HypothesisCreate,
     HypothesisList,
@@ -97,7 +97,8 @@ def resolve_evidence(db: Session, case_id: UUID, ids: Iterable[UUID]) -> dict[UU
             end=observation.period_end, active=superseded_at is None)
     for claim in db.scalars(select(EvidenceClaim).where(
             EvidenceClaim.case_id == case_id, EvidenceClaim.id.in_(wanted - found.keys()))):
-        reviewed = claim.reviewed_at is not None and claim.review_status not in (None, "PENDING")
+        # Same derivation as ABB-14: reviewed literature only while the claim is ACCEPTED.
+        reviewed = claim.review_status == "ACCEPTED"
         found[claim.id] = EvidenceRef(
             id=claim.id, evidence_type="EVIDENCE_CLAIM",
             kind="LITERATURE_REVIEWED" if reviewed else "LITERATURE_METADATA",

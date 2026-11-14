@@ -20,7 +20,7 @@ from ..services.forensics import SEVERITY_LIMITATIONS, SEVERITY_RULE, SEVERITY_R
 from ..services.metrics import VARIABLES
 from .cases import _load
 from .deps import CurrentPrincipal, DbSession
-from .evidence_dto import (
+from .forensics_dto import (
     DataQuality,
     HypothesisLinks,
     ObservedValue,
