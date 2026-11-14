@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- ABB-03 adds the PostgreSQL persistence boundary, initial reversible Alembic migration, referential/privacy constraints, optimistic case updates and PostgreSQL integration tests in CI; authenticated persistence APIs remain separate Issues.
 - Development governance simplified: roadmap Issues are directly executable without vote or approval labels, while contract coordination, technical review, scientific integrity and security checks remain required.
 - ABB-01 tooling hardening delivered: mandatory uv/npm lockfiles, strict CI installs, Node/Python pin checks, repaired frontend lock data and explicit review of the esbuild install script; GitHub Actions passed all required jobs.
 - ABB-02 shared 1.0 Pydantic contracts prepared locally with OpenAPI components, explicit provenance/privacy/null semantics, contract tests and ADR-0002; its `Paper` contract preserves ABB-13 DOI/provenance semantics, and the merged literature endpoint tests now use the compatible async ASGI test transport. Live `/api/v1` route adoption remains separate work.

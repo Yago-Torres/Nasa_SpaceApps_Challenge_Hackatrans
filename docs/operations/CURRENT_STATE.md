@@ -15,13 +15,13 @@
 | Shared API 1.0 data contracts | IN PROGRESS — LOCALLY VERIFIED | `backend/agroblackbox/schemas.py`, `backend/tests/test_contracts.py`, ADR-0002 | B/C semantic review, generated frontend types and route-by-route adoption remain |
 | User accounts / permissions | NOT BUILT | — | auth flow, privacy, role tests |
 | Incident wizard + location privacy UI (ABB-21) | IN PROGRESS — UI TESTED, DEV STORAGE ONLY | `frontend/src/cases`, `frontend/src/features/cases`, 12 Vitest tests (privacy redaction, validation, create → list → edit flow) | real `/api/v1/cases` + auth (ABB-05/06), server-side guest redaction, basemap after tile-provider decision |
-| Persistent case storage | NOT BUILT | — | SQL models, migrations, repository layer |
+| PostgreSQL case/artifact persistence (ABB-03) | IMPLEMENTED INTERNAL LAYER — API INTEGRATION PENDING | `backend/agroblackbox/db`, `backend/migrations`, `backend/tests/test_persistence.py`, ADR-0003 | authenticated API adoption (ABB-05/06), production backup/restore operations |
 | GPM / HLS | NOT BUILT | — | source adapter(s), QA, geospatial comparability |
 | Evidence graph & reviewed claims | NOT BUILT | — | schema, reviewer signoff, graph UI |
 | Rotations modeled vs constraints | NOT BUILT | — | scientific / agronomic rules, verified examples |
 | Uncertainty Hunter | NOT BUILT | — | missing data/questions and sensitivity |
 | Cross-community case review | NOT BUILT | — | permissions, invitations, audit log |
-| PostgreSQL / Redis integration | NOT BUILT | `compose.yaml` only starts infra | migrations, integration tests, operations |
+| PostgreSQL / Redis integration | POSTGRESQL IMPLEMENTED; REDIS NOT WIRED | SQLAlchemy/Alembic + PostgreSQL CI; `compose.yaml` also starts unused Redis | Redis job integration, deployment and recovery runbook |
 
 ## Verification (update with exact command outputs after each run)
 
@@ -39,6 +39,8 @@ ABB-20 local verification on 2026-11-14 (branch `claude/adoring-clarke-41j86y`):
 ABB-02 local verification on 2026-11-14 after integrating ABB-13 and rebasing over ABB-20: OpenAPI serialized successfully with 28 component schemas; contract JSON/privacy/null validation, ABB-13 `Paper` semantic compatibility and existing API 422 paths passed; the complete backend reported `42 passed`. Context policy found 25 required files; the frontend production build and all 17 Vitest tests passed with Node 24. ABB-13 endpoint tests were migrated from the incompatible blocking `TestClient` path to async `httpx.ASGITransport` without changing their assertions. The shared models are published in OpenAPI locally, but `/api/v1` routes, persistence adoption and generated frontend types are not implemented by ABB-02.
 
 ABB-11 local verification on 2026-11-14 (branch `feat/11-farm-profile` from `main` at `594d461`, WSL Ubuntu, uv 0.12.21): `uv lock --check` resolved 25 packages; `uv run --locked --extra dev pytest -q` reported `82 passed` (40 new farm-profile/catalogue tests on synthetic fixtures, including both HTTP routes and OpenAPI registration); context policy found 25 required files. No dependency added. The catalogue is taxonomy only and pending human review; no stored profile or frontend integration yet.
+
+ABB-03 local verification on 2026-11-14 against PostgreSQL 17: the initial Alembic migration upgraded an empty database, downgraded to base and upgraded again; `alembic check` reported no schema drift. The complete backend reported `48 passed`, including persistence across sessions, referential/privacy constraints, observation provenance, optimistic concurrent updates and the explicitly synthetic seed. Context policy found 25 required files; the frontend production build passed and all 29 Vitest tests passed with Node 24. Authenticated persistence routes, Redis jobs and production backup/restore remain separate work.
 
 ## Dependency-management note
 

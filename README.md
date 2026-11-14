@@ -73,7 +73,7 @@ cd ../frontend && npm run build
 
 **Bloqueo de dependencias:** `backend/uv.lock` y `frontend/package-lock.json` están versionados y son obligatorios. Comprobad Python con `cd backend && uv lock --check` e instalad mediante `uv sync --locked --extra dev`. En frontend usad `npm ci`; no sustituyáis los locks por resoluciones flotantes durante CI.
 
-El `compose.yaml` define servicios de PostgreSQL y Redis para el desarrollo de 1.0; la base de código actual todavía no los utiliza. Levantadlos **solo** para una Issue activa que los requiera.
+ABB-03 utiliza PostgreSQL para la capa interna de persistencia; Redis sigue sin estar conectado. Para una base local vacía, ejecutad `docker compose up -d db`, copiad `DATABASE_URL` desde `.env.example` al entorno y aplicad `make db-upgrade`. Las pruebas de integración requieren una base desechable explícita mediante `TEST_DATABASE_URL`; nunca apuntéis esa variable a una base con datos que deban conservarse, porque la suite prueba migraciones y limpia tablas. Las rutas autenticadas que consumen esta capa se añaden en Issues posteriores.
 
 ## 4. Guía específica para agentes IA en Omarchy (Arch Linux)
 

@@ -1,7 +1,7 @@
 # Run from repository root. Python commands are exclusively uv-managed.
-.PHONY: help setup backend web test context check infra-up infra-down
+.PHONY: help setup backend web test context check db-upgrade db-downgrade infra-up infra-down
 help:
-	@printf 'make setup | make backend | make web | make test | make check | make context | make infra-up | make infra-down\n'
+	@printf 'make setup | make backend | make web | make test | make check | make context | make db-upgrade | make db-downgrade | make infra-up | make infra-down\n'
 setup:
 	cd backend && uv sync --locked --extra dev
 	cd frontend && npm ci
@@ -18,6 +18,10 @@ check:
 	cd backend && uv lock --check
 	cd backend && uv run --locked --extra dev pytest -q
 	cd frontend && npm run build
+db-upgrade:
+	cd backend && uv run --locked alembic upgrade head
+db-downgrade:
+	cd backend && uv run --locked alembic downgrade -1
 infra-up:
 	docker compose up -d
 infra-down:
