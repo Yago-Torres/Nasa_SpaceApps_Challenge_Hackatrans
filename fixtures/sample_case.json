@@ -1,0 +1,11 @@
+{
+  "case_id": "demo-ebro-2022",
+  "kind": "case_configuration",
+  "location_label": "Ebro Valley (illustrative pilot)",
+  "latitude": 41.6,
+  "longitude": -0.9,
+  "event_year": 2022,
+  "reference_start": 2010,
+  "reference_end": 2021,
+  "disclaimer": "Location and incident year are demonstration choices, not a documented farm failure; real NASA values must be fetched by the API."
+}

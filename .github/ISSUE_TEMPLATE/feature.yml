@@ -1,0 +1,50 @@
+name: "Feature proposal (requires human votes)"
+description: "Propose functionality before any AI or human starts implementation"
+title: "[FEATURE] "
+labels: ["needs-vote"]
+body:
+  - type: markdown
+    attributes:
+      value: "A proposal is NOT approved until explicit human votes are recorded and label team-approved is applied by a human."
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem and expected impact
+      description: What farmer/reviewer need does this solve, and which of the four awards does it support?
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Proposed behavior and UI/API boundaries
+      description: Exact inputs, outputs, states and interactions; link specs or ADR as needed
+    validations:
+      required: true
+  - type: textarea
+    id: science
+    attributes:
+      label: Scientific evidence, privacy and external API implications
+      description: Sources, uncertainty, fake-data risks, permissions and security
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Testable acceptance criteria
+      description: Include functional, negative/failure and integration checks
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and affected components
+      description: Contracts/migrations/dependencies; whether all-three approval is needed
+    validations:
+      required: true
+  - type: dropdown
+    id: critical
+    attributes:
+      label: Does this alter architecture, scientific method, privacy, product scope, licensing or cost?
+      options: ["Yes — unanimous human approval required", "No — 2 of 3 human approvals required"]
+    validations:
+      required: true

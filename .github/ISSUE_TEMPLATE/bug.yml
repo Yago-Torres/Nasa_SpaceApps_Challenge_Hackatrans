@@ -1,0 +1,29 @@
+name: "Bug report"
+description: "A reproducible defect in already approved or implemented behavior"
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: actual
+    attributes:
+      label: Observed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior and evidence
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps, logs and environment (without secrets)
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Science/security/user impact
+    validations:
+      required: true
