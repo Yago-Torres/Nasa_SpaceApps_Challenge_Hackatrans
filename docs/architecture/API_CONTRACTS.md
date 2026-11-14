@@ -54,6 +54,15 @@ Same auth, 503 and error rules as the cases API. See `docs/science/EVIDENCE_CLAI
 - `GET|POST /api/v1/cases/{case_id}/claims`, `GET|PATCH|DELETE /api/v1/cases/{case_id}/claims/{claim_id}`, `POST …/{claim_id}/review`, `GET …/{claim_id}/history`, `POST /api/v1/cases/{case_id}/claims/pilot-import`.
 - `ClaimView` extends the shared `EvidenceClaim` additively (`case_id`, `version`, `is_reviewed`, `reviewer`, `created_by`, `created_at`, `updated_at`, paper summary, `study_design`, `context`, `reported_outcome` as text, `source_locator`, `quoted_fragment`, `evidence_basis`, `access_basis`, `content_license`, `origin`, `origin_ref`, `warnings`, `can_edit`, `can_review`). `source_kind` is `LITERATURE_REVIEWED` only for ACCEPTED claims; `reviewed_by`/`reviewed_at` are the latest decision. Any content edit resets to PENDING. Decisions require a note and `source_consulted`; ACCEPTED requires a FULL_TEXT check with legitimate access and licence, resolved DOI identity, study design and outcome; contributors cannot review their own claims (403).
 
+## Claim disagreements and applicability (IMPLEMENTED — ABB-15)
+
+Same auth, 503 and error rules as ABB-14; requires migration `c4d82e1f9a37`. See `docs/science/CONTRADICTIONS_APPLICABILITY.md`.
+
+- `ClaimView`/`ClaimCreate`/`ClaimPatch` add `intervention`, `comparator`, `outcome_variable`, `effect_direction` (`INCREASE | DECREASE | NO_CLEAR_EFFECT | MIXED | NOT_STATED`, default `NOT_STATED`; a direction requires intervention, outcome variable and more than metadata). `context` adds `water_regime`, `soil_texture_classes`, `soil_ph_min`/`soil_ph_max`, `geographic_scope`, `countries` (ISO alpha-2), `climate_classes` (Köppen–Geiger). Additive.
+- `GET /api/v1/cases/{case_id}/claims/disagreements` → `DisagreementList` (`items: DisagreementView[]` with both claim references and paper summaries, `comparability_notes`, `status CANDIDATE | CONFIRMED_CONTRADICTION | NOT_COMPARABLE | INCONCLUSIVE`, review history; `claims_not_compared`).
+- `POST …/claims/disagreements/{disagreement_id}/review` `{decision, note, claim_a_version, claim_b_version}`; OWNER/EDITOR/REVIEWER who did not write either claim; CONFIRMED_CONTRADICTION needs both claims ACCEPTED; a decision stops applying when either claim version changes.
+- `POST …/claims/{claim_id}/applicability` `{farm_profile?, country_code?, koppen_climate?}` → `ApplicabilityReport` (per-dimension MATCH/PARTIAL/MISMATCH/UNKNOWN with reasons, `transfer_status`, `stored: false`). No numeric score, weight, probability or confidence.
+
 ## Case observations, timeline and hypotheses (IMPLEMENTED — ABB-10)
 
 Same authentication and 401/403/404/409/422/503 rules as the cases API; requires migration `e3a9c71f5b20` (chained after `e3c91f5a7d24`). See `docs/science/TIMELINE_HYPOTHESES.md`.
