@@ -55,7 +55,7 @@ def build_report(case: dict):
     literature=case.get('literature') or []
     rotations=case.get('rotations') or []
     rows=climate.get('monthly',[])
-    lines=[f'# AGRO BLACK BOX — Preliminary Case Investigation',
+    lines=[f'# CropStory — Preliminary Case Investigation',
            '',f'Generated at (UTC): {datetime.now(timezone.utc).isoformat()}',
            f'Case location: {label}',
            '', '## Methods and provenance',

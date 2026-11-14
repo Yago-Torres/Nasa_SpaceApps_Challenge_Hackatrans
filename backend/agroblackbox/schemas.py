@@ -1,4 +1,4 @@
-"""Versioned, provider-neutral data contracts for the AGRO BLACK BOX 1.0 API.
+"""Versioned, provider-neutral data contracts for the CropStory 1.0 API.
 
 These schemas describe the target shared contract. Existing ``/api/*`` routes remain
 compatible until their implementation is migrated through the relevant roadmap Issue.
@@ -378,7 +378,7 @@ def contract_openapi_schemas() -> dict[str, Any]:
     """Return shared schemas using FastAPI's component reference namespace."""
     _, schema = models_json_schema(
         [(model, "validation") for model in CONTRACT_MODELS],
-        title="AGRO BLACK BOX 1.0 shared contracts",
+        title="CropStory 1.0 shared contracts",
         ref_template="#/components/schemas/{model}",
     )
     return schema.get("$defs", {})

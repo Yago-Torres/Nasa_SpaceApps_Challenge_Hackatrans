@@ -128,7 +128,7 @@ async def _sleep(seconds: float) -> None:
 
 def _make_client() -> httpx.AsyncClient:
     return httpx.AsyncClient(timeout=REQUEST_TIMEOUT, follow_redirects=True,
-                             headers={'User-Agent': f'AgroBlackBox/{PROCESSING_VERSION}'})
+                             headers={'User-Agent': f'CropStory/{PROCESSING_VERSION}'})
 
 
 # --------------------------------------------------------------------------- request

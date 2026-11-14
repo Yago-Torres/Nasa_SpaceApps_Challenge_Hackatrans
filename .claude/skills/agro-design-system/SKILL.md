@@ -1,9 +1,9 @@
 ---
 name: agro-design-system
-description: The "Field Survey" design language for AGRO BLACK BOX — light mode only, in the team's bright "hopecore" palette (Celestial Blue, Cal Poly Pomona Green, May Green, Yellow-Green, Pearl Aqua), with structure borrowed from survey-map legends, technical-drawing title blocks and herbarium labels, and explicit rules against AI-generated-looking UI (adapted from impeccable and taste-skill). Use this skill whenever you create, restyle or extend anything visual in frontend/ — React components, CSS, layouts, the landing page, charts, icons, empty/error states, UI copy — and whenever someone asks about colours, fonts, spacing, "the look", industrial or solarpunk style, or how a screen from docs/product/UX_FLOWS.md should look, even if they don't name the design system.
+description: The "Field Survey" design language for CropStory — light mode only, in the team's bright "hopecore" palette (Celestial Blue, Cal Poly Pomona Green, May Green, Yellow-Green, Pearl Aqua), with structure borrowed from survey-map legends, technical-drawing title blocks and herbarium labels, and explicit rules against AI-generated-looking UI (adapted from impeccable and taste-skill). Use this skill whenever you create, restyle or extend anything visual in frontend/ — React components, CSS, layouts, the landing page, charts, icons, empty/error states, UI copy — and whenever someone asks about colours, fonts, spacing, "the look", industrial or solarpunk style, or how a screen from docs/product/UX_FLOWS.md should look, even if they don't name the design system.
 ---
 
-# AGRO BLACK BOX — Field Survey design system
+# CropStory — Field Survey design system
 
 > **Status: MANDATORY for all frontend design work** (root `AGENTS.md`, `frontend/AGENTS.md`). Owned by ABB-20 (design system, navigation, accessibility, EN/ES). Changes to tokens, shared components or rules are made in this skill within ABB-20 and announced to the other two stewards.
 

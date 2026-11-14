@@ -1,8 +1,8 @@
-# AGENTS.md — AGRO BLACK BOX (cross-model rules)
+# AGENTS.md — CropStory (cross-model rules)
 
 ## Mission and source of truth
 
-Deliver the **complete AGRO BLACK BOX 1.0 product** specified in `docs/product/RELEASE_1_0.md`. This is the target, not a claim of implementation. Verify current code and `docs/operations/CURRENT_STATE.md`. The canonical product context is this repository, its roadmap Issues, and reviewed PRs/ADRs — never a model's conversation memory.
+Deliver the **complete CropStory 1.0 product** specified in `docs/product/RELEASE_1_0.md`. This is the target, not a claim of implementation. Verify current code and `docs/operations/CURRENT_STATE.md`. The canonical product context is this repository, its roadmap Issues, and reviewed PRs/ADRs — never a model's conversation memory.
 
 ## Before touching code
 
@@ -24,7 +24,7 @@ Deliver the **complete AGRO BLACK BOX 1.0 product** specified in `docs/product/R
 
 ## Frontend design guardrail (mandatory)
 
-Any change to pages, screens, components, styles, charts, images or UI copy in `frontend/` must follow the **AGRO BLACK BOX design system** in `.claude/skills/agro-design-system/SKILL.md` (tokens in `assets/tokens.css`, reference pages `assets/landing.html` and `assets/system.html`, rules in `references/`). Light mode only, team palette, evidence legend, standard controls, no AI-generated-looking patterns, real openly licensed imagery only.
+Any change to pages, screens, components, styles, charts, images or UI copy in `frontend/` must follow the **CropStory design system** in `.claude/skills/agro-design-system/SKILL.md` (tokens in `assets/tokens.css`, reference pages `assets/landing.html` and `assets/system.html`, rules in `references/`). Light mode only, team palette, evidence legend, standard controls, no AI-generated-looking patterns, real openly licensed imagery only.
 
 - Claude Code loads it as a skill; Codex/ChatGPT and humans must open `SKILL.md` and the referenced files directly before designing.
 - Before publishing frontend work, run the checklist in `.claude/skills/agro-ui-review/SKILL.md` (screenshots, contrast check, `npx -y impeccable@4.8.0 detect`) and paste the outcome in the handoff or PR.

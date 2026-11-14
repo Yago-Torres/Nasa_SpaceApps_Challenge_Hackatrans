@@ -195,7 +195,7 @@ def titles_match(a: str | None, b: str | None) -> bool:
 def _user_agent() -> str:
     mailto = os.getenv('CROSSREF_MAILTO', '').strip()
     contact = f'; mailto:{mailto}' if mailto else ''
-    return f'AgroBlackBox/{PROCESSING_VERSION} (+{PROJECT_URL}{contact})'
+    return f'CropStory/{PROCESSING_VERSION} (+{PROJECT_URL}{contact})'
 
 
 def _make_client() -> httpx.AsyncClient:
