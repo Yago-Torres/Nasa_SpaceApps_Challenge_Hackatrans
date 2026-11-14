@@ -4,7 +4,7 @@ import type { MessageKey } from '../i18n/messages';
 /** The seven primary screens required by ABB-20. `available` = backed by an endpoint that exists today. */
 export const ROUTES = [
   { id: 'dashboard', label: 'nav.dashboard', available: true },
-  { id: 'cases', label: 'nav.cases', available: false },
+  { id: 'cases', label: 'nav.cases', available: true },
   { id: 'investigation', label: 'nav.investigation', available: true },
   { id: 'evidence', label: 'nav.evidence', available: true },
   { id: 'rotations', label: 'nav.rotations', available: true },
@@ -20,12 +20,28 @@ export function parseHash(hash: string): RouteId {
   return (ROUTES.find((r) => r.id === id)?.id ?? 'dashboard') as RouteId;
 }
 
-export function hrefFor(id: RouteId) {
-  return `#/${id}`;
+/** Second hash segment, e.g. "new" or a case id in "#/cases/<id>". */
+export function parseParam(hash: string): string | null {
+  const parts = hash.replace(/^#\/?/, '').split('?')[0].split('/');
+  return parts[1] ? decodeURIComponent(parts[1]) : null;
 }
 
-export function navigate(id: RouteId) {
-  window.location.hash = hrefFor(id);
+export function hrefFor(id: RouteId, param?: string) {
+  return param ? `#/${id}/${encodeURIComponent(param)}` : `#/${id}`;
+}
+
+export function useRouteParam(): string | null {
+  const [param, setParam] = useState<string | null>(() => parseParam(window.location.hash));
+  useEffect(() => {
+    const onChange = () => setParam(parseParam(window.location.hash));
+    window.addEventListener('hashchange', onChange);
+    return () => window.removeEventListener('hashchange', onChange);
+  }, []);
+  return param;
+}
+
+export function navigate(id: RouteId, param?: string) {
+  window.location.hash = hrefFor(id, param);
 }
 
 export function useRoute(): RouteId {

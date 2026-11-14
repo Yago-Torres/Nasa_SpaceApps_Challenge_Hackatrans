@@ -13,6 +13,7 @@
 | Reproducible development toolchain | IMPLEMENTED & TESTED | tracked Python/npm locks, `.github/workflows/ci.yml`, `scripts/check_context.py`, CI run `43593848025` | keep locks and runtime pins synchronized when dependencies change |
 | Shared API 1.0 data contracts | IN PROGRESS — LOCALLY VERIFIED | `backend/agroblackbox/schemas.py`, `backend/tests/test_contracts.py`, ADR-0002 | B/C semantic review, generated frontend types and route-by-route adoption remain |
 | User accounts / permissions | NOT BUILT | — | auth flow, privacy, role tests |
+| Incident wizard + location privacy UI (ABB-21) | IN PROGRESS — UI TESTED, DEV STORAGE ONLY | `frontend/src/cases`, `frontend/src/features/cases`, 12 Vitest tests (privacy redaction, validation, create → list → edit flow) | real `/api/v1/cases` + auth (ABB-05/06), server-side guest redaction, basemap after tile-provider decision |
 | Persistent case storage | NOT BUILT | — | SQL models, migrations, repository layer |
 | GPM / HLS | NOT BUILT | — | source adapter(s), QA, geospatial comparability |
 | Evidence graph & reviewed claims | NOT BUILT | — | schema, reviewer signoff, graph UI |
