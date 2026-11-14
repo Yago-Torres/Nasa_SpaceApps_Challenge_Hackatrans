@@ -1,7 +1,8 @@
 import type {
-  CaseCreate, CaseList, CaseUpdate, CaseView, ClimateResponse, FieldPatch, HypothesisCreate, HypothesisList,
+  CaseCreate, CaseList, CaseUpdate, CaseView, ClimateResponse, CropCatalog, FieldPatch, HypothesisCreate, HypothesisList,
   HypothesisStatusChange, HypothesisTemplateCatalog, HypothesisTemplateRequest, HypothesisView, LoginRequest, Paper,
-  RegisterRequest, ReportRequest, ReportResponse, Rotation, SessionOut, Timeline, UserOut,
+  RegisterRequest, ReportRequest, ReportResponse, Rotation, RotationCompareRequest, RotationComparison,
+  ScenarioAnalysis, ScenarioAnalysisRequest, SensitivityAnalysis, SensitivityRequest, SessionOut, Timeline, UserOut,
 } from './types';
 import { clearSession, getSession } from './session';
 
@@ -148,5 +149,24 @@ export const casesApi = {
   },
   evaluateHypothesis(id: string, hypothesisId: string, body: HypothesisStatusChange) {
     return request<HypothesisView>(`${casePath(id)}/hypotheses/${encodeURIComponent(hypothesisId)}/status`, { method: 'POST', auth: true, json: body });
+  },
+};
+
+/**
+ * /api/v1/rotations (ABB-17/ABB-18, ABB-24 comparator). Stateless: every call sends the
+ * whole profile; nothing is persisted server-side. No auth (same as /api/v1/crop-catalog).
+ */
+export const rotationsApi = {
+  cropCatalog(signal?: AbortSignal) {
+    return request<CropCatalog>('/api/v1/crop-catalog', { signal });
+  },
+  compare(body: RotationCompareRequest, signal?: AbortSignal) {
+    return request<RotationComparison>('/api/v1/rotations/compare', { method: 'POST', json: body, signal });
+  },
+  scenarios(body: ScenarioAnalysisRequest, signal?: AbortSignal) {
+    return request<ScenarioAnalysis>('/api/v1/rotations/scenarios', { method: 'POST', json: body, signal });
+  },
+  sensitivity(body: SensitivityRequest, signal?: AbortSignal) {
+    return request<SensitivityAnalysis>('/api/v1/rotations/sensitivity', { method: 'POST', json: body, signal });
   },
 };
