@@ -7,3 +7,5 @@
 `CONTRADICTIONS_APPLICABILITY.md` defines candidate disagreements between claims (human-confirmed) and per-dimension transferability notes without any applicability score (ABB-15).
 
 `UNCERTAINTY_HUNTER.md` defines the gap inventory, local questions with what they could change (never a value-of-information estimate), the link-count ordering with an explicit "no basis to prioritise" result, and reviewable local answers (ABB-19).
+
+`EVIDENCE_GRAPH.md` defines the case evidence graph, human-authored conclusions, edge rules and the trace back to original evidence (ABB-16).

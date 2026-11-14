@@ -90,3 +90,4 @@ Question resolution: `OPEN` → `ANSWERED` → `REVIEWED`, or `DISMISSED` (with 
 - Answers are not fed into the profile, applicability or rotation analyses automatically, because profiles are not stored yet (ABB-03/06) and because a person should decide how a local answer enters an analysis.
 - Template wording is matched exactly; an edited template question becomes a hypothesis-written question.
 - Country and Köppen–Geiger class are not derived from the field location; they come from the request or remain gaps.
+- The ABB-16 evidence graph does not yet have a node type for local answers: a hypothesis link to an answer is listed there as an orphan reference (follow-up). Graph `review_blockers` and dead ends are not used as gap sources yet.
