@@ -44,12 +44,20 @@ Require `DATABASE_URL` (PostgreSQL, migrated to `b7e2d4a91c03`); otherwise 503 `
 - `POST|GET /api/v1/cases`, `GET|PATCH|DELETE /api/v1/cases/{case_id}`, `POST /api/v1/cases/{case_id}/status`, `POST /api/v1/cases/{case_id}/archive`, `GET /api/v1/cases/{case_id}/history`, `POST /api/v1/cases/{case_id}/fields`, `PATCH|DELETE /api/v1/cases/{case_id}/fields/{field_id}`, `GET|POST /api/v1/cases/{case_id}/permissions`, `DELETE /api/v1/cases/{case_id}/permissions/{user_id}`.
 - Responses `CaseView` / `CaseFieldView` extend the shared `Case` / `Field` additively (`version`, `status` DRAFT|INVESTIGATING|REVIEWED|PUBLISHED, `archived_at`, `owner`, `my_role`; `location_precision`, `rounding_deg`, `precise_location_consent`). Coordinates are redacted server-side for REVIEWER/VIEWER: APPROXIMATE → grid-cell centre of `rounding_deg`; REGION_ONLY/WITHHELD → null; exact only with owner consent. Every content change requires the current `version` and appends author, time and before/after values to the history. `PUBLISHED` does not make a case public; `PUBLIC_ROUNDED` is not served.
 
+## Papers and evidence claims (IMPLEMENTED — ABB-14)
+
+Same auth, 503 and error rules as the cases API. See `docs/science/EVIDENCE_CLAIMS.md`.
+
+- `POST /api/v1/evidence/papers` `{doi | openalex_id}` → `PaperView` (shared `Paper` + `source`, `caveat`); 201 created / 200 existing; 404 unknown work, 502 sources unavailable (nothing stored); metadata is always fetched upstream, never taken from the client. `GET /api/v1/evidence/papers/{paper_id}`.
+- `GET|POST /api/v1/cases/{case_id}/claims`, `GET|PATCH|DELETE /api/v1/cases/{case_id}/claims/{claim_id}`, `POST …/{claim_id}/review`, `GET …/{claim_id}/history`, `POST /api/v1/cases/{case_id}/claims/pilot-import`.
+- `ClaimView` extends the shared `EvidenceClaim` additively (`case_id`, `version`, `is_reviewed`, `reviewer`, `created_by`, `created_at`, `updated_at`, paper summary, `study_design`, `context`, `reported_outcome` as text, `source_locator`, `quoted_fragment`, `evidence_basis`, `access_basis`, `content_license`, `origin`, `origin_ref`, `warnings`, `can_edit`, `can_review`). `source_kind` is `LITERATURE_REVIEWED` only for ACCEPTED claims; `reviewed_by`/`reviewed_at` are the latest decision. Any content edit resets to PENDING. Decisions require a note and `source_consulted`; ACCEPTED requires a FULL_TEXT check with legitimate access and licence, resolved DOI identity, study design and outcome; contributors cannot review their own claims (403).
+
 ## Proposed release 1.0 routes (NOT IMPLEMENTED)
 
 Formalize versioned `/api/v1` resources through their owning roadmap Issues (`/api/v1/cases` is implemented, see above):
 - `/api/v1/cases/{case_id}/observations` — evidence source manifest, jobs, quality flags.
 - `/api/v1/cases/{case_id}/timeline` — observed, local and hypothetical event layers.
-- `/api/v1/evidence/search` and `/api/v1/evidence/findings` — DOI discovery and human-verified findings.
+- `/api/v1/evidence/search` — DOI discovery (today `GET /api/literature`); `/api/v1/evidence/findings` is superseded by the ABB-14 claims routes above.
 - `/api/v1/cases/{case_id}/hypotheses` — supporting, contradictory and missing evidence.
 - `/api/v1/cases/{case_id}/rotations/compare` — three+ feasible options with explicit scenarios (the stateless `/api/v1/rotations/compare` exists; the case-bound route waits for persisted profiles, ABB-06).
 - `/api/v1/cases/{case_id}/reviews` — reviewer comments and decisions with access control.
