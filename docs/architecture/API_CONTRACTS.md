@@ -91,6 +91,13 @@ Same authentication and 401/403/404/409/422/503 rules as the cases API; requires
 - `GET|POST …/evidence-graph/conclusions`, `GET|PATCH|DELETE …/conclusions/{id}`, `POST …/conclusions/{id}/review` (OWNER/EDITOR/REVIEWER non-contributor; ACCEPTED needs a complete trace, reviewed literature and evaluated hypotheses).
 - `GET|POST …/evidence-graph/edges`, `PATCH|DELETE …/edges/{id}`, `POST …/edges/{id}/review`. Endpoints must exist in the same case (422); DERIVED_FROM/CITES and SUPPORTS/CONTRADICTS into hypotheses cannot be added by hand. Deleting a hypothesis, claim or field that is still referenced returns 409.
 
+## Account data export and deletion (IMPLEMENTED — ABB-28)
+
+Same authentication and 401/503 rules as the cases API. See ADR-0005 and `docs/operations/LEGAL_AND_DATA_POLICY.md`.
+
+- `GET /api/v1/account/export` → `AccountExport` {`profile` (`UserOut`), `cases` (`CaseView[]`, same role-aware coordinate redaction as `GET /api/v1/cases`), `sessions` (`SessionSummary[]`: `id`, `created_at`, `expires_at`, `revoked`, `current`; never a token or its digest), `exported_at`}.
+- `POST /api/v1/account/delete` `{password}` → `AccountDeletionReceipt` {`cases_deleted`, `memberships_revoked`, `sessions_revoked`, `anonymized: true`, `deleted_at`}. 401 wrong password; 429 after 5 wrong confirmations (`Retry-After`, shares the account's existing login-lockout counters). Irreversible: erases every case the account owns (cascading fields/permissions/history/evidence exactly like `DELETE /api/v1/cases/{id}`), revokes membership on cases owned by others, revokes every session, and anonymises (does not row-delete) the account so `ON DELETE RESTRICT` references from other members' case evidence (`evidence_claims.created_by`, review/author columns on claims, disagreement reviews, uncertainty answers, graph conclusions/edges) stay valid.
+
 ## Proposed release 1.0 routes (NOT IMPLEMENTED)
 
 Formalize versioned `/api/v1` resources through their owning roadmap Issues (cases, observations, timeline, hypotheses and claims are implemented, see above):
