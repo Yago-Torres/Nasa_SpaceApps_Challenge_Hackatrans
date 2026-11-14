@@ -32,6 +32,7 @@ from typing import Any
 import httpx
 
 from .. import __version__
+from ..resilience.tasks import TaskRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,12 @@ RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 REQUEST_TIMEOUT = httpx.Timeout(55.0, connect=10.0)
 
 _DATE_KEY = re.compile(r'^\d{8}$')
+
+# ABB-27: deduplicates concurrent identical requests (same lat/lon/years) so that N
+# callers racing for a cache-cold request trigger exactly one upstream download; the
+# download itself keeps its own bounded retry/backoff (MAX_ATTEMPTS/BACKOFF_SECONDS
+# above), so this registry runs each logical request at most once (max_attempts=1).
+_REGISTRY: TaskRegistry[PowerRecord] = TaskRegistry(name='NASA POWER', max_attempts=1)
 
 
 class PowerSourceError(Exception):
@@ -302,9 +309,36 @@ async def _download(client: httpx.AsyncClient, params: dict[str, Any]) -> tuple[
     raise AssertionError('unreachable')  # pragma: no cover
 
 
+async def _download_and_cache(key: str, params: dict[str, Any],
+                              client: httpx.AsyncClient | None) -> PowerRecord:
+    """Perform the actual upstream fetch for one cache key. Only the caller that wins
+    the ``_REGISTRY`` race for ``key`` ever runs this; concurrent callers for the same
+    key share its result instead (ABB-27 deduplication)."""
+    own_client = client is None
+    client = client or _make_client()
+    try:
+        raw, attempts = await _download(client, params)
+    finally:
+        if own_client:
+            await client.aclose()
+    retrieved_at = _now()
+    parsed = parse_payload(raw)  # validated before caching: invalid payloads are never stored
+    sha = hashlib.sha256(raw).hexdigest()
+    _write_cache(key, raw, sha, retrieved_at)
+    return PowerRecord(parsed.parameter, sha256=sha, request_params=params, retrieved_at=retrieved_at,
+                       served_from_cache=False, cache_age_seconds=None, upstream_attempts=attempts,
+                       header=parsed.header, variables=parsed.variables, messages=parsed.messages)
+
+
 async def fetch_power(latitude: float, longitude: float, event_year: int, ref_start: int, ref_end: int,
                       *, client: httpx.AsyncClient | None = None) -> PowerRecord:
-    """Return validated POWER daily data plus provenance. Raises PowerSourceError."""
+    """Return validated POWER daily data plus provenance. Raises PowerSourceError.
+
+    Concurrent calls with identical parameters (same cache key) are deduplicated: only
+    one of them actually downloads from NASA POWER (``_REGISTRY``), the rest await that
+    same result. If a ``client`` is supplied by a caller that loses the dedup race, it
+    is simply never used for this call (no second request is made, nothing is leaked).
+    """
     params = build_params(latitude, longitude, event_year, ref_start, ref_end)
     key = cache_key(params)
 
@@ -321,17 +355,4 @@ async def fetch_power(latitude: float, longitude: float, event_year: int, ref_st
                                cache_age_seconds=round(age, 3), upstream_attempts=0, header=parsed.header,
                                variables=parsed.variables, messages=parsed.messages)
 
-    own_client = client is None
-    client = client or _make_client()
-    try:
-        raw, attempts = await _download(client, params)
-    finally:
-        if own_client:
-            await client.aclose()
-    retrieved_at = _now()
-    parsed = parse_payload(raw)  # validated before caching: invalid payloads are never stored
-    sha = hashlib.sha256(raw).hexdigest()
-    _write_cache(key, raw, sha, retrieved_at)
-    return PowerRecord(parsed.parameter, sha256=sha, request_params=params, retrieved_at=retrieved_at,
-                       served_from_cache=False, cache_age_seconds=None, upstream_attempts=attempts,
-                       header=parsed.header, variables=parsed.variables, messages=parsed.messages)
+    return await _REGISTRY.run(key, lambda: _download_and_cache(key, params, client))

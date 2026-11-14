@@ -5,6 +5,7 @@ Fixture payloads are SYNTHETIC (shapes mirror OpenAlex/Crossref replies); the DO
 """
 import asyncio
 import json
+from datetime import timedelta, timezone
 
 import httpx
 import pytest
@@ -14,6 +15,21 @@ from agroblackbox.services import literature as lit
 
 REAL_DOI = '10.1038/s41467-022-32464-0'
 TITLE = 'Global systematic review with meta-analysis reveals yield advantage of legume-based rotations and its drivers'
+
+
+@pytest.fixture(autouse=True)
+def literature_env(monkeypatch):
+    """An instant, recorded ``_sleep`` so the ABB-27 bounded-retry backoff does not
+    slow the suite down; tests that care about the exact backoff schedule can assert
+    on this fixture's return value (see test_power.py's analogous ``env`` fixture).
+    On-disk cache isolation is handled project-wide by conftest.py."""
+    sleeps: list[float] = []
+
+    async def fake_sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    monkeypatch.setattr(lit, '_sleep', fake_sleep)
+    return sleeps
 
 
 def oa_work(wid, title=TITLE, doi='https://doi.org/' + REAL_DOI, year=2022, license_='cc-by'):
@@ -194,6 +210,140 @@ def test_empty_search_returns_no_content():
 def test_openalex_failure_raises_without_fabricated_results(reply):
     with pytest.raises(lit.LiteratureSourceError):
         run_search(Upstream(lambda request: reply))
+
+
+# ---------------------------------------------------------------- ABB-27: OpenAlex retry/backoff
+
+def test_openalex_transient_failure_then_succeeds_after_retry(literature_env):
+    """A single 503 blip must not fail the whole search: bounded retry recovers."""
+    attempts = []
+    success = httpx.Response(200, json=openalex_payload(oa_work('W1')))
+
+    def flaky(request):
+        attempts.append(1)
+        return httpx.Response(503, text='down') if len(attempts) < 2 else success
+
+    upstream = Upstream(flaky, {REAL_DOI: httpx.Response(200, json=crossref_message())})
+    result = run_search(upstream)
+    assert len(attempts) == 2
+    assert literature_env == [1.0]  # one backoff wait before the successful second attempt
+    assert result.results[0].doi_status == 'VERIFIED_CROSSREF'
+
+
+def test_openalex_retries_are_bounded_then_raises_clean_error(literature_env):
+    attempts = []
+
+    def always_503(request):
+        attempts.append(1)
+        return httpx.Response(503)
+
+    with pytest.raises(lit.LiteratureSourceError) as err:
+        run_search(Upstream(always_503))
+    assert len(attempts) == lit.MAX_ATTEMPTS  # never more than the bounded attempts
+    assert literature_env == [1.0, 2.0]
+    assert 'OpenAlex source unavailable' in err.value.public_message
+
+
+def test_openalex_429_honours_short_retry_after(literature_env):
+    attempts = []
+
+    def flaky(request):
+        attempts.append(1)
+        if len(attempts) == 1:
+            return httpx.Response(429, headers={'Retry-After': '3'})
+        return httpx.Response(200, json=openalex_payload(oa_work('W1')))
+
+    upstream = Upstream(flaky, {REAL_DOI: httpx.Response(200, json=crossref_message())})
+    run_search(upstream)
+    assert literature_env == [3.0]  # the server's own Retry-After, not our default backoff
+
+
+def test_openalex_429_with_long_retry_after_is_not_retried(literature_env):
+    upstream = Upstream(lambda request: httpx.Response(429, headers={'Retry-After': '120'}))
+    with pytest.raises(lit.LiteratureSourceError):
+        run_search(upstream)
+    assert len(upstream.requests) == 1  # respect the server: never retry earlier than it asked
+    assert literature_env == []
+
+
+def test_recovers_once_upstream_comes_back(monkeypatch):
+    """ABB-27 acceptance: a down OpenAlex surfaces a clean, recoverable error (never
+    fabricated results), and a later call succeeds once the upstream is back."""
+    state = {'down': True}
+
+    def handler(request):
+        return httpx.Response(503) if state['down'] else httpx.Response(200, json=openalex_payload(oa_work('W1')))
+
+    upstream = Upstream(handler, {REAL_DOI: httpx.Response(200, json=crossref_message())})
+    _patch_client(monkeypatch, upstream)
+    with pytest.raises(lit.LiteratureSourceError):
+        asyncio.run(lit.search_literature('legume rotation yield'))
+
+    state['down'] = False
+    result = asyncio.run(lit.search_literature('legume rotation yield'))
+    assert result.results[0].doi_status == 'VERIFIED_CROSSREF'
+
+
+# ---------------------------------------------------------------- ABB-27: caching and dedup
+
+def test_repeated_identical_search_is_served_from_cache_without_new_downloads(monkeypatch):
+    upstream = Upstream(openalex_payload(oa_work('W1')), {REAL_DOI: httpx.Response(200, json=crossref_message())})
+    _patch_client(monkeypatch, upstream)
+    first = asyncio.run(lit.search_literature('legume rotation yield'))
+    second = asyncio.run(lit.search_literature('  Legume   Rotation YIELD '))  # same query, normalized
+    assert len(upstream.hosts('api.openalex.org')) == 1
+    assert len(upstream.hosts('api.crossref.org')) == 1
+    assert second.retrieved_at == first.retrieved_at  # cache reports the true original retrieval time
+    assert second.results[0].doi_status == 'VERIFIED_CROSSREF'
+
+
+def test_search_cache_expires_after_ttl_and_refetches(monkeypatch):
+    now = {'value': lit._now()}
+    monkeypatch.setattr(lit, '_now', lambda: now['value'])
+    upstream = Upstream(openalex_payload(oa_work('W1')), {REAL_DOI: httpx.Response(200, json=crossref_message())})
+    _patch_client(monkeypatch, upstream)
+    asyncio.run(lit.search_literature('legume rotation yield'))
+    now['value'] = now['value'] + timedelta(seconds=lit.SEARCH_CACHE_TTL_SECONDS)
+    asyncio.run(lit.search_literature('legume rotation yield'))
+    assert len(upstream.hosts('api.openalex.org')) == 2
+
+
+def test_a_different_query_is_not_served_from_another_querys_cache(monkeypatch):
+    upstream = Upstream(openalex_payload(oa_work('W1')), {REAL_DOI: httpx.Response(200, json=crossref_message())})
+    _patch_client(monkeypatch, upstream)
+    asyncio.run(lit.search_literature('legume rotation yield'))
+    asyncio.run(lit.search_literature('cover crop nitrogen'))
+    assert len(upstream.hosts('api.openalex.org')) == 2
+
+
+def test_concurrent_identical_search_triggers_one_openalex_call():
+    """ABB-27 acceptance: repeated (here, simultaneous) identical requests never
+    trigger redundant upstream downloads, verified by a call-count assertion on the
+    mocked transport."""
+    calls = []
+    release = asyncio.Event()
+
+    async def slow_openalex(request):
+        calls.append(request)
+        await release.wait()
+        return httpx.Response(200, json=openalex_payload(oa_work('W1')))
+
+    upstream = Upstream(slow_openalex, {REAL_DOI: httpx.Response(200, json=crossref_message())})
+
+    async def call():
+        async with httpx.AsyncClient(transport=httpx.MockTransport(upstream)) as client:
+            return await lit.search_literature('legume rotation yield', client=client)
+
+    async def go():
+        t1 = asyncio.ensure_future(call())
+        t2 = asyncio.ensure_future(call())
+        await asyncio.sleep(0)  # let both callers reach the registry and join one task
+        release.set()
+        return await asyncio.gather(t1, t2)
+
+    r1, r2 = asyncio.run(go())
+    assert len(calls) == 1
+    assert r1.results[0].doi_status == r2.results[0].doi_status == 'VERIFIED_CROSSREF'
 
 
 def test_openalex_network_error_raises():
