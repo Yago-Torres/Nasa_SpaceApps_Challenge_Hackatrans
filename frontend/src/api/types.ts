@@ -994,3 +994,185 @@ export type HypothesisTemplateRequest = { codes?: string[] | null };
 
 /** POST /api/v1/cases/{id}/hypotheses/{hid}/status. A note is required for every status but OPEN. */
 export type HypothesisStatusChange = { version: number; status: EvaluationStatus; note?: string | null };
+
+/* ── Collaboration, /api/v1/cases/{id}/{invitations,comments,activity,share-links}, /api/v1/invitations,
+ * /api/v1/shared/{token} (ABB-25) ──────────────────────────────────────────────────────────────
+ * Transcribed from backend/agroblackbox/api/collaboration_dto.py (docs/architecture/COLLABORATION.md).
+ * Every free-text field here (comment bodies, invitation notes, share labels) is plain text written by
+ * people: render it as a text node, never as HTML or Markdown. */
+export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'REVOKED' | 'EXPIRED';
+/** POST /cases/{id}/invitations (OWNER). expires_in_days 1–30, default 14; note ≤ 500 characters. */
+export type InvitationCreate = { email: string; role: GrantableRole; note?: string | null; expires_in_days?: number };
+export type InvitationView = {
+  id: string;
+  case_id: string;
+  email: string;
+  role: GrantableRole;
+  note: string | null;
+  status: InvitationStatus;
+  invited_by: UserSummary | null;
+  created_at: string;
+  expires_at: string;
+  responded_at: string | null;
+  revoked_at: string | null;
+};
+export type InvitationList = { items: InvitationView[] };
+/** GET /api/v1/invitations: pending invitations addressed to the signed-in account's e-mail. */
+export type ReceivedInvitationView = {
+  id: string;
+  case: { id: string; title: string };
+  role: GrantableRole;
+  note: string | null;
+  invited_by: UserSummary | null;
+  created_at: string;
+  expires_at: string;
+};
+export type ReceivedInvitationList = { items: ReceivedInvitationView[] };
+export type InvitationDecision = { invitation_id: string; case_id: string; status: 'ACCEPTED' | 'DECLINED'; role: Role | null };
+
+export type CommentTargetKind =
+  | 'CASE' | 'FIELD' | 'OBSERVATION' | 'ANOMALY' | 'HYPOTHESIS' | 'CLAIM' | 'CONCLUSION' | 'GRAPH_EDGE' | 'TIMELINE_EVENT';
+/** A reply (parent_id) inherits its parent's target: send neither target_kind nor target_id with it. */
+export type CommentCreate =
+  | { body: string; target_kind?: CommentTargetKind; target_id?: string | null }
+  | { body: string; parent_id: string };
+export type CommentEdit = { version: number; body: string };
+export type CommentView = {
+  id: string;
+  case_id: string;
+  target: { kind: CommentTargetKind; id: string | null };
+  parent_id: string | null;
+  author: UserSummary | null;
+  /** Plain text; null once deleted. */
+  body: string | null;
+  body_format: 'text/plain';
+  created_at: string;
+  edited_at: string | null;
+  version: number;
+  revision_count: number;
+  reply_count: number;
+  deleted: boolean;
+  deleted_at: string | null;
+  deleted_by: UserSummary | null;
+  can_edit: boolean;
+  can_delete: boolean;
+};
+export type CommentList = { items: CommentView[]; total: number; limit: number; offset: number };
+export type CommentRevisionView = { revision: number; body: string; body_format: 'text/plain'; replaced_at: string; edited_by: UserSummary | null };
+
+export type ActivitySource = 'CASE_HISTORY' | 'CLAIM_EVENT' | 'DISAGREEMENT_REVIEW' | 'COMMENT';
+export type ActivityCategory = 'CASE' | 'WORKFLOW' | 'PERMISSION' | 'INVITATION' | 'SHARING' | 'EVIDENCE' | 'REVIEW' | 'COMMENT';
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+export type ActivityEntry = {
+  id: string;
+  source: ActivitySource;
+  kind: string;
+  category: ActivityCategory;
+  actor: UserSummary | null;
+  created_at: string;
+  target: { kind: string; id: string | null } | null;
+  note: string | null;
+  /** What the source recorded with the action; null when it recorded none. */
+  evidence: Record<string, JsonValue> | null;
+  /** Before/after values from the case history; coordinates "REDACTED" for reviewers/viewers. */
+  changes: Record<string, JsonValue> | null;
+};
+export type ActivityPage = {
+  items: ActivityEntry[];
+  total: number;
+  limit: number;
+  offset: number;
+  order: 'asc' | 'desc';
+  sources: ActivitySource[];
+};
+
+export type ShareLocationDetail = 'NONE' | 'REGION' | 'APPROXIMATE';
+/** Every key is required: consent covers exactly what is listed, nothing is implied. */
+export type ShareSections = {
+  incident_notes: boolean;
+  field_labels: boolean;
+  location_detail: ShareLocationDetail;
+  hypotheses: boolean;
+  evidence_claims: boolean;
+  conclusions: boolean;
+  member_names: boolean;
+  comments: boolean;
+};
+export type ShareLinkCreate = { consent: true; sections: ShareSections; label?: string | null; expires_in_days?: number };
+export type ShareStatus = 'ACTIVE' | 'EXPIRED' | 'REVOKED';
+export type ShareLinkView = {
+  id: string;
+  case_id: string;
+  label: string | null;
+  sections: ShareSections;
+  consent_statement: string;
+  status: ShareStatus;
+  created_by: UserSummary | null;
+  created_at: string;
+  expires_at: string;
+  revoked_at: string | null;
+};
+/** Only the create response carries the token; the server keeps its SHA-256 digest only. */
+export type ShareLinkCreated = ShareLinkView & { token: string; path: string };
+export type ShareLinkList = { items: ShareLinkView[] };
+
+export type SharedField = {
+  label: string;
+  region_label: string | null;
+  location_precision: 'APPROXIMATE' | 'REGION_ONLY' | 'NONE';
+  latitude: number | null;
+  longitude: number | null;
+  rounding_deg: number | null;
+};
+export type SharedHypothesis = {
+  title: string | null;
+  statement: string;
+  status: string;
+  evaluation_note: string | null;
+  supporting_evidence_count: number;
+  contradicting_evidence_count: number;
+  missing_evidence: string[];
+  limitations: string[];
+};
+export type SharedClaim = {
+  claim_text: string;
+  review_status: string;
+  source_kind: string;
+  study_design: string;
+  paper: { title: string; year: number | null; doi: string | null };
+  limitations: string[];
+};
+export type SharedConclusion = { title: string | null; statement: string; review_status: string; limitations: string[] };
+export type SharedComment = {
+  ref: string;
+  reply_to: string | null;
+  author: string;
+  target_kind: CommentTargetKind;
+  body: string;
+  body_format: 'text/plain';
+  created_at: string;
+  edited: boolean;
+};
+/** GET /api/v1/shared/{token}: no account; never exact coordinates, e-mails, user ids or the case id. */
+export type SharedCaseView = {
+  kind: 'CROPSTORY_SHARED_CASE';
+  generated_at: string;
+  link_expires_at: string;
+  sections: ShareSections;
+  case: {
+    title: string;
+    status: string;
+    incident_start: string;
+    incident_end: string | null;
+    crop_history: string[];
+    incident_notes: string | null;
+    case_version: number;
+    updated_at: string;
+  };
+  fields: SharedField[];
+  hypotheses: SharedHypothesis[] | null;
+  evidence_claims: SharedClaim[] | null;
+  conclusions: SharedConclusion[] | null;
+  comments: SharedComment[] | null;
+  limitations: string[];
+};

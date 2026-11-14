@@ -3,7 +3,9 @@ import type {
   HypothesisStatusChange, HypothesisTemplateCatalog, HypothesisTemplateRequest, HypothesisView, LoginRequest, Paper,
   RegisterRequest, ReportRequest, ReportResponse, Rotation, RotationCompareRequest, RotationComparison,
   ScenarioAnalysis, ScenarioAnalysisRequest, SensitivityAnalysis, SensitivityRequest, SessionOut, Timeline, UserOut,
-  PermissionGrant, PermissionView,
+  PermissionGrant, PermissionView, ActivityPage, CommentCreate, CommentEdit, CommentList, CommentRevisionView, CommentView,
+  InvitationCreate, InvitationDecision, InvitationList, InvitationView, ReceivedInvitationList, SharedCaseView,
+  ShareLinkCreate, ShareLinkCreated, ShareLinkList,
 } from './types';
 import { clearSession, getSession } from './session';
 
@@ -178,5 +180,65 @@ export const rotationsApi = {
   },
   sensitivity(body: SensitivityRequest, signal?: AbortSignal) {
     return request<SensitivityAnalysis>('/api/v1/rotations/sensitivity', { method: 'POST', json: body, signal });
+  },
+};
+
+/**
+ * Collaboration (ABB-25, docs/architecture/COLLABORATION.md). Invitations, comments, activity and
+ * share links are case-scoped and authenticated; `shared` is the public, account-free read of a
+ * consented share link. Comment bodies, notes and labels are plain text: render them as text.
+ */
+export const collabApi = {
+  invitations(caseId: string, signal?: AbortSignal) {
+    return request<InvitationList>(`${casePath(caseId)}/invitations`, { auth: true, signal });
+  },
+  invite(caseId: string, body: InvitationCreate) {
+    return request<InvitationView>(`${casePath(caseId)}/invitations`, { method: 'POST', auth: true, json: body });
+  },
+  revokeInvitation(caseId: string, invitationId: string) {
+    return request<void>(`${casePath(caseId)}/invitations/${encodeURIComponent(invitationId)}`, { method: 'DELETE', auth: true });
+  },
+  /** Pending invitations addressed to the signed-in account's e-mail. */
+  received(signal?: AbortSignal) {
+    return request<ReceivedInvitationList>('/api/v1/invitations', { auth: true, signal });
+  },
+  accept(invitationId: string) {
+    return request<InvitationDecision>(`/api/v1/invitations/${encodeURIComponent(invitationId)}/accept`, { method: 'POST', auth: true });
+  },
+  decline(invitationId: string) {
+    return request<InvitationDecision>(`/api/v1/invitations/${encodeURIComponent(invitationId)}/decline`, { method: 'POST', auth: true });
+  },
+  comments(caseId: string, signal?: AbortSignal, offset = 0) {
+    const params = new URLSearchParams({ limit: '200', offset: String(offset) });
+    return request<CommentList>(`${casePath(caseId)}/comments?${params}`, { auth: true, signal });
+  },
+  comment(caseId: string, body: CommentCreate) {
+    return request<CommentView>(`${casePath(caseId)}/comments`, { method: 'POST', auth: true, json: body });
+  },
+  editComment(caseId: string, commentId: string, body: CommentEdit) {
+    return request<CommentView>(`${casePath(caseId)}/comments/${encodeURIComponent(commentId)}`, { method: 'PATCH', auth: true, json: body });
+  },
+  deleteComment(caseId: string, commentId: string) {
+    return request<void>(`${casePath(caseId)}/comments/${encodeURIComponent(commentId)}`, { method: 'DELETE', auth: true });
+  },
+  revisions(caseId: string, commentId: string, signal?: AbortSignal) {
+    return request<CommentRevisionView[]>(`${casePath(caseId)}/comments/${encodeURIComponent(commentId)}/revisions`, { auth: true, signal });
+  },
+  activity(caseId: string, offset = 0, signal?: AbortSignal) {
+    const params = new URLSearchParams({ limit: '25', offset: String(offset), order: 'desc' });
+    return request<ActivityPage>(`${casePath(caseId)}/activity?${params}`, { auth: true, signal });
+  },
+  shareLinks(caseId: string, signal?: AbortSignal) {
+    return request<ShareLinkList>(`${casePath(caseId)}/share-links`, { auth: true, signal });
+  },
+  createShareLink(caseId: string, body: ShareLinkCreate) {
+    return request<ShareLinkCreated>(`${casePath(caseId)}/share-links`, { method: 'POST', auth: true, json: body });
+  },
+  revokeShareLink(caseId: string, linkId: string) {
+    return request<void>(`${casePath(caseId)}/share-links/${encodeURIComponent(linkId)}`, { method: 'DELETE', auth: true });
+  },
+  /** Public, no account: the token is the only credential, so it is never logged or stored. */
+  shared(token: string, signal?: AbortSignal) {
+    return request<SharedCaseView>(`/api/v1/shared/${encodeURIComponent(token)}`, { signal, referrerPolicy: 'no-referrer', cache: 'no-store' });
   },
 };

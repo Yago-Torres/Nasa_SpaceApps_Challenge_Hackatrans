@@ -16,7 +16,9 @@ Owner: C (frontend). Status of each item is explicit: **IMPLEMENTED** means it e
 | Report (`#/report`) | `POST /api/report` | Preliminary |
 | Cases (`#/cases`, `#/cases/new`, `#/cases/<id>`) | `/api/v1/auth/*`, `/api/v1/cases*` (see §6) | Farmer reported (wizard answers); status/role as returned |
 | Case timeline (`#/cases/<id>/timeline`) | `GET /api/v1/cases/{id}/timeline`, `GET/POST /api/v1/cases/{id}/hypotheses*`, `GET /api/v1/hypothesis-templates` (see §7) | Observed, Farmer reported, Hypothesis and Missing data |
-| Collaboration | none yet | "Not built yet" state, no sample data |
+| Collaboration (`#/collaboration`) | `GET /api/v1/invitations`, `POST …/accept|decline` | Invitations for the signed-in e-mail (ABB-25) |
+| Case tabs `#/cases/<id>/collaboration` and `/discussion` | `…/permissions`, `…/invitations`, `…/share-links`, `…/comments`, `…/activity` | Members, invitations and consented share links (owner); text-only comments and the audit trail (every member) |
+| Shared view (`#/shared/<token>`, not in the nav) | `GET /api/v1/shared/{token}` | Account-free, read-only, only the sections the owner consented to |
 
 - The frontend computes no statistics. It only scales returned values for drawing (`features/chartScale.ts`).
 

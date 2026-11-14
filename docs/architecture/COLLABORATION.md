@@ -1,6 +1,6 @@
 # Collaboration: invitations, comments, activity and consented share links (ABB-25)
 
-Status: **API implemented and tested** (backend only; the web UI is a separate task). Migration `a7c2e9d4b158` (after `f4b81d2c6e93`). Authentication, roles, the 404/403 rules and location redaction come from ADR-0004 and are not changed here.
+Status: **API and web UI implemented and tested** (case tabs Collaborators and Discussion, the Collaboration page for received invitations and the public `#/shared/<token>` view). Migration `a7c2e9d4b158` (after `a19f3b7c2d64`). Authentication, roles, the 404/403 rules and location redaction come from ADR-0004 and are not changed here.
 
 ## Model
 
@@ -65,6 +65,12 @@ Decision: **VIEWER may comment.** The Issue requires that "un invitado puede com
 - The view is built on each request from the current case (later edits appear while the link is active). Always included: title, workflow status, incident dates, crop history, case version and last update. Never included: case id, exact coordinates, e-mail addresses, user ids, observations and source manifests (their request parameters hold the field location), invitations, member lists, deleted comments, history.
 - Location per field is the **more private** of the owner's choice and the field's tier: `APPROXIMATE` choice + `APPROXIMATE` tier → grid-cell centre of `rounding_deg` (same formula as ADR-0004); `EXACT` and `REGION_ONLY` tiers → region label only; `WITHHELD` or choice `NONE` → nothing. Consent given to members for the precise location (`precise_location_consent`) does **not** extend to share links.
 - Field labels become `Field 1`, `Field 2`… unless `field_labels` is true. Comment authors become `Member 1`, `Member 2`… (order of first appearance) unless `member_names` is true; comment references are positional (`C1`, `C2`…).
+
+## Web UI
+
+- `features/cases/CollaborationPanel.tsx` (tab **Collaborators**): members with revoke (two-step) and an optional direct grant; for the owner, the invitation form (warns that no e-mail is sent and addresses are not verified) with revoke, and the share-link form where nothing is pre-selected, a free-text warning is shown, consent is a required checkbox and the link is shown once (`#/shared/<token>`, so the token stays in the URL fragment).
+- `features/cases/DiscussionPanel.tsx` (tab **Discussion**): comments as ReviewSlips rendered as React text nodes (no `innerHTML`, no Markdown), one-level replies, author edits with the version read and the earlier versions on demand, tombstones, owner moderation; the paginated activity feed with translated actions (unknown actions show their code) and the recorded evidence/changes as text. Archived cases replace the composer with an explanation.
+- `features/Collaboration.tsx`: pending invitations for the signed-in e-mail with accept/decline; `features/SharedCase.tsx`: the public view, which says which sections were not shared.
 
 ## Limitations and open decisions
 
