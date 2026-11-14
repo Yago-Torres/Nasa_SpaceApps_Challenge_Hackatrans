@@ -1,11 +1,12 @@
-"""Authenticated, PostgreSQL-backed ``/api/v1`` routes (ABB-05 accounts, ABB-06 cases)."""
+"""Authenticated, PostgreSQL-backed ``/api/v1`` routes (ABB-05 accounts, ABB-06 cases,
+ABB-10 case observations, timeline and hypotheses, ABB-14 registered papers and evidence claims)."""
 from __future__ import annotations
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import InterfaceError, OperationalError
 
-from . import auth, cases
+from . import auth, cases, evidence, hypotheses, observations, timeline
 from .deps import STORAGE_UNAVAILABLE
 
 
@@ -17,5 +18,11 @@ async def _storage_unavailable(_: Request, __: Exception) -> JSONResponse:
 def include_api_v1(app: FastAPI) -> None:
     app.include_router(auth.router)
     app.include_router(cases.router)
+    app.include_router(observations.router)
+    app.include_router(timeline.router)
+    app.include_router(hypotheses.router)
+    app.include_router(hypotheses.catalog_router)
+    app.include_router(evidence.papers_router)
+    app.include_router(evidence.claims_router)
     app.add_exception_handler(OperationalError, _storage_unavailable)
     app.add_exception_handler(InterfaceError, _storage_unavailable)

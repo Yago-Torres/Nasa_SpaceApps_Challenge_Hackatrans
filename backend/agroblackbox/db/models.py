@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey, ForeignKeyConstraint,
-    Integer, String, Text, UniqueConstraint, Uuid, text,
+    Index, Integer, String, Text, UniqueConstraint, Uuid, text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -142,7 +142,32 @@ class SourceManifest(IdMixin, Base):
     spatial_resolution: Mapped[dict[str, Any]] = mapped_column(JSONB)
     temporal_resolution: Mapped[dict[str, Any]] = mapped_column(JSONB)
     limitations: Mapped[list[str]] = mapped_column(JSONB)
-    __table_args__ = (UniqueConstraint("id", "case_id", name="uq_manifest_case"),)
+    # ABB-10 case-bound ingestion. ``query_parameters`` may hold the field's precise
+    # coordinates and is only served to OWNER/EDITOR (see agroblackbox.api.observations).
+    field_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("fields.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    ingested_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=text("now()")
+    )
+    # SHA-256 of {provider, field, event year, reference window}; one active manifest per key.
+    ingestion_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # SHA-256 of the canonical returned values (no coordinates), used to detect re-ingestion
+    # of unchanged data even though the raw-byte checksum changes between retrievals.
+    content_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default=text("1"))
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    superseded_by_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
+    event_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    reference_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    reference_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    details: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
+    __table_args__ = (
+        UniqueConstraint("id", "case_id", name="uq_manifest_case"),
+        CheckConstraint("revision >= 1", name="ck_manifest_revision"),
+        Index("ix_source_manifests_case_ingestion_key", "case_id", "ingestion_key"),
+    )
 
 
 class Observation(IdMixin, Base):
@@ -158,12 +183,56 @@ class Observation(IdMixin, Base):
     temporal_resolution: Mapped[dict[str, Any]] = mapped_column(JSONB)
     quality_flags: Mapped[list[str]] = mapped_column(JSONB, default=list)
     limitations: Mapped[list[str]] = mapped_column(JSONB)
+    # ABB-10: aggregation period of the value and its daily coverage (status, day counts, reason).
+    period_start: Mapped[date | None] = mapped_column(Date, nullable=True)
+    period_end: Mapped[date | None] = mapped_column(Date, nullable=True)
+    coverage: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
     __table_args__ = (
         ForeignKeyConstraint(
             ["source_manifest_id", "case_id"],
             ["source_manifests.id", "source_manifests.case_id"],
             ondelete="RESTRICT",
             name="fk_observation_manifest_same_case",
+        ),
+        CheckConstraint(
+            "period_start IS NULL OR period_end IS NULL OR period_end >= period_start",
+            name="ck_observation_period",
+        ),
+        UniqueConstraint("id", "case_id", name="uq_observation_case"),
+    )
+
+
+class Anomaly(IdMixin, Base):
+    """Descriptive monthly anomaly of one observation against its reference years (ABB-08/10)."""
+    __tablename__ = "anomalies"
+    case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), index=True)
+    observation_id: Mapped[UUID] = mapped_column(Uuid, unique=True)
+    value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    units: Mapped[str] = mapped_column(String(40))
+    method: Mapped[str] = mapped_column(String(300))
+    reference_start: Mapped[date] = mapped_column(Date)
+    reference_end: Mapped[date] = mapped_column(Date)
+    reference_sample_count: Mapped[int] = mapped_column(Integer)
+    reference_status: Mapped[str] = mapped_column(String(16))
+    reference_value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reference_standard_deviation: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reference_minimum: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reference_maximum: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reference_years_excluded: Mapped[list[int]] = mapped_column(JSONB, default=list)
+    quality_flags: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    limitations: Mapped[list[str]] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["observation_id", "case_id"],
+            ["observations.id", "observations.case_id"],
+            ondelete="CASCADE",
+            name="fk_anomaly_observation_same_case",
+        ),
+        CheckConstraint("reference_end >= reference_start", name="ck_anomaly_reference_dates"),
+        CheckConstraint("reference_sample_count >= 0", name="ck_anomaly_sample_count"),
+        CheckConstraint(
+            "reference_status IN ('complete','reduced','insufficient')", name="ck_anomaly_reference_status"
         ),
     )
 
@@ -177,6 +246,29 @@ class Hypothesis(IdMixin, Base):
     contradicting_evidence_ids: Mapped[list[str]] = mapped_column(JSONB, default=list)
     missing_evidence: Mapped[list[str]] = mapped_column(JSONB, default=list)
     limitations: Mapped[list[str]] = mapped_column(JSONB)
+    # ABB-10: rival-hypothesis workflow. No numeric probability or causal score is stored.
+    title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    origin: Mapped[str] = mapped_column(String(16), default="USER", server_default=text("'USER'"))
+    template_code: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    verification_questions: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    evaluation_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evaluated_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    evaluated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default=text("1"))
+    created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=text("now()"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=text("now()"))
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('OPEN','SUPPORTED','CHALLENGED','REJECTED','COMPATIBLE','CONTRADICTED','NOT_EVALUABLE')",
+            name="ck_hypothesis_status",
+        ),
+        CheckConstraint("origin IN ('USER','TEMPLATE')", name="ck_hypothesis_origin"),
+        CheckConstraint("version >= 1", name="ck_hypothesis_version"),
+        UniqueConstraint("case_id", "template_code", name="uq_hypothesis_case_template"),
+    )
 
 
 class Paper(IdMixin, Base):
@@ -190,7 +282,31 @@ class Paper(IdMixin, Base):
     limitations: Mapped[list[str]] = mapped_column(JSONB)
 
 
+CLAIM_REVIEW_STATUSES = ("PENDING", "ACCEPTED", "CHANGES_REQUESTED", "REJECTED")
+STUDY_DESIGNS = (
+    "META_ANALYSIS", "SYSTEMATIC_REVIEW", "FIELD_EXPERIMENT", "CONTROLLED_EXPERIMENT",
+    "OBSERVATIONAL_STUDY", "MODELLING_STUDY", "NARRATIVE_REVIEW", "OTHER", "UNKNOWN",
+)
+EVIDENCE_BASES = ("METADATA_ONLY", "ABSTRACT", "FULL_TEXT")
+ACCESS_BASES = (
+    "NONE", "PUBLIC_ABSTRACT", "OPEN_ACCESS_LICENSE", "PUBLISHER_FREE_TO_READ",
+    "INSTITUTIONAL_SUBSCRIPTION", "AUTHOR_PROVIDED_COPY",
+)
+CLAIM_ORIGINS = ("MANUAL", "PILOT_SEED_UNVERIFIED")
+CLAIM_EVENT_ACTIONS = ("CREATED", "UPDATED", "REVIEWED")
+
+
+def _in(column: str, values: tuple[str, ...]) -> str:
+    return f"{column} IN (" + ",".join(f"'{value}'" for value in values) + ")"
+
+
 class EvidenceClaim(IdMixin, Base):
+    """Case-scoped claim extracted from a registered paper (ABB-14).
+
+    ``source_kind`` is derived, never stored: LITERATURE_REVIEWED only while ``review_status`` is
+    ACCEPTED. ``reviewed_by``/``reviewed_at`` describe the latest review decision; the full trail is in
+    ``evidence_claim_events``.
+    """
     __tablename__ = "evidence_claims"
     case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), index=True)
     paper_id: Mapped[UUID] = mapped_column(ForeignKey("papers.id", ondelete="RESTRICT"), index=True)
@@ -200,6 +316,86 @@ class EvidenceClaim(IdMixin, Base):
     reviewed_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     limitations: Mapped[list[str]] = mapped_column(JSONB)
+    # ABB-14 structured record, review workflow and provenance of the claim itself.
+    created_by: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), nullable=True, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=text("now()"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=text("now()"))
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default=text("1"))
+    study_design: Mapped[str] = mapped_column(String(32), default="UNKNOWN", server_default=text("'UNKNOWN'"))
+    context: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
+    reported_outcome: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
+    source_locator: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
+    quoted_fragment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evidence_basis: Mapped[str] = mapped_column(
+        String(24), default="METADATA_ONLY", server_default=text("'METADATA_ONLY'")
+    )
+    access_basis: Mapped[str] = mapped_column(String(32), default="NONE", server_default=text("'NONE'"))
+    content_license: Mapped[str | None] = mapped_column(Text, nullable=True)
+    origin: Mapped[str] = mapped_column(String(32), default="MANUAL", server_default=text("'MANUAL'"))
+    origin_ref: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    __table_args__ = (
+        UniqueConstraint("case_id", "origin_ref", name="uq_claim_case_origin_ref"),
+        CheckConstraint("version >= 1", name="ck_claim_version"),
+        CheckConstraint(_in("review_status", CLAIM_REVIEW_STATUSES), name="ck_claim_review_status"),
+        CheckConstraint(_in("study_design", STUDY_DESIGNS), name="ck_claim_study_design"),
+        CheckConstraint(_in("evidence_basis", EVIDENCE_BASES), name="ck_claim_evidence_basis"),
+        CheckConstraint(_in("access_basis", ACCESS_BASES), name="ck_claim_access_basis"),
+        CheckConstraint(_in("origin", CLAIM_ORIGINS), name="ck_claim_origin"),
+        CheckConstraint(
+            "review_status != 'PENDING' OR (reviewed_by IS NULL AND reviewed_at IS NULL)",
+            name="ck_claim_pending_unreviewed",
+        ),
+        CheckConstraint(
+            "review_status = 'PENDING' OR reviewed_at IS NOT NULL", name="ck_claim_decision_timestamp"
+        ),
+        CheckConstraint(
+            "review_status != 'ACCEPTED' OR reviewed_by IS NOT NULL", name="ck_claim_accepted_reviewer"
+        ),
+        CheckConstraint(
+            "created_by IS NULL OR reviewed_by IS NULL OR created_by != reviewed_by", name="ck_claim_no_self_review"
+        ),
+        CheckConstraint(
+            "quoted_fragment IS NULL OR evidence_basis != 'METADATA_ONLY'", name="ck_claim_quote_needs_source_text"
+        ),
+        CheckConstraint(
+            "evidence_basis != 'FULL_TEXT' OR (access_basis NOT IN ('NONE','PUBLIC_ABSTRACT') "
+            "AND content_license IS NOT NULL)",
+            name="ck_claim_full_text_access",
+        ),
+    )
+
+
+class EvidenceClaimEvent(IdMixin, Base):
+    """Append-only trail of a claim: creation, edits and every review decision (ABB-14).
+
+    Review events keep the reviewer, time, note, the source the reviewer consulted and a snapshot
+    of the paper identity at that moment. The actor FK is RESTRICT so the reviewer is never lost.
+    """
+    __tablename__ = "evidence_claim_events"
+    claim_id: Mapped[UUID] = mapped_column(ForeignKey("evidence_claims.id", ondelete="CASCADE"), index=True)
+    case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), index=True)
+    claim_version: Mapped[int] = mapped_column(Integer)
+    action: Mapped[str] = mapped_column(String(24))
+    actor_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    from_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    to_status: Mapped[str] = mapped_column(String(32))
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_consulted: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    paper_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    changes: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    __table_args__ = (
+        CheckConstraint("claim_version >= 1", name="ck_claim_event_version"),
+        CheckConstraint(_in("action", CLAIM_EVENT_ACTIONS), name="ck_claim_event_action"),
+        CheckConstraint(_in("to_status", CLAIM_REVIEW_STATUSES), name="ck_claim_event_to_status"),
+        CheckConstraint(
+            "action != 'REVIEWED' OR (note IS NOT NULL AND source_consulted IS NOT NULL "
+            "AND from_status IS NOT NULL AND to_status != 'PENDING')",
+            name="ck_claim_event_review_complete",
+        ),
+    )
 
 
 class Rotation(IdMixin, Base):
