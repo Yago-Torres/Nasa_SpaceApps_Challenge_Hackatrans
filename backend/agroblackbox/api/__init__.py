@@ -2,7 +2,7 @@
 ABB-10 case observations, timeline and hypotheses, ABB-14 registered papers and evidence claims,
 ABB-15 claim disagreements and study applicability, ABB-16 case evidence graph, conclusions and manual
 edges, ABB-19 Uncertainty Hunter, ABB-25 invitations, comments, activity feed and consented share links,
-ABB-28 self-service account data export/deletion)."""
+ABB-26 versioned case reports and exports, ABB-28 self-service account data export/deletion)."""
 from __future__ import annotations
 
 from fastapi import FastAPI, Request
@@ -11,7 +11,7 @@ from sqlalchemy.exc import InterfaceError, OperationalError
 
 from . import (
     account, activity, auth, cases, comments, comparability, evidence, evidence_graph, hypotheses, invitations,
-    observations, sharing, timeline, uncertainty,
+    observations, reports, sharing, timeline, uncertainty,
 )
 from .deps import STORAGE_UNAVAILABLE
 
@@ -41,6 +41,7 @@ def include_api_v1(app: FastAPI) -> None:
     app.include_router(comments.router)
     app.include_router(activity.router)
     app.include_router(sharing.case_router)
+    app.include_router(reports.router)
     app.include_router(sharing.public_router)
     app.add_exception_handler(OperationalError, _storage_unavailable)
     app.add_exception_handler(InterfaceError, _storage_unavailable)
