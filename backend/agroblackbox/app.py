@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel, Field
 from .schemas import contract_openapi_schemas
+from .crop_catalog import CropCatalog, catalog
+from .farm_profile import FarmProfile, FarmProfileAssessment, assess_profile
 from .services.power import fetch_power
 from .services.metrics import summarize_power
 from .services.literature import LiteratureSearchResult, LiteratureSourceError, search_literature
@@ -59,6 +61,17 @@ async def literature(query:str=Query(min_length=3,max_length=180)):
 
 @app.get('/api/rotations/demo')
 def rotations():return {'rotations':rotation_examples()}
+
+@app.get('/api/v1/crop-catalog', response_model=CropCatalog, tags=['farm profile (ABB-11)'])
+def crop_catalog():
+    """Crop identity catalogue (taxonomy only, pending review). Contains no agronomic parameters."""
+    return catalog()
+
+@app.post('/api/v1/farm-profiles/assess', response_model=FarmProfileAssessment, tags=['farm profile (ABB-11)'])
+def assess_farm_profile(profile: FarmProfile):
+    """Stateless consistency/completeness check of farmer-supplied soil, crops, calendar, constraints
+    and priorities. Nothing is stored; no agronomic outcome is computed."""
+    return assess_profile(profile)
 
 class CaseReport(BaseModel):
     location_label:str=Field(max_length=160)
