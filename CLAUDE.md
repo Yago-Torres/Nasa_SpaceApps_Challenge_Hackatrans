@@ -1,4 +1,4 @@
-# Claude Code entrypoint — AGRO BLACK BOX
+# Claude Code entrypoint — CropStory
 
 @AGENTS.md
 @docs/ai/CONTEXT_MAP.md

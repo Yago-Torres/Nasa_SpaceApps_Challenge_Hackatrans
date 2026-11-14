@@ -9,7 +9,7 @@ From `docs/product/UX_FLOWS.md`. Desktop ≥ 60rem, mobile 390px. Content left-a
 ## 0. Landing (Persuade)
 
 ```
-┌ nav: ■ AGRO BLACK BOX   How it works  Evidence labels  Data sources  Team        EN | ES ┐
+┌ nav: ■ CropStory   How it works  Evidence labels  Data sources  Team        EN | ES ┐
 ├──────────────────────── celestial band (--surface-sky) ──────────────────────────────────┤
 │ Investigate a failed harvest            ┌ Start an investigation ──────────┐             │
 │ with NASA Earth data   (display 800)    │ Latitude [41.6 °N] Longitude [..]│             │

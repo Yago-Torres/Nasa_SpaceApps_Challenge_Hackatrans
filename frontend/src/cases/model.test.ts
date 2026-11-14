@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { displayedLocation, emptyCase, guestCopy, missingItems, roundToCell, validateStep, type IncidentCase } from './model';
-import { LocalDevCaseRepository } from './repository';
+import { legacyBrowserCases } from './repository';
 
 function filled(): IncidentCase {
   const c = emptyCase(new Date('2026-11-14T10:00:00Z'));
@@ -61,18 +61,25 @@ describe('validation keeps data and reports useful errors', () => {
   });
 });
 
-describe('development repository', () => {
+describe('symptom months the case API would reject', () => {
+  const now = new Date('2026-11-14T10:00:00Z');
+  it('flags months before 1900 or after the current month', () => {
+    const c = filled();
+    c.symptomsStart = '1899-12';
+    expect(validateStep(c, 'incident', now)).toContain('symptomsRange');
+    c.symptomsStart = '2026-11';
+    expect(validateStep(c, 'incident', now)).not.toContain('symptomsRange');
+    c.symptomsEnd = '2026-12';
+    expect(validateStep(c, 'incident', now)).toContain('symptomsRange');
+  });
+});
+
+describe('legacy browser-only cases', () => {
   beforeEach(() => localStorage.clear());
-  it('creates, reads back, edits and versions a case', async () => {
-    const repo = new LocalDevCaseRepository();
-    expect(repo.developmentOnly).toBe(true);
-    const saved = await repo.save(filled());
-    expect(saved.version).toBe(1);
-    const again = await repo.save({ ...saved, title: 'Edited' });
-    expect(again.version).toBe(2);
-    expect((await repo.get(saved.id))?.title).toBe('Edited');
-    expect(await repo.list()).toHaveLength(1);
-    await repo.clear();
-    expect(await repo.list()).toHaveLength(0);
+  it('are counted and can be deleted', () => {
+    localStorage.setItem('abb-dev-cases-v1', JSON.stringify([filled()]));
+    expect(legacyBrowserCases.count()).toBe(1);
+    legacyBrowserCases.clear();
+    expect(legacyBrowserCases.count()).toBe(0);
   });
 });

@@ -1,4 +1,4 @@
-# Product definition — AGRO BLACK BOX
+# Product definition — CropStory
 
 **Positioning:** agricultural incident investigation and crop-rotation decision-support grounded in NASA Earth observations, locally supplied agronomic information, and traceable scientific literature.
 

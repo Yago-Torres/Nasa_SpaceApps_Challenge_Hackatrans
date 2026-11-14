@@ -4,93 +4,197 @@ import { useI18n } from '../../i18n/I18n';
 import type { MessageKey } from '../../i18n/messages';
 import { Button, ButtonLink, Checkbox, EvidenceLabel, Field, PageHeader, RadioGroup, StatusMessage, TextArea } from '../../design/components';
 import {
-  STEPS, emptyCase, missingItems, newId, parseNumber, validateStep,
+  MAX_CROP_ROWS, STEPS, canEdit, emptyCase, missingItems, monthOutOfRange, newId, parseNumber, validateStep,
   type FieldError, type IncidentCase, type Rounding, type Step,
 } from '../../cases/model';
-import { caseRepository, StorageUnavailableError } from '../../cases/repository';
+import { readyForServer } from '../../cases/mapping';
+import { CaseConflictError, caseRepository } from '../../cases/repository';
+import { getSession, useSession } from '../../api/session';
 import { hrefFor, navigate } from '../../app/routes';
 import { useInvestigation } from '../../app/investigation';
+import { AuthPanel } from '../account/AuthPanel';
+import { CaseTitleBlock } from './CaseTitleBlock';
 import { PrivacyPreview } from './PrivacyPreview';
+import { caseErrorText, isStorageUnavailable, isUnauthorized } from './caseErrors';
 
 type SaveState = { status: 'idle' | 'saving' | 'saved' | 'error'; at?: string; error?: string };
+type LoadState = { status: 'loading' | 'missing' | 'unavailable' | 'error'; error?: string };
+type Meta = Pick<IncidentCase, 'id' | 'version' | 'updatedAt' | 'server'>;
+
+const metaOf = ({ id, version, updatedAt, server }: IncidentCase): Meta => ({ id, version, updatedAt, server });
 
 const ERROR_TEXT: Partial<Record<string, MessageKey>> = {
   title: 'f.titleError', latitude: 'f.latError', longitude: 'f.lonError', regionLabel: 'f.regionError',
   incidentYear: 'f.incidentYearError', symptomsStart: 'f.monthError', symptomsEnd: 'f.monthError', symptomsOrder: 'f.orderError',
-  symptoms: 'f.symptomsError', affectedShare: 'f.shareError',
+  symptomsRange: 'f.rangeError', symptoms: 'f.symptomsError', affectedShare: 'f.shareError',
 };
 
+/**
+ * Five-step incident wizard (ABB-21) saving to /api/v1/cases (ABB-06). Nothing typed is lost:
+ * drafts the API cannot accept yet, a signed-out user or a failed save keep the answers on
+ * the page; a version conflict asks the user which version to keep.
+ */
 export function IncidentWizard({ caseId }: { caseId: string }) {
   const { t, lang } = useI18n();
+  const session = useSession();
   const repo = caseRepository();
   const { setInput } = useInvestigation();
   const [c, setC] = useState<IncidentCase | null>(caseId === 'new' ? emptyCase() : null);
-  const [missing, setMissing] = useState(false);
+  const [load, setLoad] = useState<LoadState>({ status: 'loading' });
+  const [reload, setReload] = useState(0);
   const [step, setStep] = useState(0);
   const [visited, setVisited] = useState(0);
   const [errors, setErrors] = useState<FieldError[]>([]);
   const [save, setSave] = useState<SaveState>({ status: 'idle' });
+  const [conflict, setConflict] = useState<IncidentCase | null>(null);
   const [finished, setFinished] = useState(false);
   const [locating, setLocating] = useState<'idle' | 'busy' | 'denied' | 'unavailable'>('idle');
   const dirty = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const cRef = useRef(c);
+  cRef.current = c;
+  // Authoritative server identity and version, updated synchronously after each save.
+  const meta = useRef<Meta | null>(null);
+  // Saves run one at a time, so a slow create can never be sent twice.
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  const everSignedIn = useRef(!!session);
+  if (session) everSignedIn.current = true;
+  // Focus requested by a step change or a validation error. Applied right after the render
+  // that shows the target (not in a later animation frame), so focus never jumps away while
+  // the user has already started typing in the new step.
+  const [focusRequest, setFocusRequest] = useState<{ selector: string } | null>(null);
 
   useEffect(() => {
-    if (caseId === 'new') return;
-    repo.get(caseId).then((found) => (found ? setC(found) : setMissing(true)), () => setMissing(true));
-  }, [caseId]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (focusRequest) formRef.current?.querySelector<HTMLElement>(focusRequest.selector)?.focus();
+  }, [focusRequest]);
 
-  // Autosave 600 ms after the last change. Draft data is saved even when a step has errors,
-  // so nothing the farmer typed is ever lost.
   useEffect(() => {
-    if (!c || !dirty.current) return;
-    const id = window.setTimeout(() => persist(c), 600);
+    if (caseId === 'new' || cRef.current || !session) return;
+    let live = true;
+    setLoad({ status: 'loading' });
+    repo.get(caseId).then(
+      (found) => {
+        if (!live) return;
+        if (!found) return setLoad({ status: 'missing' });
+        meta.current = metaOf(found);
+        setC(found);
+      },
+      (err) => {
+        if (!live || isUnauthorized(err)) return; // signed out: the sign-in panel shows
+        setLoad(isStorageUnavailable(err) ? { status: 'unavailable' } : { status: 'error', error: caseErrorText(err, t) });
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [caseId, session, reload]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Autosave 600 ms after the last change, once the API can accept the case.
+  useEffect(() => {
+    if (!c || !dirty.current || !session || conflict || !canEdit(c) || !readyForServer(c)) return;
+    const id = window.setTimeout(() => void persist(), 600);
     return () => window.clearTimeout(id);
-  }, [c]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [c, session, conflict]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function persist(current: IncidentCase): Promise<IncidentCase | null> {
+  function persist(): Promise<IncidentCase | null> {
+    const run = queue.current.then(saveNow);
+    queue.current = run;
+    return run;
+  }
+
+  async function saveNow(): Promise<IncidentCase | null> {
+    const draft = cRef.current;
+    if (!draft || !getSession()) return null;
+    const current = meta.current ? { ...draft, ...meta.current } : draft;
+    if (!readyForServer(current)) return null;
+    dirty.current = false;
     setSave({ status: 'saving' });
     try {
       const saved = await repo.save(current);
-      dirty.current = false;
-      setC((prev) => (prev && prev.id === saved.id ? { ...prev, version: saved.version, updatedAt: saved.updatedAt } : prev));
-      if (caseId === 'new') window.history.replaceState(null, '', hrefFor('cases', saved.id));
+      meta.current = metaOf(saved);
+      setC((prev) => (prev ? { ...prev, ...meta.current } : prev));
+      if (saved.id !== caseId) window.history.replaceState(null, '', hrefFor('cases', saved.id));
       setSave({ status: 'saved', at: new Intl.DateTimeFormat(lang === 'es' ? 'es-ES' : 'en-GB', { hour: '2-digit', minute: '2-digit' }).format(new Date()) });
       return saved;
     } catch (err) {
-      setSave({ status: 'error', error: err instanceof StorageUnavailableError ? t('cases.storageError') : String(err) });
+      dirty.current = true;
+      if (err instanceof CaseConflictError) {
+        setConflict(err.latest);
+        setSave({ status: 'idle' });
+      } else {
+        setSave({ status: 'error', error: caseErrorText(err, t) });
+      }
       return null;
     }
   }
 
-  if (missing) {
-    return (
-      <>
-        <PageHeader title={t('wiz.titleEdit')} />
-        <StatusMessage tone="error" title={t('cases.notFound')} action={<ButtonLink href={hrefFor('cases')}>{t('nav.cases')}</ButtonLink>} />
-      </>
-    );
+  function loadSaved() {
+    if (!conflict) return;
+    repo.adopt(conflict);
+    meta.current = metaOf(conflict);
+    dirty.current = false;
+    setC(conflict);
+    setConflict(null);
+    setSave({ status: 'idle' });
   }
-  if (!c) return <StatusMessage tone="loading" title={t('state.loading')} />;
+
+  function keepMine() {
+    if (!conflict) return;
+    repo.adopt(conflict);
+    meta.current = metaOf(conflict);
+    setC((prev) => (prev ? { ...prev, ...meta.current } : prev));
+    setConflict(null);
+    void persist();
+  }
+
+  const authPanel = !session && (
+    <AuthPanel primary={c === null} notice={everSignedIn.current ? t('auth.sessionEnded') : c ? t('auth.signInToSave') : undefined} />
+  );
+
+  if (!c) {
+    const header = <PageHeader title={t('wiz.titleEdit')} />;
+    if (!session) return <>{header}{authPanel}</>;
+    if (load.status === 'missing') {
+      return <>{header}<StatusMessage tone="error" title={t('cases.notFound')} action={<ButtonLink href={hrefFor('cases')}>{t('nav.cases')}</ButtonLink>} /></>;
+    }
+    if (load.status === 'unavailable' || load.status === 'error') {
+      return (
+        <>
+          {header}
+          <StatusMessage tone="error" title={load.status === 'unavailable' ? t('cases.storageUnavailable') : load.error ?? t('state.unknownError')}
+            action={<Button onClick={() => setReload((n) => n + 1)}>{t('state.retry')}</Button>}>
+            {load.status === 'unavailable' ? t('cases.storageUnavailableBody') : undefined}
+          </StatusMessage>
+        </>
+      );
+    }
+    return <StatusMessage tone="loading" title={t('state.loading')} />;
+  }
+
+  if (!canEdit(c)) return <ReadOnlyCase c={c} />;
 
   const current: Step = STEPS[step];
   const update = (patch: Partial<IncidentCase>) => {
     dirty.current = true;
+    setFinished(false);
     setC((prev) => (prev ? { ...prev, ...patch } : prev));
   };
   const updateLoc = (patch: Partial<IncidentCase['location']>) => update({ location: { ...c.location, ...patch } });
   const err = (key: FieldError) => (errors.includes(key) ? t(ERROR_TEXT[key] ?? (key.endsWith('.year') ? 'f.cropYearError' : 'f.cropError')) : undefined);
-  const clearErr = (key: FieldError) => errors.includes(key) && setErrors(errors.filter((e) => e !== key));
+  const rangeErr = (month: string) => (errors.includes('symptomsRange') && monthOutOfRange(month) ? t('f.rangeError') : undefined);
+  const clearErr = (...keys: FieldError[]) => keys.some((k) => errors.includes(k)) && setErrors(errors.filter((e) => !keys.includes(e)));
 
   function focusFirst(list: FieldError[]) {
-    const key = list[0] === 'symptomsOrder' ? 'symptomsEnd' : list[0];
-    requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>(`[data-field="${key}"]`)?.focus());
+    let key: string = list[0];
+    if (key === 'symptomsOrder') key = 'symptomsEnd';
+    if (key === 'symptomsRange') key = monthOutOfRange(c!.symptomsStart) ? 'symptomsStart' : 'symptomsEnd';
+    setFocusRequest({ selector: `[data-field="${key}"]` }); // new object: always applied once, after the errors render
   }
 
   function goTo(i: number) {
     setErrors([]);
     setStep(i);
-    requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('h2')?.focus());
+    setFocusRequest({ selector: 'h2' });
   }
 
   function next() {
@@ -111,7 +215,8 @@ export function IncidentWizard({ caseId }: { caseId: string }) {
         return focusFirst(found);
       }
     }
-    const saved = await persist(c!);
+    if (!getSession()) return;
+    const saved = await persist();
     if (saved) setFinished(true);
   }
 
@@ -134,22 +239,37 @@ export function IncidentWizard({ caseId }: { caseId: string }) {
     navigate('investigation');
   }
 
+  const ready = readyForServer(c);
   const saveText =
-    save.status === 'saving' ? t('wiz.saving')
-    : save.status === 'saved' ? t('wiz.saved', { time: save.at ?? '' })
-    : save.status === 'error' ? t('wiz.saveError', { error: save.error ?? '' }) : '';
+    !session ? ''
+    : save.status === 'saving' ? t('wiz.saving')
+    : save.status === 'error' ? t('wiz.saveError', { error: save.error ?? '' })
+    : !ready && (dirty.current || !c.server) ? t('wiz.notReady')
+    : save.status === 'saved' ? t('wiz.saved', { time: save.at ?? '' }) : '';
 
   return (
     <>
-      <PageHeader title={caseId === 'new' ? t('wiz.titleNew') : t('wiz.titleEdit')} lead={t('wiz.lead')} />
-      <StatusMessage tone="pending" title={t('cases.devTitle')}>{t('cases.devBody')}</StatusMessage>
+      {c.server ? <CaseTitleBlock c={c} lead={t('wiz.lead')} /> : <PageHeader title={t('wiz.titleNew')} lead={t('wiz.lead')} />}
+      {authPanel}
+      {conflict && (
+        <StatusMessage tone="error" title={t('wiz.conflictTitle')}
+          action={
+            <div className="actions">
+              <Button variant="secondary" onClick={loadSaved}>{t('wiz.conflictLoad')}</Button>
+              <Button variant="text" onClick={keepMine}>{t('wiz.conflictKeep')}</Button>
+            </div>
+          }>
+          {t('wiz.conflictBody', { version: conflict.version })}
+        </StatusMessage>
+      )}
+      {c.server && c.server.fieldCount > 1 && <StatusMessage tone="partial" title={t('cases.parcels', { n: c.server.fieldCount })} />}
 
       <div className="wizard">
         <nav aria-label={t('wiz.stepsLabel')}>
           <ol className="stepper">
             {STEPS.map((s, i) => (
               <li key={s} className={i < step ? 'done' : undefined}>
-                <button type="button" onClick={() => goTo(i)} disabled={i > visited} aria-current={i === step ? 'step' : undefined}>
+                <button type="button" onClick={() => goTo(i)} disabled={i > visited && !c.server} aria-current={i === step ? 'step' : undefined}>
                   <span className="n" aria-hidden="true">{i < step ? <Check /> : i + 1}</span>
                   <span>{t(`wiz.step.${s}` as MessageKey)}</span>
                 </button>
@@ -225,9 +345,11 @@ export function IncidentWizard({ caseId }: { caseId: string }) {
                   );
                 })}
               </ol>
-              <div className="actions">
-                <Button variant="secondary" icon={<Plus aria-hidden="true" />} onClick={() => update({ crops: [...c.crops, { id: newId('y'), year: '', crop: '', notes: '' }] })}>{t('f.addYear')}</Button>
-              </div>
+              {c.crops.length < MAX_CROP_ROWS && (
+                <div className="actions">
+                  <Button variant="secondary" icon={<Plus aria-hidden="true" />} onClick={() => update({ crops: [...c.crops, { id: newId('y'), year: '', crop: '', notes: '' }] })}>{t('f.addYear')}</Button>
+                </div>
+              )}
             </>
           )}
 
@@ -236,10 +358,12 @@ export function IncidentWizard({ caseId }: { caseId: string }) {
               <Field label={t('f.incidentYear')} name="incidentYear" data-field="incidentYear" inputMode="numeric" value={c.incidentYear} hint={t('f.incidentYearHint')} error={err('incidentYear')}
                 onChange={(e) => { update({ incidentYear: e.target.value }); clearErr('incidentYear'); }} />
               <div className="form-row form-row--2">
-                <Field label={t('f.symptomsStart')} name="symptomsStart" data-field="symptomsStart" type="month" value={c.symptomsStart} hint={t('f.monthHint')} error={err('symptomsStart')}
-                  onChange={(e) => { update({ symptomsStart: e.target.value }); clearErr('symptomsStart'); clearErr('symptomsOrder'); }} />
-                <Field label={t('f.symptomsEnd')} name="symptomsEnd" data-field="symptomsEnd" type="month" value={c.symptomsEnd} hint={t('f.monthHint')} error={err('symptomsEnd') ?? err('symptomsOrder')}
-                  onChange={(e) => { update({ symptomsEnd: e.target.value }); clearErr('symptomsEnd'); clearErr('symptomsOrder'); }} />
+                <Field label={t('f.symptomsStart')} name="symptomsStart" data-field="symptomsStart" type="month" value={c.symptomsStart} hint={t('f.monthHint')}
+                  error={err('symptomsStart') ?? rangeErr(c.symptomsStart)}
+                  onChange={(e) => { update({ symptomsStart: e.target.value }); clearErr('symptomsStart', 'symptomsOrder', 'symptomsRange'); }} />
+                <Field label={t('f.symptomsEnd')} name="symptomsEnd" data-field="symptomsEnd" type="month" value={c.symptomsEnd} hint={t('f.monthHint')}
+                  error={err('symptomsEnd') ?? err('symptomsOrder') ?? rangeErr(c.symptomsEnd)}
+                  onChange={(e) => { update({ symptomsEnd: e.target.value }); clearErr('symptomsEnd', 'symptomsOrder', 'symptomsRange'); }} />
               </div>
               <TextArea label={t('f.symptoms')} name="symptoms" data-field="symptoms" value={c.symptoms} maxLength={2000} hint={t('f.symptomsHint')} error={err('symptoms')} className="voice-input"
                 onChange={(e) => { update({ symptoms: e.target.value }); clearErr('symptoms'); }} />
@@ -280,7 +404,7 @@ export function IncidentWizard({ caseId }: { caseId: string }) {
           <div className="wizard-bar">
             {step > 0 && <Button variant="secondary" icon={<ArrowLeft aria-hidden="true" />} onClick={() => goTo(step - 1)}>{t('wiz.back')}</Button>}
             {!finished && (
-              <Button type="submit" variant="primary">
+              <Button type="submit" variant="primary" busy={current === 'review' && save.status === 'saving'}>
                 {current === 'review' ? t('wiz.finish') : t('wiz.next')}
               </Button>
             )}
@@ -327,6 +451,41 @@ function Review({ c }: { c: IncidentCase }) {
         )}
       </section>
       <PrivacyPreview location={c.location} />
+    </>
+  );
+}
+
+/** Reviewers, viewers, and cases that are reviewed, final or archived: read-only, location as the server returned it. */
+function ReadOnlyCase({ c }: { c: IncidentCase }) {
+  const { t } = useI18n();
+  const s = c.server!;
+  const reason = s.archived ? t('wiz.readOnlyArchived')
+    : s.myRole === 'REVIEWER' || s.myRole === 'VIEWER' ? t('wiz.readOnlyRole', { role: t(`case.role.${s.myRole}` as MessageKey) })
+    : t('wiz.readOnlyStatus', { status: t(`case.status.${s.status}` as MessageKey) });
+  const notStated = t('rev.notStated');
+  const months = [c.symptomsStart, c.symptomsEnd].filter(Boolean).join(' – ');
+  const water = c.constraints.water ? t(`f.water.${c.constraints.water}` as MessageKey) : notStated;
+  const crops = c.crops.filter((r) => r.crop.trim()).map((r) => `${r.year ? `${r.year}: ` : ''}${r.crop}${r.notes ? ` (${r.notes})` : ''}`).join('\n');
+  return (
+    <>
+      <CaseTitleBlock c={c} />
+      <StatusMessage tone="pending" title={reason} action={<ButtonLink href={hrefFor('cases')}>{t('nav.cases')}</ButtonLink>} />
+      <section className="panel" aria-labelledby="ro-sum">
+        <div className="panel-head">
+          <h2 id="ro-sum">{t('rev.summary')}</h2>
+          <EvidenceLabel kind="FARMER_REPORTED" />
+        </div>
+        <dl className="review-list">
+          <div><dt>{t('f.incidentYear')}</dt><dd className="num">{c.incidentYear || notStated}</dd></div>
+          <div><dt>{t('rev.missing.symptomDates')}</dt><dd className="num">{months || notStated}</dd></div>
+          <div><dt>{t('f.symptoms')}</dt><dd className={c.symptoms.trim() ? 'voice' : undefined}>{c.symptoms.trim() || notStated}</dd></div>
+          <div><dt>{t('f.share')}</dt><dd className="num">{c.affectedShare || notStated}</dd></div>
+          <div><dt>{t('wiz.step.crops')}</dt><dd>{crops || notStated}</dd></div>
+          <div><dt>{t('f.water')}</dt><dd>{water}</dd></div>
+          <div><dt>{t('f.soilNotes')}</dt><dd>{c.constraints.soilKnown && c.constraints.soilNotes.trim() ? c.constraints.soilNotes : notStated}</dd></div>
+          <div><dt>{t('f.priorities')}</dt><dd>{c.constraints.priorities.trim() || notStated}</dd></div>
+        </dl>
+      </section>
     </>
   );
 }

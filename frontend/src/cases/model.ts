@@ -1,11 +1,24 @@
 /**
- * Incident case model for the ABB-21 wizard.
- *
- * Shape follows request A4 in docs/architecture/FRONTEND_INTEGRATION.md; it is a frontend
- * proposal until ABB-02/ABB-06 freeze the real contract. Privacy helpers here decide what
- * the UI DISPLAYS. Real protection must be enforced by the server (a guest must never
- * receive precise coordinates in the first place).
+ * Incident case model for the ABB-21 wizard (form state). The server contract is
+ * `CaseView` in api/types.ts; `cases/mapping.ts` converts between the two. Privacy helpers
+ * here decide what the UI DISPLAYS. Real protection is enforced by the server (ADR-0004):
+ * reviewers and viewers never receive precise coordinates unless the owner consented.
  */
+import type { CaseStatus, FieldPrivacyTier, LocationPrecision, Role } from '../api/types';
+
+/** Server-side facts about a persisted case. Absent for a new case not yet saved. */
+export type ServerMeta = {
+  status: CaseStatus;
+  myRole: Role;
+  ownerName: string;
+  archived: boolean;
+  /** The parcel the wizard edits (the first field of the case). */
+  fieldId: string;
+  fieldCount: number;
+  /** Stored tier of that field, and what the caller received after redaction. */
+  privacyTier: FieldPrivacyTier;
+  locationPrecision: LocationPrecision;
+};
 
 export type PrivacyTier = 'private' | 'rounded' | 'region';
 export type Rounding = 0.1 | 0.5 | 1;
@@ -38,7 +51,17 @@ export type IncidentCase = {
   createdAt: string;
   updatedAt: string;
   version: number;
+  server?: ServerMeta;
 };
+
+export const MAX_CROP_ROWS = 50;
+
+/** Roles and statuses that may edit (ADR-0004): owners/editors while DRAFT or INVESTIGATING and not archived. */
+export function canEdit(c: IncidentCase): boolean {
+  if (!c.server) return true;
+  const { myRole, status, archived } = c.server;
+  return (myRole === 'OWNER' || myRole === 'EDITOR') && (status === 'DRAFT' || status === 'INVESTIGATING') && !archived;
+}
 
 export const STEPS = ['location', 'crops', 'incident', 'constraints', 'review'] as const;
 export type Step = (typeof STEPS)[number];
@@ -77,10 +100,20 @@ export function parseNumber(s: string): number {
 export type FieldError =
   | 'title' | 'latitude' | 'longitude' | 'regionLabel'
   | `crop.${number}.year` | `crop.${number}.crop`
-  | 'incidentYear' | 'symptomsStart' | 'symptomsEnd' | 'symptomsOrder' | 'symptoms' | 'affectedShare';
+  | 'incidentYear' | 'symptomsStart' | 'symptomsEnd' | 'symptomsOrder' | 'symptomsRange' | 'symptoms' | 'affectedShare';
+
+/** "YYYY-MM" of `now` in UTC. */
+export function currentMonth(now = new Date()): string {
+  return now.toISOString().slice(0, 7);
+}
+
+/** A well-formed month the case API would reject (it accepts incident dates from 1900-01-01 to today). */
+export function monthOutOfRange(m: string, now = new Date()): boolean {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(m) && (m < '1900-01' || m > currentMonth(now));
+}
 
 /** Blocking errors for a step. Data is never discarded; the user fixes and continues. */
-export function validateStep(c: IncidentCase, step: Step): FieldError[] {
+export function validateStep(c: IncidentCase, step: Step, now = new Date()): FieldError[] {
   const e: FieldError[] = [];
   if (step === 'location') {
     if (!c.title.trim() || c.title.length > 120) e.push('title');
@@ -106,6 +139,7 @@ export function validateStep(c: IncidentCase, step: Step): FieldError[] {
     if (c.symptomsStart && !month.test(c.symptomsStart)) e.push('symptomsStart');
     if (c.symptomsEnd && !month.test(c.symptomsEnd)) e.push('symptomsEnd');
     if (month.test(c.symptomsStart) && month.test(c.symptomsEnd) && c.symptomsEnd < c.symptomsStart) e.push('symptomsOrder');
+    if (monthOutOfRange(c.symptomsStart, now) || monthOutOfRange(c.symptomsEnd, now)) e.push('symptomsRange');
     if (!c.symptoms.trim()) e.push('symptoms');
     if (c.affectedShare.trim()) {
       const p = parseNumber(c.affectedShare);
