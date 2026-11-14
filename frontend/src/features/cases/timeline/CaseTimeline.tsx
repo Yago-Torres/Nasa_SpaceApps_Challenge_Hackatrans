@@ -122,6 +122,15 @@ export function CaseTimeline({ caseId }: { caseId: string }) {
   const { timeline, hypotheses, case: c } = load;
   const events = timeline.events;
   const selectedEvent = events.find((e) => e.id === selected) ?? null;
+  const inspectEvidence = (evidenceId: string) => {
+    // An anomaly is itself a timeline event, while an observation is represented by its
+    // associated anomaly event (backend/api/timeline.py::to_event_ids). Resolve both wire IDs
+    // here so clicking either kind of linked evidence opens the provenance panel.
+    const event = events.find((e) => e.id === evidenceId
+      || e.provenance.anomaly_id === evidenceId
+      || e.provenance.observation_id === evidenceId);
+    setSelected(event?.id ?? null);
+  };
   const server = c.server;
   const canCreateHypotheses = canEdit(c); // OWNER/EDITOR, DRAFT/INVESTIGATING, not archived (cases/model.ts)
   const canEvaluate = !!server && EVALUATOR_ROLES.has(server.myRole) && OPEN_STATUSES.has(server.status) && !server.archived;
@@ -169,7 +178,7 @@ export function CaseTimeline({ caseId }: { caseId: string }) {
       </section>
 
       <HypothesesPanel caseId={caseId} hypotheses={hypotheses.items} listLimitations={hypotheses.limitations}
-        canCreate={canCreateHypotheses} canEvaluate={canEvaluate} onInspectEvidence={setSelected} onChange={reload} />
+        canCreate={canCreateHypotheses} canEvaluate={canEvaluate} onInspectEvidence={inspectEvidence} onChange={reload} />
     </>
   );
 }
@@ -183,10 +192,12 @@ function EventDetail({ event, onClose }: { event: TimelineEvent; onClose: () => 
   const rows: SourceRow[] = [
     { label: t('tl.detail.period'), value: `${event.start ?? t('tl.undated')} – ${event.end ?? t('tl.undated')}` },
     { label: t('tl.detail.description'), value: event.description },
+    { label: t('tl.detail.sourceDescription'), value: p.description },
   ];
   if (event.observed) {
     const o = event.observed;
     rows.push(
+      { label: t('src.parameters'), value: o.source_parameter, mono: true },
       { label: t('tl.detail.value'), value: o.value === null ? t('inv.noData') : `${num(o.value, { digits: 2 })} ${o.units}`, mono: true },
       {
         label: t('tl.detail.reference'),
@@ -206,7 +217,12 @@ function EventDetail({ event, onClose }: { event: TimelineEvent; onClose: () => 
   }
   if (event.data_quality) {
     const q = event.data_quality;
-    rows.push({ label: t('tl.detail.quality'), value: q.reason ? `${q.status} — ${q.reason}` : q.status });
+    rows.push(
+      { label: t('tl.detail.quality'), value: t(`tl.quality.${q.status}` as MessageKey) },
+      { label: t('tl.detail.referenceQuality'), value: t(`tl.referenceQuality.${q.reference_status}` as MessageKey) },
+      { label: t('tl.detail.qualityFlags'), value: q.flags.length ? q.flags.join(', ') : t('tl.detail.none') },
+    );
+    if (q.reason) rows.push({ label: t('tl.detail.qualityReason'), value: q.reason });
   }
   if (event.crops && event.crops.length) {
     rows.push({ label: t('tl.detail.crops'), value: event.crops.join(', ') });
@@ -215,10 +231,17 @@ function EventDetail({ event, onClose }: { event: TimelineEvent; onClose: () => 
     rows.push({ label: t('tl.hyp.colStatus'), value: event.hypothesis.status });
   }
   rows.push(
+    { label: t('tl.detail.provider'), value: p.provider ?? missing },
     { label: t('src.dataset'), value: p.dataset ?? missing },
+    { label: t('tl.detail.datasetVersion'), value: p.dataset_version ?? missing },
+    { label: t('tl.detail.sourceUri'), value: p.source_uri
+      ? <a href={p.source_uri} target="_blank" rel="noreferrer">{p.source_uri}</a>
+      : missing },
     { label: t('src.resolution'), value: p.spatial_resolution ? p.spatial_resolution.description : missing },
+    { label: t('tl.detail.temporalResolution'), value: p.temporal_resolution ? p.temporal_resolution.description : missing },
     { label: t('src.retrieved'), value: p.retrieved_at ?? missing },
     { label: t('src.checksum'), value: p.checksum_sha256 ? <span className="mono">{p.checksum_sha256.slice(0, 16)}…</span> : missing },
+    { label: t('tl.detail.processingVersion'), value: p.processing_version ?? missing, mono: true },
   );
   return (
     <section className="panel" aria-labelledby="tl-detail-h">

@@ -66,6 +66,8 @@ export function HypothesesPanel({
   const { t } = useI18n();
   const repo = caseRepository();
   const [templates, setTemplates] = useState<HypothesisTemplateView[] | null>(null);
+  const [templateError, setTemplateError] = useState('');
+  const [templateReload, setTemplateReload] = useState(0);
   const [showAdd, setShowAdd] = useState(false);
   const [statement, setStatement] = useState('');
   const [busy, setBusy] = useState(false);
@@ -76,9 +78,17 @@ export function HypothesesPanel({
   useEffect(() => {
     if (!showAdd || templates) return;
     let live = true;
-    api.hypothesisTemplates().then((cat) => { if (live) setTemplates(cat.items); }, () => { if (live) setTemplates([]); });
+    setTemplateError('');
+    api.hypothesisTemplates().then(
+      (cat) => { if (live) setTemplates(cat.items); },
+      (err) => {
+        if (!live) return;
+        setTemplates([]);
+        setTemplateError(caseErrorText(err, t));
+      },
+    );
     return () => { live = false; };
-  }, [showAdd]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showAdd, templateReload]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addedCodes = new Set(hypotheses.map((h) => h.template_code).filter((c): c is string => c !== null));
   const refs = new Map(hypotheses.flatMap((h) => h.evidence.map((e) => [e.id, e] as const)));
@@ -230,7 +240,12 @@ export function HypothesesPanel({
           {formError && <StatusMessage tone="error" title={formError} />}
           <div>
             <p className="muted">{t('tl.hyp.templatesLead')}</p>
-            {templates === null ? (
+            {templateError ? (
+              <StatusMessage tone="error" title={t('tl.hyp.templatesError')}
+                action={<Button variant="secondary" onClick={() => { setTemplates(null); setTemplateReload((n) => n + 1); }}>{t('state.retry')}</Button>}>
+                {templateError}
+              </StatusMessage>
+            ) : templates === null ? (
               <StatusMessage tone="loading" title={t('state.loading')} />
             ) : (
               <ul className="list-plain">

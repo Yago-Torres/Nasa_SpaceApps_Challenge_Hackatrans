@@ -26,6 +26,7 @@ const CASE_VIEW: CaseView = {
 };
 
 const ANOMALY_ID = '22222222-2222-4222-8222-222222222222';
+const OBSERVATION_ID = '66666666-6666-4666-8666-666666666666';
 
 function timelineFixture(): Timeline {
   return {
@@ -51,7 +52,7 @@ function timelineFixture(): Timeline {
         data_quality: { status: 'complete', reference_status: 'complete', flags: [], reason: null },
         provenance: {
           source_kind: 'OBSERVED', description: 'NASA POWER daily point data aggregated to a calendar month.', case_id: CASE_ID, case_version: 1,
-          source_manifest_id: 'm1', observation_id: 'o1', anomaly_id: ANOMALY_ID, hypothesis_id: null, field_id: 'f1', field_label: 'North field',
+          source_manifest_id: 'm1', observation_id: OBSERVATION_ID, anomaly_id: ANOMALY_ID, hypothesis_id: null, field_id: 'f1', field_label: 'North field',
           provider: 'NASA POWER', dataset: 'NASA POWER daily point', dataset_version: null, source_uri: 'https://power.larc.nasa.gov',
           retrieved_at: '2026-01-02T00:00:00Z', checksum_sha256: 'a'.repeat(64), processing_version: '1',
           spatial_resolution: { value: null, unit: 'deg', description: '0.5° × 0.625°' }, temporal_resolution: { value: 1, unit: 'month', description: 'monthly' },
@@ -157,6 +158,29 @@ describe('CaseTimeline (ABB-22)', () => {
     expect(screen.getByText(/a{16}…/)).toBeTruthy(); // truncated checksum from provenance
   });
 
+  it('maps linked observation evidence to its anomaly event before opening provenance', async () => {
+    const linked = hypothesisView({
+      supporting_evidence_ids: [OBSERVATION_ID],
+      evidence: [{
+        id: OBSERVATION_ID, evidence_type: 'OBSERVATION', kind: 'OBSERVED',
+        label: 'Observation: precipitation, Apr 2022', start: '2022-04-01', end: '2022-04-30', active: true,
+      }],
+    });
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const path = String(input);
+      if (path.endsWith(`/api/v1/cases/${CASE_ID}`)) return json(200, CASE_VIEW);
+      if (path.endsWith('/timeline')) return json(200, timelineFixture());
+      if (path.endsWith('/hypotheses')) return json(200, { items: [linked], limitations: [] } satisfies HypothesisList);
+      return json(404, { detail: 'unexpected path in test' });
+    });
+    const user = userEvent.setup();
+    renderTimeline();
+    await screen.findByRole('heading', { level: 1, name: 'Synthetic plot' });
+    await user.click(screen.getByRole('button', { name: /Observation: precipitation/ }));
+    expect(await screen.findByRole('heading', { level: 2, name: 'Source of the selected finding' })).toBeTruthy();
+    expect(screen.getByText('NASA POWER')).toBeTruthy();
+  });
+
   it('shows the backend error detail verbatim and no timeline when the case API fails', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const path = String(input);
@@ -194,6 +218,26 @@ describe('CaseTimeline (ABB-22)', () => {
     expect(screen.getByText('Water deficit may have contributed to the reported symptoms.')).toBeTruthy();
     // Never a confidence score or probability next to the hypothesis.
     expect(document.body.textContent).not.toMatch(/%\s*(confidence|probability)/i);
+  });
+
+  it('shows a retryable error when the hypothesis template catalogue fails', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const path = String(input);
+      if (path.endsWith(`/api/v1/cases/${CASE_ID}`)) return json(200, CASE_VIEW);
+      if (path.endsWith('/timeline')) return json(200, timelineFixture());
+      if (path.endsWith('/hypothesis-templates')) return json(503, { detail: 'Template catalogue unavailable.' });
+      if (path.endsWith('/hypotheses')) return json(200, { items: [], limitations: [] } satisfies HypothesisList);
+      return json(404, { detail: 'unexpected path in test' });
+    });
+    const user = userEvent.setup();
+    renderTimeline();
+    await screen.findByRole('heading', { level: 1, name: 'Synthetic plot' });
+    await user.click(screen.getByRole('button', { name: 'Add a hypothesis' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('Starting templates could not be loaded');
+    expect(alert.textContent).toContain('HTTP 503: Template catalogue unavailable.');
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
+    expect(screen.queryByText('Every starting template has been added.')).toBeNull();
   });
 
   it('asks a signed-out viewer to sign in instead of showing any case data', async () => {
