@@ -5,7 +5,8 @@ import type {
   ScenarioAnalysis, ScenarioAnalysisRequest, SensitivityAnalysis, SensitivityRequest, SessionOut, Timeline, UserOut,
   PermissionGrant, PermissionView, ActivityPage, CommentCreate, CommentEdit, CommentList, CommentRevisionView, CommentView,
   InvitationCreate, InvitationDecision, InvitationList, InvitationView, ReceivedInvitationList, SharedCaseView,
-  ShareLinkCreate, ShareLinkCreated, ShareLinkList,
+  ShareLinkCreate, ShareLinkCreated, ShareLinkList, ApplicabilityReport, ApplicabilityRequest, ClaimCreate, ClaimEventView,
+  ClaimList, ClaimView, DisagreementList, EvidenceGraph, EvidenceTrace, PaperRegistration, PaperView,
 } from './types';
 import { clearSession, getSession } from './session';
 
@@ -240,5 +241,37 @@ export const collabApi = {
   /** Public, no account: the token is the only credential, so it is never logged or stored. */
   shared(token: string, signal?: AbortSignal) {
     return request<SharedCaseView>(`/api/v1/shared/${encodeURIComponent(token)}`, { signal, referrerPolicy: 'no-referrer', cache: 'no-store' });
+  },
+};
+
+/**
+ * Case evidence (ABB-14 claims, ABB-15 disagreements/applicability, ABB-16 graph; ABB-23 UI).
+ * Read routes serve every member; writes follow each route's role rules on the server.
+ */
+export const evidenceApi = {
+  claims(caseId: string, signal?: AbortSignal) {
+    return request<ClaimList>(`${casePath(caseId)}/claims`, { auth: true, signal });
+  },
+  claimHistory(caseId: string, claimId: string, signal?: AbortSignal) {
+    return request<ClaimEventView[]>(`${casePath(caseId)}/claims/${encodeURIComponent(claimId)}/history`, { auth: true, signal });
+  },
+  /** Registers a work by DOI or OpenAlex id; the server fetches and verifies its metadata (no metadata is sent). */
+  registerPaper(body: PaperRegistration) {
+    return request<PaperView>('/api/v1/evidence/papers', { method: 'POST', auth: true, json: body });
+  },
+  createClaim(caseId: string, body: ClaimCreate) {
+    return request<ClaimView>(`${casePath(caseId)}/claims`, { method: 'POST', auth: true, json: body });
+  },
+  disagreements(caseId: string, signal?: AbortSignal) {
+    return request<DisagreementList>(`${casePath(caseId)}/claims/disagreements`, { auth: true, signal });
+  },
+  applicability(caseId: string, claimId: string, body: ApplicabilityRequest) {
+    return request<ApplicabilityReport>(`${casePath(caseId)}/claims/${encodeURIComponent(claimId)}/applicability`, { method: 'POST', auth: true, json: body });
+  },
+  graph(caseId: string, signal?: AbortSignal) {
+    return request<EvidenceGraph>(`${casePath(caseId)}/evidence-graph`, { auth: true, signal });
+  },
+  trace(caseId: string, nodeId: string, signal?: AbortSignal) {
+    return request<EvidenceTrace>(`${casePath(caseId)}/evidence-graph/trace/${encodeURIComponent(nodeId)}`, { auth: true, signal });
   },
 };

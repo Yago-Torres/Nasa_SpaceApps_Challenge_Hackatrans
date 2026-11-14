@@ -134,4 +134,4 @@ With **no case data at all**, every dimension is `UNKNOWN` and `transfer_status 
 - Partial Köppen–Geiger similarity (same main group and precipitation letter) and the treatment of `MIXED` water regimes and `GLOBAL` scope as `PARTIAL` are documented conventions, pending scientific review.
 - Texture classes assume USDA particle-size limits; other particle-size systems are not converted.
 - Applicability results are computed on request and not stored or versioned; a report that cites them must record the request inputs.
-- Not linked to hypotheses or the evidence graph yet (ABB-16), and no UI yet (ABB-23).
+- Confirmed contradictions appear in the evidence graph as CONTRADICTS edges (ABB-16); shown read-only in the case Evidence tab with the applicability check (ABB-23); the decision form is API-only.

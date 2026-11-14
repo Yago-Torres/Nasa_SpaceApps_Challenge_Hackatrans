@@ -11,7 +11,8 @@ Owner: C (frontend). Status of each item is explicit: **IMPLEMENTED** means it e
 | Screen (`#/route`) | Endpoint | Evidence label shown |
 |---|---|---|
 | Investigation (`#/investigation`) | `GET /api/climate` (reference fixed to 2010–2021) | Observed · NASA POWER |
-| Evidence (`#/evidence`) | `GET /api/literature` | Metadata only (never Reviewed literature) |
+| Evidence (`#/evidence`) | `GET /api/literature` | Metadata only (never Reviewed literature); points to the case Evidence tab to keep a study |
+| Case tab `#/cases/<id>/evidence` (ABB-23) | `…/claims`, `…/claims/{id}/history`, `POST /api/v1/evidence/papers`, `POST …/claims`, `…/claims/disagreements`, `POST …/claims/{id}/applicability`, `…/evidence-graph`, `…/evidence-graph/trace/{node}` | Reviewed literature only for ACCEPTED claims; everything else "Not reviewed"; graph kinds from the backend; DOIs as registered |
 | Rotations (`#/rotations`) | `GET /api/v1/crop-catalog`, `POST /api/v1/rotations/scenarios`, `/sensitivity` | Backend-returned MODEL_SCENARIO, with declared inputs and limitations |
 | Report (`#/report`) | `POST /api/report` | Preliminary |
 | Cases (`#/cases`, `#/cases/new`, `#/cases/<id>`) | `/api/v1/auth/*`, `/api/v1/cases*` (see §6) | Farmer reported (wizard answers); status/role as returned |
@@ -41,8 +42,8 @@ Owner: C (frontend). Status of each item is explicit: **IMPLEMENTED** means it e
 | # | Request | Why the UI needs it | Issue |
 |---|---|---|---|
 | B1 | Configure `OPENALEX_API_KEY` (or polite-pool `mailto` set by the team, not by an agent) | OpenAlex answers `429 Too Many Requests` to shared egress; the Evidence screen currently shows the error state | ABB-13 |
-| B2 | Reviewed-claim object: `claim`, `doi`, `study_context` (region, crop, method), `limitations`, `reviewer`, `reviewed_at`, `status` | Promote a paper from *Metadata only* to *Reviewed literature* | ABB-14 |
-| B3 | Evidence-graph payload: nodes `{id, kind ∈ OBSERVED…MISSING_DATA, label, provenance}` and edges `{from, to, relation ∈ supports/contradicts, note}` | ABB-23 graph and its accessible list view | ABB-16 |
+| B2 | Reviewed-claim object: `claim`, `doi`, `study_context` (region, crop, method), `limitations`, `reviewer`, `reviewed_at`, `status` | Promote a paper from *Metadata only* to *Reviewed literature* | ABB-14 — **Delivered by ABB-14, consumed by ABB-23.** |
+| B3 | Evidence-graph payload: nodes `{id, kind ∈ OBSERVED…MISSING_DATA, label, provenance}` and edges `{from, to, relation ∈ supports/contradicts, note}` | ABB-23 graph and its accessible list view | ABB-16 — **Delivered by ABB-16, consumed by ABB-23.** |
 | B4 | ~~Rotation comparison payload~~ **Implemented in ABB-17/18**: `/api/v1/rotations/scenarios` returns rule-generated strategies, ordinal ordering, trade-offs, exposure, explanations and limitations. No numeric yield/water claims or impact score. UI sends farmer-declared inputs and renders the response. | ABB-24 comparator | ABB-17, ABB-18 |
 | B5 | Uncertainty Hunter items: `{question, why_it_matters, measurement, would_change}` | "Would settle it" column of hypotheses | ABB-19 |
 

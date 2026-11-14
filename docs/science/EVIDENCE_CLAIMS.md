@@ -1,6 +1,6 @@
 # Evidence claims and human review (ABB-14)
 
-Status: implemented in the API (`backend/agroblackbox/api/evidence.py`, migration `e3c91f5a7d24`); no UI yet (ABB-23). This document defines what a claim records, how it is reviewed and what "reviewed" does and does not mean. It applies `SCIENTIFIC_POLICY.md`.
+Status: implemented in the API (`backend/agroblackbox/api/evidence.py`, migration `e3c91f5a7d24`); shown read-only in the case Evidence tab (ABB-23), where owners and editors can also add a study as a not-reviewed claim. Review forms are API-only. This document defines what a claim records, how it is reviewed and what "reviewed" does and does not mean. It applies `SCIENTIFIC_POLICY.md`.
 
 ## 1. Two separate records
 

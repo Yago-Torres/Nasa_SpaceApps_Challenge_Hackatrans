@@ -13,6 +13,7 @@ import { IncidentWizard } from './cases/IncidentWizard';
 import { CaseTimeline } from './cases/timeline/CaseTimeline';
 import { CollaborationPanel } from './cases/CollaborationPanel';
 import { DiscussionPanel } from './cases/DiscussionPanel';
+import { CaseEvidence } from './cases/evidence/CaseEvidence';
 import { sharedAsText } from './cases/CaseTitleBlock';
 import { caseErrorText, isStorageUnavailable } from './cases/caseErrors';
 
@@ -26,9 +27,10 @@ import { caseErrorText, isStorageUnavailable } from './cases/caseErrors';
 const CASE_TABS = [
   { id: 'details', label: 'cases.tab.details' as MessageKey, render: (caseId: string) => <IncidentWizard key={caseId} caseId={caseId} /> },
   { id: 'timeline', label: 'cases.tab.timeline' as MessageKey, render: (caseId: string) => <CaseTimeline key={caseId} caseId={caseId} /> },
+  { id: 'evidence', label: 'cases.tab.evidence' as MessageKey, render: (caseId: string) => <CaseEvidence key={caseId} caseId={caseId} /> },
   { id: 'collaboration', label: 'cases.tab.collaboration' as MessageKey, render: (caseId: string) => <CollaborationPanel key={caseId} caseId={caseId} /> },
   { id: 'discussion', label: 'cases.tab.discussion' as MessageKey, render: (caseId: string) => <DiscussionPanel key={caseId} caseId={caseId} /> },
-  // ABB-23 (Evidence), ABB-26 (Report): add { id, label, render } here.
+  // ABB-26 (Report): add { id, label, render } here.
 ] as const satisfies readonly { id: string; label: MessageKey; render: (caseId: string) => ReactElement }[];
 
 /** Cases list + wizard routes (#/cases, #/cases/new, #/cases/<id>[/<tab>]), backed by /api/v1/cases. */

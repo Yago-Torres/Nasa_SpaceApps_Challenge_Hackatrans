@@ -81,7 +81,7 @@ export function Evidence() {
               </li>
             ))}
           </ul>
-          <StatusMessage tone="pending" title={t('state.notBuiltTitle')}>{t('ev.reviewPending')}</StatusMessage>
+          <StatusMessage tone="empty" title={t('ev.keepTitle')}>{t('ev.keepBody')}</StatusMessage>
         </section>
       )}
     </>
