@@ -1,4 +1,4 @@
-"""Request/response models for registered papers and case evidence claims (ABB-14).
+"""Request/response models for registered papers and case evidence claims (ABB-14; ABB-15 fields).
 
 Responses extend the shared ABB-02 contracts (``schemas.Paper`` / ``schemas.EvidenceClaim``)
 additively. Outcome values, units and uncertainty are stored as text *as stated in the source*:
@@ -10,9 +10,10 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import Field as PydanticField, HttpUrl, JsonValue, StringConstraints, model_validator
+from pydantic import AfterValidator, Field as PydanticField, HttpUrl, JsonValue, StringConstraints, model_validator
 
 from .. import schemas
+from ..comparability import EffectDirection, GeographicScope, KoppenClass, StudyWaterRegime, TextureClass
 from .dto import Limitation, RequestModel, UserSummary
 
 StudyDesign = Literal[
@@ -53,6 +54,7 @@ Text1000 = _text(1_000)
 Text2000 = _text(2_000)
 Text5000 = _text(5_000)
 Term = Text120
+CountryCode = Annotated[str, StringConstraints(strip_whitespace=True, pattern=r"^[A-Za-z]{2}$"), AfterValidator(str.upper)]
 
 
 def check_access(basis: str, access: str, license_: str | None, *, what: str) -> None:
@@ -114,6 +116,29 @@ class ClaimContext(RequestModel):
     region: Text300 | None = None
     climate: Text500 | None = None
     management: Text1000 | None = PydanticField(default=None, description="Practices / intervention studied")
+    # ABB-15 structured conditions, entered by a person from the paper (never parsed from the text above).
+    water_regime: StudyWaterRegime = "NOT_REPORTED"
+    soil_texture_classes: list[TextureClass] = PydanticField(
+        default_factory=list, max_length=12, description="USDA texture classes reported for the study sites")
+    soil_ph_min: float | None = PydanticField(default=None, ge=0, le=14, description="Lowest soil pH reported")
+    soil_ph_max: float | None = PydanticField(default=None, ge=0, le=14, description="Highest soil pH reported")
+    geographic_scope: GeographicScope = "NOT_REPORTED"
+    countries: list[CountryCode] = PydanticField(
+        default_factory=list, max_length=100, description="ISO 3166-1 alpha-2 codes of the study sites")
+    climate_classes: list[KoppenClass] = PydanticField(
+        default_factory=list, max_length=31, description="Koppen-Geiger classes of the study sites")
+
+    @model_validator(mode="after")
+    def _structured_conditions(self) -> ClaimContext:
+        if (self.soil_ph_min is None) != (self.soil_ph_max is None):
+            raise ValueError("soil_ph_min and soil_ph_max must be given together")
+        if self.soil_ph_min is not None and self.soil_ph_min > self.soil_ph_max:
+            raise ValueError("soil_ph_min must not exceed soil_ph_max")
+        for name in ("soil_texture_classes", "countries", "climate_classes"):
+            values = getattr(self, name)
+            if len(set(values)) != len(values):
+                raise ValueError(f"{name} contains duplicates")
+        return self
 
 
 class ReportedOutcome(RequestModel):
@@ -149,10 +174,21 @@ class ClaimContent(RequestModel):
     content_license: Text500 | None = PydanticField(
         default=None, description="Licence/terms under which the text was read (required for FULL_TEXT)")
     limitations: list[Limitation] = PydanticField(min_length=1, max_length=20)
+    # ABB-15 comparability fields, entered by a person; matched exactly (normalised), never inferred.
+    intervention: Text300 | None = PydanticField(default=None, description="Practice or treatment studied")
+    comparator: Text300 | None = PydanticField(default=None, description="What the intervention was compared with")
+    outcome_variable: Text300 | None = PydanticField(default=None, description="Variable the direction refers to")
+    effect_direction: EffectDirection = PydanticField(
+        default="NOT_STATED", description="Direction of the effect on outcome_variable as stated by the authors")
 
     @model_validator(mode="after")
     def _evidence_rules(self) -> ClaimContent:
         check_access(self.evidence_basis, self.access_basis, self.content_license, what="claim")
+        if self.effect_direction != "NOT_STATED":
+            if self.evidence_basis == "METADATA_ONLY":
+                raise ValueError("an effect direction cannot come from metadata alone")
+            if self.intervention is None or self.outcome_variable is None:
+                raise ValueError("an effect direction needs the intervention and the outcome variable it refers to")
         if self.quoted_fragment is not None:
             if self.evidence_basis == "METADATA_ONLY":
                 raise ValueError("a quoted fragment requires that the abstract or full text was read")
@@ -181,10 +217,14 @@ class ClaimPatch(RequestModel):
     access_basis: AccessBasis | None = None
     content_license: Text500 | None = None
     limitations: list[Limitation] | None = PydanticField(default=None, min_length=1, max_length=20)
+    intervention: Text300 | None = None
+    comparator: Text300 | None = None
+    outcome_variable: Text300 | None = None
+    effect_direction: EffectDirection | None = None
 
     @model_validator(mode="after")
     def _not_null(self) -> ClaimPatch:
-        nullable = {"quoted_fragment", "content_license"}
+        nullable = {"quoted_fragment", "content_license", "intervention", "comparator", "outcome_variable"}
         for name in self.model_fields_set - nullable - {"version"}:
             if getattr(self, name) is None:
                 raise ValueError(f"{name} cannot be null")
@@ -225,6 +265,13 @@ class ClaimContextView(schemas.ContractModel):
     region: str | None = None
     climate: str | None = None
     management: str | None = None
+    water_regime: StudyWaterRegime = "NOT_REPORTED"
+    soil_texture_classes: list[TextureClass] = PydanticField(default_factory=list)
+    soil_ph_min: float | None = None
+    soil_ph_max: float | None = None
+    geographic_scope: GeographicScope = "NOT_REPORTED"
+    countries: list[str] = PydanticField(default_factory=list)
+    climate_classes: list[KoppenClass] = PydanticField(default_factory=list)
 
 
 class ReportedOutcomeView(schemas.ContractModel):
@@ -265,6 +312,10 @@ class ClaimView(schemas.EvidenceClaim):
     content_license: str | None = None
     origin: ClaimOrigin
     origin_ref: str | None = None
+    intervention: str | None = None
+    comparator: str | None = None
+    outcome_variable: str | None = None
+    effect_direction: EffectDirection = "NOT_STATED"
     warnings: list[str] = PydanticField(default_factory=list)
     can_edit: bool
     can_review: bool
