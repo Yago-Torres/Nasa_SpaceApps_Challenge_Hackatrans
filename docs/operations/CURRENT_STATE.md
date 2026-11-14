@@ -10,7 +10,7 @@
 | Rotation examples | IMPLEMENTED *ILLUSTRATIVE ONLY* | `services/rotations.py` | user inputs, crop constraints, meaningful comparison |
 | Case note Markdown export | IMPLEMENTED DEVELOPMENT BASELINE | `services/report.py` | persisted cases, citations, report snapshot and download |
 | React app baseline | IMPLEMENTED DEVELOPMENT BASELINE | `frontend/src/main.tsx` | full case/graph/map/collaboration UX, accessibility, tests |
-| Reproducible development toolchain | IN PROGRESS — LOCALLY VERIFIED | tracked Python/npm locks, `.github/workflows/ci.yml`, `scripts/check_context.py` | run changed revision in remote CI after the team publishes it |
+| Reproducible development toolchain | IMPLEMENTED & TESTED | tracked Python/npm locks, `.github/workflows/ci.yml`, `scripts/check_context.py`, CI run `43593848025` | keep locks and runtime pins synchronized when dependencies change |
 | User accounts / permissions | NOT BUILT | — | auth flow, privacy, role tests |
 | Persistent case storage | NOT BUILT | — | SQL models, migrations, repository layer |
 | GPM / HLS | NOT BUILT | — | source adapter(s), QA, geospatial comparability |
@@ -27,7 +27,7 @@
 - Frontend: `cd frontend && npm ci && npm run build` with Node.js 24 in an Internet-enabled Linux/WSL environment.
 - Real NASA/OpenAlex network path: **not verified by archive creation**; each team must test and log successful retrieved dataset/source.
 
-ABB-01 local verification on 2026-11-14: context policy found 22 required files; `uv lock --check` and strict sync succeeded; backend reported `3 passed`; Node `v24.22.3` with npm `11.19.1` completed `npm ci` and the production build with zero reported vulnerabilities and no unreviewed install scripts. Remote CI has not run against these uncommitted changes.
+ABB-01 verification on 2026-11-14: context policy found 22 required files; `uv lock --check` and strict sync succeeded; backend reported `3 passed`; Node `v24.22.3` with npm `11.19.1` completed `npm ci` and the production build with zero reported vulnerabilities and no unreviewed install scripts. GitHub Actions run `43593848025` passed `api-tests`, `web-build` and `context-policy` for commit `7081f6990684cb3e058e404dae4ca63c7593260e`.
 
 ## Dependency-management note
 
