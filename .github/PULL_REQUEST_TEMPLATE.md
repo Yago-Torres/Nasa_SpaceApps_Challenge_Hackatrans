@@ -1,10 +1,10 @@
-## Approved work item
+## Roadmap work item
 
 Closes #___
 
-- [ ] Linked Issue has human approval comments and `team-approved` label (or this is a linked documented bug fix)
-- [ ] No added feature beyond approved scope
-- [ ] All-three approval/ADR linked if science methodology, architecture, privacy, security, license or scope changed
+- [ ] Linked Issue or documented bug fix defines the implemented scope
+- [ ] No unrelated feature was added
+- [ ] ADR/review notes linked if science methodology, architecture, privacy, security, license or scope changed
 
 ## What changed
 

@@ -14,7 +14,7 @@
 
 ## Sources
 
-NASA POWER first, with exact endpoint parameters and checksum. GPM/HLS when approved and with resolution limitations. Literature search via OpenAlex/Crossref, DOI verification and license-aware full text. Context-sensitive local soil info should distinguish farmer measurements from modeled soil maps.
+NASA POWER first, with exact endpoint parameters and checksum. GPM/HLS when scheduled in the roadmap and with resolution limitations. Literature search via OpenAlex/Crossref, DOI verification and license-aware full text. Context-sensitive local soil info should distinguish farmer measurements from modeled soil maps.
 
 ## Forensics methodology standards
 
@@ -28,4 +28,4 @@ NASA POWER first, with exact endpoint parameters and checksum. GPM/HLS when appr
 
 ## Review levels
 
-Scientific inference change -> group unanimous approval + tests + scientific review. A wording/UI change -> reviewer confirms status/uncertainty labels. Data source/quality changes -> update source manifest, API and regression tests.
+Scientific inference change -> documented method, tests, scientific review and ADR when architectural. A wording/UI change -> reviewer confirms status/uncertainty labels. Data source/quality changes -> update source manifest, API and regression tests.

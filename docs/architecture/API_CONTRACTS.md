@@ -23,7 +23,7 @@ Formalize versioned `/api/v1` resources and schema generation through approved c
 - `/api/v1/cases/{case_id}/reviews` — reviewer comments and decisions with access control.
 - `/api/v1/cases/{case_id}/reports` — versioned human-readable case reports.
 
-Do not implement paths/types or migrate existing consumers without an approved feature spec. Breaking changes require a compatibility plan, contract tests and updated docs.
+Do not implement paths/types or migrate existing consumers without a documented feature spec and coordination with affected consumers. Breaking changes require a compatibility plan, contract tests and updated docs.
 
 ## Shared response requirements
 

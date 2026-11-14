@@ -3,7 +3,7 @@
 - Status: proposed | accepted | superseded
 - Date:
 - Related GitHub Issue:
-- Human approvals (all 3 for architecture):
+- Reviewers / coordination notes:
 
 ## Context
 

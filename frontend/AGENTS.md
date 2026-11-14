@@ -6,4 +6,4 @@ Inherit repository `AGENTS.md`.
 - Label every value as observed, hypothesized, literature-backed, modeled or illustrative.
 - Show loading, stale/offline and error states. No silently invented or simulated NASA data.
 - Accessibility: keyboard usable, distinguish status by text not color alone, responsive layouts, locale-safe units.
-- Follow `docs/product/UX_FLOWS.md` and the approved Issue; do not fabricate UI backed by nonexistent endpoints without marking it explicitly pending.
+- Follow `docs/product/UX_FLOWS.md` and the roadmap Issue; do not fabricate UI backed by nonexistent endpoints without marking it explicitly pending.

@@ -2,7 +2,7 @@
 
 ## Central truth
 
-Git repository + approved GitHub Issues/PRs = authoritative. No model's private memory is authoritative. Context must be stored as versioned, human-approved artifacts (product specs, API, ADRs, status ledger), not duplicated chat transcripts.
+Git repository + roadmap GitHub Issues/PRs = authoritative. No model's private memory is authoritative. Context must be stored as versioned, reviewed artifacts (product specs, API, ADRs, status ledger), not duplicated chat transcripts.
 
 ## Worktree isolation
 
@@ -16,7 +16,7 @@ Never let two autonomous agents rewrite shared API schemas concurrently without 
 
 ## Before AI coding
 
-Ask the model to read `AGENTS.md`, its nested instruction, context map, CURRENT_STATE, contract docs, approved Issue, relevant source and tests. Ask for a short implementation plan and dependencies. Confirm feature has human votes, even if the assistant says it does.
+Ask the model to read `AGENTS.md`, its nested instruction, context map, CURRENT_STATE, contract docs, roadmap Issue, relevant source and tests. Ask for a short implementation plan and dependencies. Roadmap Issues can be implemented directly; coordinate shared files and interfaces before integration.
 
 ## After AI coding
 

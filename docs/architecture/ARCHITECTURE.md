@@ -2,7 +2,7 @@
 
 ## Stack decision
 
-- **Backend / science**: Python 3.12+, FastAPI, Pydantic, NumPy/pandas; use validated libraries only as required by approved feature.
+- **Backend / science**: Python 3.12+, FastAPI, Pydantic, NumPy/pandas; use validated libraries only as required by the active roadmap work.
 - **Frontend**: React / TypeScript / Vite. MapLibre or Leaflet once mapping feature is approved; no scientific computations in TS.
 - **Persistence**: PostgreSQL + migrations for accounts, cases, evidence, review and audit. Optional PostGIS after approval if geospatial queries justify it.
 - **Jobs**: Redis-backed worker for slow/retriable ingestion or report processing; current baseline uses direct API requests and is **not** wired to Redis.
@@ -27,7 +27,7 @@ FastAPI (auth, cases, policies, validated DTOs)
 
 ## What exists at repository creation
 
-`backend/agroblackbox/app.py` and `services/*.py` implement a small in-memory API for NASA POWER, OpenAlex metadata, illustrative rotations and a case note. `frontend/src/main.tsx` is a simple corresponding web UI. `backend/tests/` has climate metric tests. **No SQL persistence/auth/review/worker/GPM/HLS currently integrated.** The development baseline should evolve via approved Issues rather than an unreviewed rewrite.
+`backend/agroblackbox/app.py` and `services/*.py` implement a small in-memory API for NASA POWER, OpenAlex metadata, illustrative rotations and a case note. `frontend/src/main.tsx` is a simple corresponding web UI. `backend/tests/` has climate metric tests. **No SQL persistence/auth/review/worker/GPM/HLS currently integrated.** The development baseline should evolve through scoped roadmap Issues rather than an unreviewed rewrite.
 
 ## Data boundaries
 

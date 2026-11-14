@@ -6,6 +6,6 @@ Inherit repository `AGENTS.md`. Scientific integrity is the top priority.
 - No unsupported causal attribution, fake probabilities, yield or water savings. Keep evidence provenance explicit.
 - Review `docs/architecture/API_CONTRACTS.md` and `docs/science/SCIENTIFIC_POLICY.md` before editing.
 - Planned PostgreSQL/Redis modules must not be described as already integrated.
-- Significant scientific algorithm changes require unanimous group approval recorded in the Issue.
+- Significant scientific algorithm changes require explicit assumptions, regression tests, scientific review and a decision record in the Issue or ADR before integration.
 
 - Use `uv sync --extra dev`, `uv run --extra dev pytest -q` and `uv add` for every backend dependency/task. Do not use pip or manually activate Python environments.

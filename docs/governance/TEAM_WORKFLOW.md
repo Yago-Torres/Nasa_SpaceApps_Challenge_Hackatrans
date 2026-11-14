@@ -1,4 +1,4 @@
-# Three-person workflow — no permanently siloed development
+# Three-person workflow — coordinated delivery without implementation gates
 
 ## Roles (domain stewards, not assigned-exclusive owners)
 
@@ -6,34 +6,35 @@
 - B: scientific claims, verified literature findings, agronomic constraints and rotation logic.
 - C: UX, case persistence/auth, shared review, accessibility and release engineering.
 
-Anyone can claim any approved GitHub Issue. The domain steward reviews across boundaries. Each task has exactly one implementer, one human reviewer, and clear acceptance criteria. Don't simultaneously edit the same files in parallel branches if avoidable.
+Anyone can claim any roadmap Issue. The relevant domain steward reviews integration-sensitive work. Each task has one primary implementer, explicit acceptance criteria and a documented handoff. Avoid simultaneous edits to the same files.
 
 ## Daily team cadence
 
-- **Kickoff (10 min)**: source-of-truth check `CURRENT_STATE`, vote on proposals, assign approved Issues, surface dependencies.
-- **Development**: commit small changes on `feat/<issue>-<slug>` branches, run local checks, integrate every few hours.
-- **Integration checkpoint (15 min)**: PR review, API compatibility, reproducibility, resolve blockers; `main` remains demonstrable.
-- **Before ending session**: update Issue/PR handoff and current-state ledger upon merge. No critical decisions only in a voice call/DM.
+- **Kickoff (10 min)**: check `CURRENT_STATE`, select Ready Issues, assign implementers and surface dependencies.
+- **Development**: work from the Issue scope, communicate shared-contract changes and run focused checks continuously.
+- **Integration checkpoint (15 min)**: review diffs, API compatibility, scientific reproducibility and blockers; keep `main` demonstrable.
+- **Before ending session**: record verified results, limitations, affected contracts and the next action in the Issue, PR or handoff.
 
 ## Agent handoff procedure
 
-1. Commit and push stable changes on the task branch.
-2. Record Issue number, base commit, files changed, tests run, new API/schema, limitations and next action in the PR or a GitHub Issue comment.
-3. Next user/model reads repo `AGENTS.md`, context map, current state, Issue and changed code.
-4. New model **does not** use previous model's subjective summaries to override repository tests or facts.
+1. Record the Issue, base revision, files changed, checks run, API/schema impact, limitations and next action.
+2. Humans decide whether and when to create a branch, commit, push or PR.
+3. The next user/model reads `AGENTS.md`, the context map, `CURRENT_STATE`, the Issue and changed code.
+4. A new model does not use previous model summaries to override repository tests or facts.
 
-## GitHub settings checklist (team must configure)
+## GitHub settings checklist
 
-- Organization-owned repo, 3 collaborators with write access; least privilege for external collaborators.
-- Enable Issues, Projects, Discussions only if needed; provide `team-approved`, `needs-vote`, `breaking-contract`, `science-review`, `security-review` labels.
-- Protect `main`: PR required, **1 human approving reviewer minimum**, pass `api-tests`, `web-build`, `context-policy`, conversations resolved, no direct pushes/force pushes; dismiss stale approvals when code changes.
-- Use squash merges and short-lived branches; require review from domain steward on affected changes.
-- Optional CODEOWNERS after real GitHub usernames are known. Do not put fake handles into a live CODEOWNERS file. Remember GitHub's CODEOWNERS accepts approval from **any one** listed owner, not everyone.
-- Releases use version tags like `v1.0.0` only when all release gates have actually passed.
+- Three collaborators with least-privilege access; enable Issues and Projects as needed.
+- Use labels such as `roadmap`, `phase:*`, `lead:*`, `priority:*`, `breaking-contract`, `science-review`, `security-review` and `blocked`.
+- Project states: `Backlog`, `Ready`, `In Progress`, `In Review`, `Done`, `Blocked`, `Rejected`.
+- Protect `main`: PR required when publishing, one human approving reviewer, passing `api-tests`, `web-build` and `context-policy`, resolved conversations, no force pushes; dismiss stale reviews when code changes.
+- Prefer squash merges and short-lived branches when the team chooses to publish work.
+- Optional CODEOWNERS after real GitHub usernames are known. Do not put fake handles into a live CODEOWNERS file.
+- Releases use tags such as `v1.0.0` only when all release gates have actually passed.
 
 ## Team task ownership examples
 
 - A owns first real NASA data source integration and quality testing.
 - B owns evidence schema, DOI checks and rotation constraints.
 - C owns case workflow, API-client integration and UI shell.
-- Cross-cutting integration has one issue assigned to C with A/B as reviewers; members may swap ownership after a group decision.
+- Cross-cutting work has one implementer and explicit reviewers from affected domains; ownership may change through an Issue handoff.
