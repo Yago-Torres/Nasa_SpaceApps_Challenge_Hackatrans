@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Product renamed to **CropStory: The Agricultural Blackbox** (formerly AGRO BLACK BOX) in the web app title and brand, API title, report heading, outbound User-Agent and documentation. Internal identifiers keep the old name: Python package `agroblackbox`, repository, `ABB-*` Issue IDs, design-skill folders and the stored wizard-notes marker.
 - ABB-03 adds the PostgreSQL persistence boundary, initial reversible Alembic migration, referential/privacy constraints, optimistic case updates and PostgreSQL integration tests in CI; authenticated persistence APIs remain separate Issues.
 - Development governance simplified: roadmap Issues are directly executable without vote or approval labels, while contract coordination, technical review, scientific integrity and security checks remain required.
 - ABB-01 tooling hardening delivered: mandatory uv/npm lockfiles, strict CI installs, Node/Python pin checks, repaired frontend lock data and explicit review of the esbuild install script; GitHub Actions passed all required jobs.

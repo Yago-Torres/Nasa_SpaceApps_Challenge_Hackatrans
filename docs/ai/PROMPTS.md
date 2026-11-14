@@ -2,7 +2,7 @@
 
 ## Universal start prompt
 
-> You are working on AGRO BLACK BOX. Read the repository `AGENTS.md`, applicable nested instructions, `docs/ai/CONTEXT_MAP.md`, relevant product/architecture/science documents and `docs/operations/CURRENT_STATE.md`. Confirm which features are implemented, which are only specified, and which roadmap GitHub Issue is active. Inspect source/tests before planning. First show a concise plan and affected files; then implement only that Issue, add tests, update contracts/status docs and describe exact checks performed. Do not invent NASA data or scientific claims.
+> You are working on CropStory. Read the repository `AGENTS.md`, applicable nested instructions, `docs/ai/CONTEXT_MAP.md`, relevant product/architecture/science documents and `docs/operations/CURRENT_STATE.md`. Confirm which features are implemented, which are only specified, and which roadmap GitHub Issue is active. Inspect source/tests before planning. First show a concise plan and affected files; then implement only that Issue, add tests, update contracts/status docs and describe exact checks performed. Do not invent NASA data or scientific claims.
 
 ## Person A — Earth observation
 

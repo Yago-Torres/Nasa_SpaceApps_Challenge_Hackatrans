@@ -19,6 +19,8 @@ import type { CaseCreate, CaseView, FieldInput, FieldPrivacyTier, RoundingDeg } 
 import { MAX_CROP_ROWS, newId, parseNumber, validateStep, type CropYear, type IncidentCase, type PrivacyTier, type Rounding } from './model';
 
 export const REGION_NOT_SHARED = 'Not shared by the owner';
+// Stored data-format marker inside `incident_notes`. It keeps the project's former name on purpose:
+// changing it would make previously saved cases unreadable. Not user-facing branding.
 export const NOTES_MARKER = '--- AGRO BLACK BOX wizard answers v1 (structured; edit them in the wizard) ---';
 const ROUNDINGS: Rounding[] = [0.1, 0.5, 1];
 

@@ -73,7 +73,7 @@ def _manifest_provenance(case: Case, manifest: SourceManifest, fields: dict[UUID
     field = fields.get(manifest.field_id) if manifest.field_id else None
     return TimelineProvenance(
         source_kind=kind,
-        description=("NASA POWER daily point data aggregated to a calendar month by AGRO BLACK BOX; anomaly "
+        description=("NASA POWER daily point data aggregated to a calendar month by CropStory; anomaly "
                      "against the stored reference years."),
         case_id=case.id, source_manifest_id=manifest.id, observation_id=observation.id, anomaly_id=anomaly.id,
         field_id=manifest.field_id, field_label=field.label if field else None, provider=manifest.provider,
