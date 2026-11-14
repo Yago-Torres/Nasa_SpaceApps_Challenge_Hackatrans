@@ -1,7 +1,7 @@
 import type {
   CaseCreate, CaseList, CaseUpdate, CaseView, ClimateResponse, FieldPatch, HypothesisCreate, HypothesisList,
   HypothesisStatusChange, HypothesisTemplateCatalog, HypothesisTemplateRequest, HypothesisView, LoginRequest, Paper,
-  RegisterRequest, ReportRequest, ReportResponse, Rotation, SessionOut, Timeline, UserOut,
+  RegisterRequest, ReportRequest, ReportResponse, Rotation, SessionOut, Timeline, UserOut, PermissionGrant, PermissionView,
 } from './types';
 import { clearSession, getSession } from './session';
 
@@ -120,6 +120,15 @@ export const casesApi = {
   },
   get(id: string, signal?: AbortSignal) {
     return request<CaseView>(casePath(id), { auth: true, signal });
+  },
+  permissions(id: string, signal?: AbortSignal) {
+    return request<PermissionView[]>(`${casePath(id)}/permissions`, { auth: true, signal });
+  },
+  grantPermission(id: string, body: PermissionGrant) {
+    return request<PermissionView>(`${casePath(id)}/permissions`, { method: 'POST', auth: true, json: body });
+  },
+  revokePermission(id: string, userId: string) {
+    return request<void>(`${casePath(id)}/permissions/${encodeURIComponent(userId)}`, { method: 'DELETE', auth: true });
   },
   create(body: CaseCreate) {
     return request<CaseView>('/api/v1/cases', { method: 'POST', auth: true, json: body });
