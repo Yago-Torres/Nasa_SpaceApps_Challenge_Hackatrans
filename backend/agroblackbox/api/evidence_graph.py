@@ -30,6 +30,7 @@ from sqlalchemy.orm import Session
 from ..db.models import (
     Case,
     CaseHistory,
+    ClaimDisagreementReview,
     EvidenceClaim,
     EvidenceConclusion,
     EvidenceGraphEdge,
@@ -161,6 +162,8 @@ def load_graph(db: Session, case: Case, *, include_superseded: bool) -> Graph:
         hypotheses=list(db.scalars(select(Hypothesis).where(Hypothesis.case_id == case.id))),
         conclusions=list(db.scalars(select(EvidenceConclusion).where(EvidenceConclusion.case_id == case.id))),
         edges=list(db.scalars(select(EvidenceGraphEdge).where(EvidenceGraphEdge.case_id == case.id))),
+        disagreements=list(db.scalars(select(ClaimDisagreementReview).where(
+            ClaimDisagreementReview.case_id == case.id))),
     ), include_superseded=include_superseded)
 
 
@@ -234,6 +237,11 @@ def _conclusion_view(graph: Graph, conclusion: EvidenceConclusion, users: dict[U
     superseded = [n for n in result.node_ids if not graph.nodes[n].active]
     if superseded:
         warnings.append("Cites values of a superseded retrieval: " + ", ".join(superseded))
+    if result.contradiction_edge_ids:
+        edges_by_id = {e.id: e for e in graph.edges}
+        pairs = [f"{edges_by_id[i].source} / {edges_by_id[i].target}" for i in result.contradiction_edge_ids]
+        warnings.append("Cited literature includes claims a reviewer confirmed as contradicting each other "
+                        "(ABB-15): " + "; ".join(pairs))
     node = graph.nodes[node_id]
     return ConclusionView(
         id=conclusion.id, case_id=conclusion.case_id, node_id=node_id, title=conclusion.title,
@@ -401,8 +409,10 @@ def trace_node(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Node not found in this case's evidence graph.")
     result = trace(graph, node_id)
     edges_by_id = {e.id: e for e in graph.edges}
-    involved = [graph.nodes[n] for n in (*result.node_ids, *result.limiting_node_ids)]
-    traced_edges = [edges_by_id[e] for e in (*result.edge_ids, *result.limiting_edge_ids)]
+    involved = [graph.nodes[n] for n in (*result.node_ids, *result.limiting_node_ids,
+                                         *result.contradiction_node_ids)]
+    traced_edges = [edges_by_id[e] for e in (*result.edge_ids, *result.limiting_edge_ids,
+                                             *result.contradiction_edge_ids)]
     users = _graph_users(db, involved, traced_edges)
     traced = [graph.nodes[n] for n in result.node_ids]
     summary = TraceSummary(
@@ -419,6 +429,8 @@ def trace_node(
         "A trace lists the recorded references from this node back to original evidence; it does not show that "
         "the evidence establishes the statement.",
         "LIMITS edges qualify the traced evidence and are listed separately; they are not part of a path.",
+        "Contradictions between claims confirmed by a reviewer (ABB-15) are listed in contradiction_edges; they "
+        "are not part of a path.",
     ]
     if result.truncated:
         limitations.append(f"Only the first {len(result.paths)} paths are listed; nodes and edges are complete.")
@@ -431,6 +443,7 @@ def trace_node(
         truncated=result.truncated, nodes=[node_view(n, users) for n in involved],
         edges=[edge_view(edges_by_id[e], users, access) for e in result.edge_ids],
         limiting_edges=[edge_view(edges_by_id[e], users, access) for e in result.limiting_edge_ids],
+        contradiction_edges=[edge_view(edges_by_id[e], users, access) for e in result.contradiction_edge_ids],
         summary=summary,
         review_blockers=trace_problems(graph, result) if graph.nodes[node_id].node_type == "CONCLUSION" else [],
         limitations=limitations,

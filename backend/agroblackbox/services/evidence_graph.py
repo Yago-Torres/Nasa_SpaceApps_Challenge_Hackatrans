@@ -38,7 +38,9 @@ NodeKind = Literal[
     "MISSING_DATA",
 ]
 Relation = Literal["SUPPORTS", "CONTRADICTS", "LIMITS", "ADDRESSES", "DERIVED_FROM", "CITES"]
-EdgeOrigin = Literal["STRUCTURAL", "HYPOTHESIS_LINK", "MANUAL"]
+EdgeOrigin = Literal["STRUCTURAL", "HYPOTHESIS_LINK", "DISAGREEMENT_REVIEW", "MANUAL"]
+#: Confirmed claim disagreements (ABB-15) are symmetric, so they qualify traces but never ground them.
+NON_GROUNDING_ORIGINS = frozenset({"DISAGREEMENT_REVIEW"})
 EdgeReviewStatus = Literal["NOT_APPLICABLE", "PENDING", "EVALUATED", "ACCEPTED", "CHANGES_REQUESTED", "REJECTED"]
 
 NODE_TYPES: tuple[str, ...] = NodeType.__args__  # type: ignore[attr-defined]
@@ -177,6 +179,7 @@ class GraphInputs:
     hypotheses: list[Any] = field(default_factory=list)
     conclusions: list[Any] = field(default_factory=list)
     edges: list[Any] = field(default_factory=list)
+    disagreements: list[Any] = field(default_factory=list)  # ABB-15 ClaimDisagreementReview rows
 
 
 # ── node ids ─────────────────────────────────────────────────────────────────
@@ -519,6 +522,21 @@ def build_graph(data: GraphInputs, *, include_superseded: bool = False) -> Graph
             graph.orphan_references.append(OrphanReference(node.id, nid("paper", claim.paper_id), "CITES",
                                                            "STRUCTURAL"))
 
+    # ABB-15: a disagreement a reviewer confirmed is a CONTRADICTS edge between the two claims while the
+    # latest decision for the pair is CONFIRMED_CONTRADICTION and both claims keep the reviewed versions.
+    latest: dict[Any, Any] = {}
+    for row in sorted(data.disagreements, key=lambda r: (r.reviewed_at, str(r.id))):
+        latest[row.pair_id] = row
+    for row in latest.values():
+        a, b = claims.get(row.claim_a_id), claims.get(row.claim_b_id)
+        if (row.decision != "CONFIRMED_CONTRADICTION" or a is None or b is None
+                or (row.claim_a_version, row.claim_b_version) != (a.version, b.version)):
+            continue
+        graph.add_edge(Edge(id=f"disagreement:{row.id}", source=nid("claim", a.id), target=nid("claim", b.id),
+                            relation="CONTRADICTS", origin="DISAGREEMENT_REVIEW", review_status="ACCEPTED",
+                            note=row.note, reviewed_by=row.reviewer_id, reviewed_at=row.reviewed_at,
+                            created_at=row.reviewed_at))
+
     # hypotheses with their evidence links and missing evidence
     def evidence_node_id(raw: str) -> str | None:
         try:
@@ -577,7 +595,8 @@ def build_graph(data: GraphInputs, *, include_superseded: bool = False) -> Graph
 
 def grounds(graph: Graph, node_id: str) -> list[tuple[Edge, str]]:
     """Edges that ground ``node_id`` in other records, with the record they lead to."""
-    result = [(e, e.source) for e in graph.edges if e.target == node_id and e.relation in GROUNDS_INCOMING]
+    result = [(e, e.source) for e in graph.edges if e.target == node_id and e.relation in GROUNDS_INCOMING
+              and e.origin not in NON_GROUNDING_ORIGINS]
     result += [(e, e.target) for e in graph.edges if e.source == node_id and e.relation in GROUNDS_OUTGOING]
     return result
 
@@ -627,6 +646,8 @@ class Trace:
     limiting_node_ids: list[str]   # their sources (not traversed further)
     original_evidence: list[str]
     dead_ends: list[str]
+    contradiction_edge_ids: list[str] = field(default_factory=list)  # confirmed claim disagreements (ABB-15)
+    contradiction_node_ids: list[str] = field(default_factory=list)  # the other claim, when not traced
 
 
 def trace(graph: Graph, root: str, *, max_paths: int = MAX_TRACE_PATHS) -> Trace:
@@ -672,11 +693,15 @@ def trace(graph: Graph, root: str, *, max_paths: int = MAX_TRACE_PATHS) -> Trace
 
     walk(root, [TraceStep(root, None, None)], frozenset({root}))
     limiting = [e for e in graph.edges if e.relation == "LIMITS" and e.target in nodes]
+    disputed = [e for e in graph.edges if e.origin in NON_GROUNDING_ORIGINS and (e.source in nodes or e.target in nodes)]
     original = [n for n in nodes if graph.nodes[n].original_evidence]
     return Trace(root=root, complete=grounded(graph, root), paths=paths, truncated=truncated, node_ids=list(nodes),
                  edge_ids=list(edges), limiting_edge_ids=[e.id for e in limiting],
                  limiting_node_ids=list(dict.fromkeys(e.source for e in limiting if e.source not in nodes)),
-                 original_evidence=original, dead_ends=list(dead_ends))
+                 original_evidence=original, dead_ends=list(dead_ends),
+                 contradiction_edge_ids=[e.id for e in disputed],
+                 contradiction_node_ids=list(dict.fromkeys(n for e in disputed for n in (e.source, e.target)
+                                                           if n not in nodes)))
 
 
 def trace_problems(graph: Graph, result: Trace) -> list[str]:
@@ -755,6 +780,9 @@ def check_edge(graph: Graph, source: str, target: str, relation: str) -> None:
         raise GraphRuleError(409, "This edge already exists in the graph.")
     if relation in POLARITY and (source, target, ({"SUPPORTS", "CONTRADICTS"} - {relation}).pop()) in keys:
         raise GraphRuleError(422, "A node cannot both support and contradict the same target.")
+    if relation == "SUPPORTS" and any(e.origin == "DISAGREEMENT_REVIEW" and {e.source, e.target} == {source, target}
+                                      for e in graph.edges):
+        raise GraphRuleError(422, "A reviewer confirmed that these two claims contradict each other (ABB-15).")
     if relation in POLARITY and _creates_cycle(graph, source, target):
         raise GraphRuleError(422, "This edge would make the evidence circular.")
 

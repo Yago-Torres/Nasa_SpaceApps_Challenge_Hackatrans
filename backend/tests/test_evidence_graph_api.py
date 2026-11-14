@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 from datetime import UTC, date, datetime
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import httpx
 import pytest
@@ -21,8 +21,10 @@ from sqlalchemy.exc import IntegrityError
 
 from agroblackbox.api.deps import get_session_factory
 from agroblackbox.app import app
+from agroblackbox.comparability import pair_id
 from agroblackbox.db.models import (
     Anomaly,
+    ClaimDisagreementReview,
     EvidenceClaim,
     EvidenceConclusion,
     EvidenceGraphEdge,
@@ -226,7 +228,7 @@ def table_counts(factory) -> tuple[int, int]:
 # ── migration ────────────────────────────────────────────────────────────────
 
 def test_abb16_migration_downgrades_and_upgrades(api_engine):
-    command.downgrade(alembic_config(), "e3a9c71f5b20")  # ABB-10, the parent revision
+    command.downgrade(alembic_config(), "c4d82e1f9a37")  # ABB-15, the parent revision
     tables = set(inspect(api_engine).get_table_names())
     assert not {"evidence_conclusions", "evidence_graph_edges"} & tables
     command.upgrade(alembic_config(), "head")
@@ -267,6 +269,21 @@ async def test_graph_is_built_from_case_records_and_keeps_rival_hypotheses(clien
                                                            "DERIVED_FROM", "CITES"}
     numeric_keys = {k for n in graph["nodes"] for k in n["details"]} | {k for e in edges for k in e}
     assert not {"score", "probability", "confidence", "weight"} & numeric_keys
+
+    # ABB-15: a contradiction confirmed by a reviewer appears as a CONTRADICTS edge between the claims
+    low, high = sorted((UUID(s["claims"]["accepted"]), UUID(s["claims"]["other"])))
+    with factory.begin() as session:
+        session.add(ClaimDisagreementReview(
+            case_id=s["cid"], pair_id=pair_id(low, high), claim_a_id=low, claim_b_id=high, claim_a_version=1,
+            claim_b_version=1, decision="CONFIRMED_CONTRADICTION", note="Synthetic confirmed disagreement",
+            reviewer_id=await user_id(client, s["reviewer"]), snapshot={}))
+    graph = (await client.get(graph_url(s["cid"]), headers=s["viewer"])).json()
+    disputed = [e for e in graph["edges"] if e["origin"] == "DISAGREEMENT_REVIEW"]
+    assert [(e["from"], e["to"], e["relation"], e["review_status"]) for e in disputed] == [
+        (f"claim:{low}", f"claim:{high}", "CONTRADICTS", "ACCEPTED")]
+    assert disputed[0]["reviewed_by"]["display_name"] == "Synthetic reviewer"
+    trace = (await client.get(graph_url(s["cid"], f"/trace/claim:{high}"), headers=s["viewer"])).json()
+    assert [e["id"] for e in trace["contradiction_edges"]] == [disputed[0]["id"]] and trace["complete"]
 
 
 # ── conclusions and trace ────────────────────────────────────────────────────

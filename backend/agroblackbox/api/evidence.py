@@ -31,7 +31,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import schemas
-from ..db.models import Case, EvidenceClaim, EvidenceClaimEvent, Paper, User, utcnow
+from ..db.models import Case, ClaimDisagreementReview, EvidenceClaim, EvidenceClaimEvent, Paper, User, utcnow
 from ..evidence_seed import PILOT_SEED, seed_claim_content
 from ..services import literature as lit
 from .cases import EDITABLE_STATUSES, EDITOR_ROLES, _load, _record, _require_editable, _require_role, _summary
@@ -70,6 +70,7 @@ DECISIONS_FROM: dict[str, frozenset[str]] = {
 CONTENT_FIELDS = (
     "claim_text", "study_context", "study_design", "context", "reported_outcome", "source_locator",
     "quoted_fragment", "evidence_basis", "access_basis", "content_license", "limitations",
+    "intervention", "comparator", "outcome_variable", "effect_direction",  # ABB-15
 )
 PAPER_LIMITATION = "Bibliographic metadata does not establish a scientific finding"
 CLAIM_NOT_FOUND = "Claim not found."
@@ -370,7 +371,9 @@ def _views(db: Session, case: Case, role: str, me: User, claims: list[EvidenceCl
             source_locator=SourceLocatorView(**(claim.source_locator or {})),
             quoted_fragment=claim.quoted_fragment, evidence_basis=claim.evidence_basis,
             access_basis=claim.access_basis, content_license=claim.content_license, origin=claim.origin,
-            origin_ref=claim.origin_ref, warnings=_warnings(claim, paper),
+            origin_ref=claim.origin_ref, intervention=claim.intervention, comparator=claim.comparator,
+            outcome_variable=claim.outcome_variable, effect_direction=claim.effect_direction,
+            warnings=_warnings(claim, paper),
             can_edit=role in EDITOR_ROLES and editable,
             can_review=(role in REVIEW_ROLES and editable and me.id not in contributors[claim.id]
                         and claim.review_status in DECISIONS_FROM),
@@ -526,6 +529,9 @@ def delete_claim(
     _require_claim_version(claim, version)
     reviewed = db.scalar(select(EvidenceClaimEvent.id).where(
         EvidenceClaimEvent.claim_id == claim.id, EvidenceClaimEvent.action == "REVIEWED").limit(1))
+    if reviewed is None:  # ABB-15: decisions on disagreements also keep the claim for audit
+        reviewed = db.scalar(select(ClaimDisagreementReview.id).where(or_(
+            ClaimDisagreementReview.claim_a_id == claim.id, ClaimDisagreementReview.claim_b_id == claim.id)).limit(1))
     if reviewed is not None:
         raise HTTPException(status.HTTP_409_CONFLICT,
                             detail="This claim has review decisions and is kept for audit; edit or reject it instead.")

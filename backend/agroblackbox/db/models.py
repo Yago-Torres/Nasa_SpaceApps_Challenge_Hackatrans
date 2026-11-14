@@ -294,6 +294,8 @@ ACCESS_BASES = (
 )
 CLAIM_ORIGINS = ("MANUAL", "PILOT_SEED_UNVERIFIED")
 CLAIM_EVENT_ACTIONS = ("CREATED", "UPDATED", "REVIEWED")
+EFFECT_DIRECTIONS = ("INCREASE", "DECREASE", "NO_CLEAR_EFFECT", "MIXED", "NOT_STATED")
+DISAGREEMENT_DECISIONS = ("CONFIRMED_CONTRADICTION", "NOT_COMPARABLE", "INCONCLUSIVE")
 
 
 def _in(column: str, values: tuple[str, ...]) -> str:
@@ -335,8 +337,24 @@ class EvidenceClaim(IdMixin, Base):
     content_license: Mapped[str | None] = mapped_column(Text, nullable=True)
     origin: Mapped[str] = mapped_column(String(32), default="MANUAL", server_default=text("'MANUAL'"))
     origin_ref: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # ABB-15 comparability fields, entered by people and matched exactly (never parsed from text).
+    intervention: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    comparator: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    outcome_variable: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    effect_direction: Mapped[str] = mapped_column(
+        String(24), default="NOT_STATED", server_default=text("'NOT_STATED'")
+    )
     __table_args__ = (
         UniqueConstraint("case_id", "origin_ref", name="uq_claim_case_origin_ref"),
+        CheckConstraint(_in("effect_direction", EFFECT_DIRECTIONS), name="ck_claim_effect_direction"),
+        CheckConstraint(
+            "effect_direction = 'NOT_STATED' OR evidence_basis != 'METADATA_ONLY'",
+            name="ck_claim_direction_needs_source_text",
+        ),
+        CheckConstraint(
+            "effect_direction = 'NOT_STATED' OR (intervention IS NOT NULL AND outcome_variable IS NOT NULL)",
+            name="ck_claim_direction_needs_terms",
+        ),
         CheckConstraint("version >= 1", name="ck_claim_version"),
         CheckConstraint(_in("review_status", CLAIM_REVIEW_STATUSES), name="ck_claim_review_status"),
         CheckConstraint(_in("study_design", STUDY_DESIGNS), name="ck_claim_study_design"),
@@ -395,6 +413,33 @@ class EvidenceClaimEvent(IdMixin, Base):
             "AND from_status IS NOT NULL AND to_status != 'PENDING')",
             name="ck_claim_event_review_complete",
         ),
+    )
+
+
+class ClaimDisagreementReview(IdMixin, Base):
+    """Append-only human decisions on a candidate disagreement between two claims (ABB-15).
+
+    Candidates are computed from the claims, never stored. A decision applies only while both
+    claims keep the versions recorded here; the latest applicable row is the current decision.
+    ``pair_id`` is the stable id of the pair (``comparability.pair_id``) and claim A is the lower UUID.
+    """
+    __tablename__ = "claim_disagreement_reviews"
+    case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), index=True)
+    pair_id: Mapped[UUID] = mapped_column(Uuid, index=True)
+    claim_a_id: Mapped[UUID] = mapped_column(ForeignKey("evidence_claims.id", ondelete="CASCADE"), index=True)
+    claim_b_id: Mapped[UUID] = mapped_column(ForeignKey("evidence_claims.id", ondelete="CASCADE"), index=True)
+    claim_a_version: Mapped[int] = mapped_column(Integer)
+    claim_b_version: Mapped[int] = mapped_column(Integer)
+    decision: Mapped[str] = mapped_column(String(32))
+    note: Mapped[str] = mapped_column(Text)
+    reviewer_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), index=True)
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    __table_args__ = (
+        CheckConstraint("claim_a_id < claim_b_id", name="ck_disagreement_pair_order"),
+        CheckConstraint("claim_a_version >= 1 AND claim_b_version >= 1", name="ck_disagreement_versions"),
+        CheckConstraint(_in("decision", DISAGREEMENT_DECISIONS), name="ck_disagreement_decision"),
+        CheckConstraint("char_length(note) > 0", name="ck_disagreement_note"),
     )
 
 

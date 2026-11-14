@@ -1,6 +1,6 @@
 # Evidence graph, conclusions and traceability (ABB-16)
 
-Status: **implemented in the case API, pending scientific review (B) and the ABB-23 graph view (C)**. Code: `backend/agroblackbox/services/evidence_graph.py` (assembly, edge rules, trace — pure functions), `backend/agroblackbox/api/evidence_graph.py` (routes), `api/graph_dto.py` (contract), `api/graph_guard.py` (deletion guard). Tests: `backend/tests/test_evidence_graph_offline.py` (no database), `backend/tests/test_evidence_graph_api.py` (PostgreSQL). Migration `f4b81d2c6e93` (after `e3a9c71f5b20`). Applies `SCIENTIFIC_POLICY.md`, `TIMELINE_HYPOTHESES.md` and `EVIDENCE_CLAIMS.md`.
+Status: **implemented in the case API, pending scientific review (B) and the ABB-23 graph view (C)**. Code: `backend/agroblackbox/services/evidence_graph.py` (assembly, edge rules, trace — pure functions), `backend/agroblackbox/api/evidence_graph.py` (routes), `api/graph_dto.py` (contract), `api/graph_guard.py` (deletion guard). Tests: `backend/tests/test_evidence_graph_offline.py` (no database), `backend/tests/test_evidence_graph_api.py` (PostgreSQL). Migration `f4b81d2c6e93` (after ABB-15 `c4d82e1f9a37`). Applies `SCIENTIFIC_POLICY.md`, `TIMELINE_HYPOTHESES.md`, `EVIDENCE_CLAIMS.md` and `CONTRADICTIONS_APPLICABILITY.md`.
 
 The graph shows **which record refers to which**. An edge is never a causal link, and no node or edge carries a weight, probability, confidence or score. A conclusion is always written by a person; CropStory never generates one.
 
@@ -37,6 +37,7 @@ Direction reads "`from` RELATION `to`".
 | `CITES` | STRUCTURAL | claim → paper | generated only |
 | `SUPPORTS` / `CONTRADICTS` | HYPOTHESIS_LINK | evidence → hypothesis, from the hypothesis evidence lists | edited only through `PATCH …/hypotheses/{id}` |
 | `LIMITS` | HYPOTHESIS_LINK | hypothesis missing-evidence entry → hypothesis | generated |
+| `CONTRADICTS` | DISAGREEMENT_REVIEW | claim A → claim B (A = lower UUID) while the latest ABB-15 decision for the pair is `CONFIRMED_CONTRADICTION` and both claims keep the reviewed versions; `review_status` ACCEPTED, `reviewed_by` = that reviewer | generated from `claim_disagreement_reviews`; symmetric, so it never grounds a trace (listed in `contradiction_edges`) and blocks a manual SUPPORTS between the two claims |
 | `SUPPORTS` / `CONTRADICTS` | MANUAL | observation, anomaly (with a value), claim, farmer report, field → conclusion or claim; hypothesis → conclusion | stored |
 | `LIMITS` | MANUAL | evidence or `missing:no-local-measurements` → conclusion, hypothesis or claim | stored |
 | `ADDRESSES` | MANUAL | conclusion → hypothesis | stored |
@@ -69,7 +70,7 @@ Manual edges that are not conclusion citations are reviewed one by one with the 
 
 ## 4. Trace
 
-`GET …/evidence-graph/trace/{node_id}` follows grounding edges from any node: SUPPORTS/CONTRADICTS backwards (from the cited evidence) and DERIVED_FROM/CITES forwards. Original evidence — a NASA POWER source manifest, a farmer-reported record or field, a registered paper — ends a path. The response gives `complete` (every branch ends at original evidence), `paths` (each step with the edge and relation; capped at 500, `truncated` flag; nodes and edges are always complete), `dead_ends`, `original_evidence`, the LIMITS edges that qualify the traced nodes (not traversed), a summary (reaches observed data / farmer report / literature, reviewed and unreviewed claims, unevaluated hypotheses, superseded values, missing data) and, for conclusions, `review_blockers`. A trace lists recorded references; it does not show that the evidence establishes the statement.
+`GET …/evidence-graph/trace/{node_id}` follows grounding edges from any node: SUPPORTS/CONTRADICTS backwards (from the cited evidence) and DERIVED_FROM/CITES forwards. Original evidence — a NASA POWER source manifest, a farmer-reported record or field, a registered paper — ends a path. The response gives `complete` (every branch ends at original evidence), `paths` (each step with the edge and relation; capped at 500, `truncated` flag; nodes and edges are always complete), `dead_ends`, `original_evidence`, the LIMITS edges that qualify the traced nodes and the reviewer-confirmed claim contradictions touching them (`contradiction_edges`; neither is traversed), a summary (reaches observed data / farmer report / literature, reviewed and unreviewed claims, unevaluated hypotheses, superseded values, missing data) and, for conclusions, `review_blockers`. A trace lists recorded references; it does not show that the evidence establishes the statement.
 
 ## 5. Roles and audit
 

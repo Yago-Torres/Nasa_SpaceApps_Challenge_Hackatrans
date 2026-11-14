@@ -1,7 +1,7 @@
 """evidence graph: human-authored conclusions and manual edges (ABB-16)
 
 Revision ID: f4b81d2c6e93
-Revises: e3a9c71f5b20 (ABB-10 observations, anomalies and hypotheses)
+Revises: c4d82e1f9a37 (ABB-15 claim comparability; chained after it to keep a single head)
 Create Date: 2026-11-14 23:00:00.000000
 
 Derived edges (anomaly → observation → source manifest, claim → paper, hypothesis evidence
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 revision: str = 'f4b81d2c6e93'
-down_revision: Union[str, None] = 'e3a9c71f5b20'
+down_revision: Union[str, None] = 'c4d82e1f9a37'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

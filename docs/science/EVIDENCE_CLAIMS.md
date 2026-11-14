@@ -20,7 +20,8 @@ No abstract or full text is fetched or stored by the system.
 | `claim_text` | the statement attributed to the paper | ≤ 2 000 characters |
 | `study_context` | free-text summary of the study context | required |
 | `study_design` | `META_ANALYSIS`, `SYSTEMATIC_REVIEW`, `FIELD_EXPERIMENT`, `CONTROLLED_EXPERIMENT`, `OBSERVATIONAL_STUDY`, `MODELLING_STUDY`, `NARRATIVE_REVIEW`, `OTHER`, `UNKNOWN` | not guessed: unknown stays `UNKNOWN` |
-| `context` | population, crops, soils, region, climate, management/intervention **of the study** | describes the paper, not the farm |
+| `context` | population, crops, soils, region, climate, management/intervention **of the study**; ABB-15 structured conditions (water regime, USDA texture classes, pH range, geographic scope/countries, Köppen–Geiger classes) | describes the paper, not the farm |
+| `intervention`, `comparator`, `outcome_variable`, `effect_direction` | ABB-15 comparability fields, see `CONTRADICTIONS_APPLICABILITY.md` | entered by a person; a direction needs the abstract or full text |
 | `reported_outcome` | `outcome`, `comparison`, `effect_as_stated`, `units_as_stated`, `uncertainty_as_stated`, `sample_as_stated` | text copied as stated in the source; never parsed, converted, pooled or recomputed |
 | `source_locator` | page, section, figure/table | required whenever there is a quotation |
 | `quoted_fragment` | short quotation | ≤ 500 characters, attributed by `source_locator`, only if the abstract or full text was read |
@@ -72,7 +73,7 @@ Claims that already have a review decision cannot be deleted; they are kept for 
 
 It does **not** mean:
 
-- that the result applies to this farm, region, soil or season (transferability is ABB-15 work);
+- that the result applies to this farm, region, soil or season (see the ABB-15 transferability notes in `CONTRADICTIONS_APPLICABILITY.md`);
 - that the study is free of bias, or that the effect is causal;
 - that the outcome numbers were recomputed or validated (they are copied as stated);
 - that the case or its hypotheses are scientifically validated;
@@ -97,4 +98,4 @@ No code path marks a pilot card as reviewed. A backend copy of the seed is kept 
 - Licence matching compares the licence strings that sources report; it does not interpret licence terms.
 - "Contributor" is defined by the claim's creation and edit events; comments by other means are not tracked.
 - The system cannot verify that a reviewer actually read what they say they read; it records the statement and the person.
-- Claims can be cited by hypotheses (ABB-10) and in the evidence graph (ABB-16, `EVIDENCE_GRAPH.md`); a claim referenced there cannot be deleted (409). Contradictions/applicability are ABB-15.
+- Claims can be cited by hypotheses (ABB-10) and in the evidence graph (ABB-16, `EVIDENCE_GRAPH.md`); a claim referenced there cannot be deleted (409). Candidate disagreements and applicability notes (ABB-15) are described in `CONTRADICTIONS_APPLICABILITY.md`.

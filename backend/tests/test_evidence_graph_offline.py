@@ -16,6 +16,7 @@ from agroblackbox.db.models import (
     GRAPH_STORABLE_NODE,
     Anomaly,
     Case,
+    ClaimDisagreementReview,
     EvidenceClaim,
     EvidenceConclusion,
     EvidenceGraphEdge,
@@ -306,6 +307,36 @@ def test_edge_rules(world):
                            review_status="PENDING"))
     assert status_of(pending, reviewed, "CONTRADICTS") == 422  # circular evidence
     assert c.id == eg.conclusion_uuid(node) and eg.conclusion_uuid(june_a) is None
+
+
+def test_confirmed_claim_contradictions_qualify_but_never_ground(world):
+    reviewed, pending = world["reviewed"], world["pending"]
+    a, b = sorted((reviewed, pending), key=lambda c: str(c.id))
+    pair = uuid4()
+
+    def decision(kind, at, versions=(1, 1)):
+        return ClaimDisagreementReview(id=uuid4(), case_id=world["case"].id, pair_id=pair, claim_a_id=a.id,
+                                       claim_b_id=b.id, claim_a_version=versions[0], claim_b_version=versions[1],
+                                       decision=kind, note="Synthetic decision", reviewer_id=uuid4(),
+                                       reviewed_at=datetime(2026, 11, 14, at, tzinfo=UTC), snapshot={})
+
+    world["data"].disagreements = [decision("CONFIRMED_CONTRADICTION", 10)]
+    graph = eg.build_graph(world["data"])
+    edges = [e for e in graph.edges if e.origin == "DISAGREEMENT_REVIEW"]
+    assert [(e.source, e.target, e.relation, e.review_status) for e in edges] == [
+        (ids("claim", a), ids("claim", b), "CONTRADICTS", "ACCEPTED")]
+    # symmetric: never part of a grounding path, reported on the trace of either claim
+    for claim_row in (a, b):
+        result = eg.trace(graph, ids("claim", claim_row))
+        assert result.contradiction_edge_ids == [edges[0].id] and result.complete
+        assert edges[0].id not in result.edge_ids
+    with pytest.raises(eg.GraphRuleError):
+        eg.check_edge(graph, ids("claim", b), ids("claim", a), "SUPPORTS")
+    # a later decision, or an edit of either claim, withdraws the edge
+    world["data"].disagreements.append(decision("INCONCLUSIVE", 11))
+    assert not [e for e in eg.build_graph(world["data"]).edges if e.origin == "DISAGREEMENT_REVIEW"]
+    world["data"].disagreements = [decision("CONFIRMED_CONTRADICTION", 10, versions=(1, 2))]
+    assert not [e for e in eg.build_graph(world["data"]).edges if e.origin == "DISAGREEMENT_REVIEW"]
 
 
 def test_storable_pattern_matches_database_constraint():

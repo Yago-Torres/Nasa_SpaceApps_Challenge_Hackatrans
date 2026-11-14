@@ -94,8 +94,9 @@ class GraphEdgeView(schemas.ContractModel):
     to: str = PydanticField(description="Target node id")
     relation: Relation
     origin: EdgeOrigin = PydanticField(
-        description="STRUCTURAL (generated from stored records), HYPOTHESIS_LINK (hypothesis evidence lists) or "
-                    "MANUAL (stored, written by a case member)")
+        description="STRUCTURAL (generated from stored records), HYPOTHESIS_LINK (hypothesis evidence lists), "
+                    "DISAGREEMENT_REVIEW (claim contradiction confirmed by a reviewer, ABB-15) or MANUAL (stored, "
+                    "written by a case member)")
     note: str | None = None
     review_status: EdgeReviewStatus
     record_id: UUID | None = PydanticField(default=None, description="Stored edge id (MANUAL edges only)")
@@ -181,6 +182,8 @@ class EvidenceTraceView(schemas.ContractModel):
     nodes: list[GraphNodeView]
     edges: list[GraphEdgeView]
     limiting_edges: list[GraphEdgeView]
+    contradiction_edges: list[GraphEdgeView] = PydanticField(
+        description="Reviewer-confirmed contradictions (ABB-15) touching a traced claim; not part of a path")
     summary: TraceSummary
     review_blockers: list[str] = PydanticField(
         description="What would prevent accepting a conclusion with this trace (empty when nothing)")
