@@ -8,4 +8,6 @@
 - Previous development-baseline endpoints preserved; Python development tooling migrated to uv and Omarchy agent setup documented.
 - ABB-13: `/api/literature` now verifies each DOI against Crossref, normalizes authors/venue/licence/retrieval time, removes duplicates and labels every result `LITERATURE_METADATA` / `BIBLIOGRAPHIC_MATCH_ONLY` with a DOI status. Fixed: an upstream error could expose `OPENALEX_API_KEY` in the 502 response detail.
 
+- ABB-20 (local, unpublished): new app shell with seven routes (Overview, Cases, Investigation, Evidence, Rotations, Collaboration, Report), Field Survey design system, EN/ES switch, keyboard navigation and focus management, loading/empty/error/partial/not-built states, accessible anomaly chart with table view and source label. Cases and Collaboration show "not built yet" instead of sample data.
+
 A successful specification or design document is not a completed product feature. Add entries only when user-visible behavior actually changes.

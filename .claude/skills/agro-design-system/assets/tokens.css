@@ -131,8 +131,8 @@
      legibility — fits older users reading phones outdoors. Source Serif 4 italic:
      the cartographic convention for natural names, used here for people's words
      and crop/species names. Atkinson Hyperlegible Mono: coordinates, DOIs, hashes. */
-  --font-sans: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
-  --font-serif: "Source Serif 4", "Source Serif Pro", Georgia, serif;
+  --font-sans: "Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-serif: "Source Serif 4 Variable", "Source Serif 4", "Source Serif Pro", Georgia, serif;
   --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   --text-xs: 0.75rem;     /* 12 — axis ticks, title-block field names */
