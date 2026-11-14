@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from ..db.models import Case, CaseHistory, CasePermission, Field, User, utcnow
 from ..privacy import PRECISE_ROLES, redact_coordinates, visible_location
 from .deps import CurrentPrincipal, DbSession
+from .graph_guard import require_unreferenced
 from .dto import (
     ArchiveRequest,
     CaseCreate,
@@ -124,7 +125,9 @@ def _record(
 ) -> None:
     if bump:
         case.version += 1
-        case.updated_at = utcnow()
+        # Never earlier than created_at: a wall clock that steps back (e.g. WSL2/VM time sync)
+        # would otherwise produce a CaseView that fails its own updated_at >= created_at check.
+        case.updated_at = max(utcnow(), case.created_at)
     db.add(CaseHistory(
         case_id=case.id, version=case.version, action=action, actor_id=actor.id,
         created_at=utcnow(), changes=changes, note=note,
@@ -394,6 +397,7 @@ def remove_field(
     field = _field_or_404(db, case_id, field_id)
     if db.scalar(select(func.count()).select_from(Field).where(Field.case_id == case_id)) <= 1:
         raise HTTPException(status.HTTP_409_CONFLICT, detail="A case must keep at least one field.")
+    require_unreferenced(db, case_id, f"field:{field.id}", "field")  # ABB-16: no orphan graph edges
     snapshot = _field_snapshot(field)
     db.execute(delete(Field).where(Field.id == field.id))
     _record(db, case, principal.user, "FIELD_REMOVED", {"field": {"before": snapshot, "after": None}})

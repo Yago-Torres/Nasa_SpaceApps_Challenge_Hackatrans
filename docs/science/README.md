@@ -5,3 +5,5 @@
 `EVIDENCE_CLAIMS.md` defines the structured claim record, licence/access rules and the human review protocol (ABB-14).
 
 `CONTRADICTIONS_APPLICABILITY.md` defines candidate disagreements between claims (human-confirmed) and per-dimension transferability notes without any applicability score (ABB-15).
+
+`EVIDENCE_GRAPH.md` defines the case evidence graph, human-authored conclusions, edge rules and the trace back to original evidence (ABB-16).

@@ -33,6 +33,7 @@ from ..services.forensics import (
 from ..services.metrics import VARIABLES
 from .cases import EDITOR_ROLES, _load, _record, _require_editable, _require_role, _summary
 from .deps import CurrentPrincipal, DbSession
+from .graph_guard import require_unreferenced
 from .forensics_dto import (
     EvidenceRef,
     HypothesisCreate,
@@ -387,6 +388,7 @@ def delete_hypothesis(
     _require_editable(case)
     hypothesis = _hypothesis_or_404(db, case_id, hypothesis_id, lock=True)
     _require_hypothesis_version(hypothesis, version)
+    require_unreferenced(db, case_id, f"hypothesis:{hypothesis.id}", "hypothesis")  # ABB-16: no orphan edges
     _record(db, case, principal.user, "HYPOTHESIS_DELETED",
             {"hypothesis_id": str(hypothesis.id), "hypothesis": {"before": _snapshot(hypothesis), "after": None}},
             bump=False)
