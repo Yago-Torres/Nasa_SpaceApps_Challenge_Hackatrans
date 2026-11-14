@@ -30,7 +30,7 @@ const CASE_TABS = [
   { id: 'evidence', label: 'cases.tab.evidence' as MessageKey, render: (caseId: string) => <CaseEvidence key={caseId} caseId={caseId} /> },
   { id: 'collaboration', label: 'cases.tab.collaboration' as MessageKey, render: (caseId: string) => <CollaborationPanel key={caseId} caseId={caseId} /> },
   { id: 'discussion', label: 'cases.tab.discussion' as MessageKey, render: (caseId: string) => <DiscussionPanel key={caseId} caseId={caseId} /> },
-  // ABB-26 (Report): add { id, label, render } here.
+  // ABB-23 (Evidence), ABB-26 (Report): add { id, label, render } here.
 ] as const satisfies readonly { id: string; label: MessageKey; render: (caseId: string) => ReactElement }[];
 
 /** Cases list + wizard routes (#/cases, #/cases/new, #/cases/<id>[/<tab>]), backed by /api/v1/cases. */
