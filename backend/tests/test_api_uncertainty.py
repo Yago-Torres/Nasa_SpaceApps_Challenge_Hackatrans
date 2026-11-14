@@ -29,7 +29,7 @@ pytestmark = pytest.mark.skipif(not TEST_URL, reason="TEST_DATABASE_URL is requi
 
 PASSWORD = "synthetic-correct-horse-42"
 V1 = "/api/v1"
-PARENT_REVISION = "c4d82e1f9a37"
+PARENT_REVISION = "f4b81d2c6e93"  # ABB-16 evidence graph
 
 
 def alembic_config() -> Config:

@@ -1,7 +1,7 @@
 """uncertainty hunter answers and question events (ABB-19)
 
 Revision ID: a19f3b7c2d64
-Revises: c4d82e1f9a37
+Revises: f4b81d2c6e93
 Create Date: 2026-11-14 23:30:00.000000
 
 Additive only: two new tables. ``uncertainty_answers`` holds local answers (FARMER_REPORTED
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 revision: str = 'a19f3b7c2d64'
-down_revision: Union[str, None] = 'c4d82e1f9a37'
+down_revision: Union[str, None] = 'f4b81d2c6e93'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
