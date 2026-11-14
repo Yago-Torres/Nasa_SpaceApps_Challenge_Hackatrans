@@ -5,7 +5,7 @@ description: The "Field Survey" design language for AGRO BLACK BOX — light mod
 
 # AGRO BLACK BOX — Field Survey design system
 
-> **Status: PROPOSED.** Binding once the frontend design-system Issue is `team-approved` (`docs/governance/FEATURE_POLICY.md`). Until then follow it for consistency, but don't call it an approved decision.
+> **Status: MANDATORY for all frontend design work** (root `AGENTS.md`, `frontend/AGENTS.md`). Owned by ABB-20 (design system, navigation, accessibility, EN/ES). Changes to tokens, shared components or rules are made in this skill within ABB-20 and announced to the other two stewards.
 
 **What it must feel like:** a clear, hopeful working tool. Industrial in the sense of honest, legible and operable; solarpunk in the sense of bright, alive and on the side of the people who farm. It must not look generated: no template scaffolds, no costumes, no decoration without a job.
 

@@ -22,6 +22,14 @@ Deliver the **complete AGRO BLACK BOX 1.0 product** specified in `docs/product/R
 - New dependencies, endpoints, schema changes, external services and major architecture changes must be documented in the relevant Issue and ADR as applicable, with shared interfaces coordinated before integration.
 - Prefer small PRs and no direct pushes to protected `main`.
 
+## Frontend design guardrail (mandatory)
+
+Any change to pages, screens, components, styles, charts, images or UI copy in `frontend/` must follow the **AGRO BLACK BOX design system** in `.claude/skills/agro-design-system/SKILL.md` (tokens in `assets/tokens.css`, reference pages `assets/landing.html` and `assets/system.html`, rules in `references/`). Light mode only, team palette, evidence legend, standard controls, no AI-generated-looking patterns, real openly licensed imagery only.
+
+- Claude Code loads it as a skill; Codex/ChatGPT and humans must open `SKILL.md` and the referenced files directly before designing.
+- Before publishing frontend work, run the checklist in `.claude/skills/agro-ui-review/SKILL.md` (screenshots, contrast check, `npx -y impeccable@4.8.0 detect`) and paste the outcome in the handoff or PR.
+- Changing the design system itself (tokens, shared components, rules) is a cross-team change tracked in ABB-20: describe it in the Issue/PR and update the skill in the same change.
+
 ## Commands (run from repo root unless otherwise stated)
 
 ```bash
