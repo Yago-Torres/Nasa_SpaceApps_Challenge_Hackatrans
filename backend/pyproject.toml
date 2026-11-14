@@ -26,3 +26,7 @@ include = ["agroblackbox*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "e2e: end-to-end journey through the public HTTP API with SYNTHETIC fixtures (ABB-29)",
+    "real_network: calls the REAL NASA/OpenAlex/Crossref services; manual only, never in CI (ABB-29)",
+]

@@ -1,0 +1,47 @@
+"""ABB-29 MANUAL smoke test against the REAL NASA POWER, Crossref and OpenAlex services.
+
+Never runs in CI and never runs by accident: it needs ``RUN_REAL_SOURCES=1`` and outbound HTTPS to
+power.larc.nasa.gov, api.crossref.org and api.openalex.org. Run it before a release and record the output in
+``docs/operations/E2E_AND_CONTRACTS.md``:
+
+    cd backend && RUN_REAL_SOURCES=1 uv run --extra dev pytest -q -m real_network -s tests/test_real_sources_smoke.py
+
+It sends only a public, region-level coordinate (Ebro valley, no farm) and a pilot-paper DOI: no private data.
+Assertions live in ``real_source_checks`` (also exercised offline by ``test_real_source_checks_offline.py``).
+"""
+from __future__ import annotations
+
+import json
+import os
+
+import httpx
+import pytest
+
+from agroblackbox.app import app
+from agroblackbox.evidence_seed import PILOT_SEED
+from agroblackbox.services import literature, power
+from real_source_checks import check_climate_payload, check_doi_verification, check_paper_record
+
+pytestmark = [pytest.mark.real_network,
+              pytest.mark.skipif(os.getenv("RUN_REAL_SOURCES") != "1",
+                                 reason="manual smoke test: set RUN_REAL_SOURCES=1 (real network)")]
+DOI = PILOT_SEED[0]["doi"]
+LAT, LON, YEAR = 41.65, -0.88, 2022      # public Ebro-valley grid cell, not a farm
+
+
+@pytest.mark.asyncio
+async def test_real_nasa_power_through_the_public_climate_endpoint(monkeypatch, tmp_path):
+    monkeypatch.setattr(power, "CACHE", tmp_path / "power")   # force a live download, not a stale cache
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test", timeout=120) as c:
+        response = await c.get("/api/climate", params={"latitude": LAT, "longitude": LON, "event_year": YEAR,
+                                                       "reference_start": 2010, "reference_end": 2021})
+    assert response.status_code == 200, response.text
+    print("NASA POWER:", json.dumps(check_climate_payload(response.json(), event_year=YEAR, expect_live=True)))
+
+
+@pytest.mark.asyncio
+async def test_real_crossref_and_openalex_for_a_pilot_paper():
+    check = await literature.verify_doi(DOI)
+    print("Crossref:", json.dumps(check_doi_verification(check, doi=DOI)))
+    record = await literature.lookup_paper(doi=DOI)
+    print("OpenAlex+Crossref:", json.dumps(check_paper_record(record, doi=DOI)))
