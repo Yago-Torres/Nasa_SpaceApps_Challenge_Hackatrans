@@ -4,7 +4,7 @@ import { useI18n } from '../../i18n/I18n';
 import type { MessageKey } from '../../i18n/messages';
 import { Button, ButtonLink, Checkbox, EvidenceLabel, Field, PageHeader, RadioGroup, StatusMessage, TextArea } from '../../design/components';
 import {
-  MAX_CROP_ROWS, STEPS, canEdit, emptyCase, missingItems, monthOutOfRange, newId, parseNumber, validateStep,
+  MAX_CROP_ROWS, STEPS, canEdit, displayedLocation, emptyCase, missingItems, monthOutOfRange, newId, parseNumber, validateStep,
   type FieldError, type IncidentCase, type Rounding, type Step,
 } from '../../cases/model';
 import { readyForServer } from '../../cases/mapping';
@@ -14,6 +14,7 @@ import { hrefFor, navigate } from '../../app/routes';
 import { useInvestigation } from '../../app/investigation';
 import { AuthPanel } from '../account/AuthPanel';
 import { CaseTitleBlock } from './CaseTitleBlock';
+import { LocationMap, viewerLocationForReadOnlyCase } from './LocationMap';
 import { PrivacyPreview } from './PrivacyPreview';
 import { caseErrorText, isStorageUnavailable, isUnauthorized } from './caseErrors';
 
@@ -318,6 +319,8 @@ export function IncidentWizard({ caseId }: { caseId: string }) {
               {locating === 'denied' && <StatusMessage tone="partial" title={t('f.locationDenied')} />}
               {locating === 'unavailable' && <StatusMessage tone="partial" title={t('f.locationUnavailable')} />}
               <Checkbox name="consentPrecise" label={t('f.consent')} hint={t('f.consentHint')} checked={c.location.consentPrecise} onChange={(v) => updateLoc({ consentPrecise: v })} />
+              {/* Editing your own case: you are always authorized to see the exact point (ADR-0004). */}
+              <LocationMap viewer={displayedLocation(c.location, 'owner')} />
               <PrivacyPreview location={c.location} />
             </>
           )}
@@ -486,6 +489,8 @@ function ReadOnlyCase({ c }: { c: IncidentCase }) {
           <div><dt>{t('f.priorities')}</dt><dd>{c.constraints.priorities.trim() || notStated}</dd></div>
         </dl>
       </section>
+      {/* Server-redacted location only: never re-derived from raw coordinates for this viewer (ADR-0004/0005). */}
+      <LocationMap viewer={viewerLocationForReadOnlyCase(c)} />
     </>
   );
 }
