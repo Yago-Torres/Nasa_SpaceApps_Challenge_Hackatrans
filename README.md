@@ -1,8 +1,10 @@
-# AGRO BLACK BOX — The Planetary Agricultural Forensics Lab
+# CropStory: The Agricultural Blackbox
 
 **NASA Space Apps Challenge 2026 · Herramienta agrícola · Monorepo para tres desarrolladores con Claude Code y OpenAI Codex.**
 
-AGRO BLACK BOX investiga incidentes agrícolas mediante datos de observación de la Tierra, contrasta hipótesis con bibliografía científica verificable, compara **tres o más estrategias de rotación (incluida la actual)** y facilita la revisión entre comunidades y la exportación de **informes de caso**.
+> Antes llamado **AGRO BLACK BOX**. Los identificadores internos conservan el nombre antiguo para no romper código, enlaces ni datos: el paquete Python `agroblackbox`, el nombre del repositorio, los IDs de Issue `ABB-*`, las skills `agro-design-system`/`agro-ui-review` y el marcador de datos del asistente en `incident_notes`.
+
+CropStory investiga incidentes agrícolas mediante datos de observación de la Tierra, contrasta hipótesis con bibliografía científica verificable, compara **tres o más estrategias de rotación (incluida la actual)** y facilita la revisión entre comunidades y la exportación de **informes de caso**.
 
 > **Estado del código:** el repositorio contiene una base de desarrollo funcional y las especificaciones completas de la versión 1.0. **No es todavía una versión 1.0 finalizada.** Consultad `docs/operations/CURRENT_STATE.md` para distinguir las funcionalidades implementadas de las pendientes. No presentéis simulaciones como observaciones NASA reales.
 
@@ -23,7 +25,7 @@ Leed, en este orden:
 **Inicio de una sesión IA:**
 
 ```text
-Actúa como desarrollador de AGRO BLACK BOX. Lee AGENTS.md, CLAUDE.md (si estás en Claude), docs/ai/CONTEXT_MAP.md, el alcance 1.0, CURRENT_STATE, el flujo de trabajo y los contratos pertinentes. Identifica la Issue activa, qué está implementado y qué falta. No inventes datos ni funcionalidades. Antes de editar, presenta archivos afectados, dependencias y tests previstos. Implementa solo el alcance de la Issue y al final documenta la verificación y el traspaso a otro agente.
+Actúa como desarrollador de CropStory. Lee AGENTS.md, CLAUDE.md (si estás en Claude), docs/ai/CONTEXT_MAP.md, el alcance 1.0, CURRENT_STATE, el flujo de trabajo y los contratos pertinentes. Identifica la Issue activa, qué está implementado y qué falta. No inventes datos ni funcionalidades. Antes de editar, presenta archivos afectados, dependencias y tests previstos. Implementa solo el alcance de la Issue y al final documenta la verificación y el traspaso a otro agente.
 ```
 
 ## 2. Stack y gestor de dependencias

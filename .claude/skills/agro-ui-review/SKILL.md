@@ -1,9 +1,9 @@
 ---
 name: agro-ui-review
-description: Audits AGRO BLACK BOX frontend changes for UX, accessibility, scientific honesty in the UI (epistemic tags, provenance, no fake NASA data), i18n EN/ES, privacy of farm locations adherence to the Field Survey design system and AI-generated-design tells (impeccable detector), then screenshots the app at desktop and mobile for visual critique. Use it before opening or approving any PR that touches frontend/, after building or restyling a screen, and whenever someone asks to "review the UI", "check accessibility", "audit UX", "is this screen OK", "revisar la interfaz", or wants a design QA pass — even if they only mention one component.
+description: Audits CropStory frontend changes for UX, accessibility, scientific honesty in the UI (epistemic tags, provenance, no fake NASA data), i18n EN/ES, privacy of farm locations adherence to the Field Survey design system and AI-generated-design tells (impeccable detector), then screenshots the app at desktop and mobile for visual critique. Use it before opening or approving any PR that touches frontend/, after building or restyling a screen, and whenever someone asks to "review the UI", "check accessibility", "audit UX", "is this screen OK", "revisar la interfaz", or wants a design QA pass — even if they only mention one component.
 ---
 
-# AGRO BLACK BOX — UI review
+# CropStory — UI review
 
 A UI change in this product can be wrong in three ways: it can be hard to use, it can be inaccessible, or it can **mislead people about evidence** (e.g. an illustrative number that looks observed). The third kind is the most serious here, because users make farming decisions from these screens. This skill checks all three and also checks consistency with the design system.
 
@@ -68,4 +68,4 @@ Severity:
 
 ## Attribution
 
-Sections C and E of the checklist adapt the Vercel Web Interface Guidelines (MIT, © 2025 Vercel Labs; license in `references/LICENSE-vercel-web-interface-guidelines.txt`). Section D includes bans paraphrased from impeccable (Apache-2.0, Paul Bakaus) and taste-skill (MIT, Leonxlnx). Sections A and B are specific to AGRO BLACK BOX.
+Sections C and E of the checklist adapt the Vercel Web Interface Guidelines (MIT, © 2025 Vercel Labs; license in `references/LICENSE-vercel-web-interface-guidelines.txt`). Section D includes bans paraphrased from impeccable (Apache-2.0, Paul Bakaus) and taste-skill (MIT, Leonxlnx). Sections A and B are specific to CropStory.

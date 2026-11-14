@@ -3,7 +3,7 @@
  * so a missing translation fails `npm run build`. Interpolation uses {name} placeholders.
  */
 export const en = {
-  'app.name': 'AGRO BLACK BOX',
+  'app.name': 'CropStory',
   'app.skip': 'Skip to content',
   'app.navLabel': 'Main navigation',
   'app.language': 'Language',
@@ -348,7 +348,7 @@ export const en = {
 export type MessageKey = keyof typeof en;
 
 export const es: Record<MessageKey, string> = {
-  'app.name': 'AGRO BLACK BOX',
+  'app.name': 'CropStory',
   'app.skip': 'Saltar al contenido',
   'app.navLabel': 'Navegación principal',
   'app.language': 'Idioma',

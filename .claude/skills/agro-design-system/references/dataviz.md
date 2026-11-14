@@ -1,6 +1,6 @@
 # Data visualisation rules
 
-Charts in AGRO BLACK BOX are evidence. A chart that overstates, hides units or blends observed with modelled values is a scientific error, not a style issue. The backend computes every value; the frontend only draws what the API returns (frontend/AGENTS.md: no scientific computations in TS — scaling for pixels is fine, deriving new statistics is not).
+Charts in CropStory are evidence. A chart that overstates, hides units or blends observed with modelled values is a scientific error, not a style issue. The backend computes every value; the frontend only draws what the API returns (frontend/AGENTS.md: no scientific computations in TS — scaling for pixels is fine, deriving new statistics is not).
 
 Until a chart library is approved by Issue, draw with plain SVG in React (the current anomaly chart needs nothing more).
 

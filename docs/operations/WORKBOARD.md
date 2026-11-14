@@ -4,7 +4,7 @@ GitHub Issues + Projects are the live source of truth once connected; this file 
 
 ## Live board (ABB-04, configured 2026-11-14)
 
-- Project: **AGRO BLACK BOX 1.0 roadmap** — https://github.com/users/M-a-t-e-o/projects/2 (linked to the repository). Every roadmap Issue ABB-01…ABB-34 is an item.
+- Project: **CropStory 1.0 roadmap** — https://github.com/users/M-a-t-e-o/projects/2 (linked to the repository). Every roadmap Issue ABB-01…ABB-34 is an item.
 - Column field `Stage`: `Backlog`, `Ready`, `In Progress`, `In Review`, `Done`, `Blocked`, `Rejected` (matches `FEATURE_POLICY.md`).
 - Each open Issue has an assignee (owner) and keeps its acceptance criteria in the Issue body; `lead:*`, `phase:*` and `priority:*` labels give routing and order.
 - Review labels: `science-review`, `breaking-contract`, `security-review`, `blocked`, `needs-spec`. The obsolete `needs-vote` label was removed from all Issues after the governance simplification (ABB-01).
