@@ -8,8 +8,8 @@ import { caseErrorText } from '../caseErrors';
 import { useDates } from '../collaboration/format';
 import { reportsApi, type ReportFormat, type ReportView, type VerifyResult } from './reportApi';
 
-const FORMATS: { id: ReportFormat; label: 'rep2.fmtMarkdown' | 'rep2.fmtHtml' | 'rep2.fmtJson' }[] = [
-  { id: 'markdown', label: 'rep2.fmtMarkdown' }, { id: 'html', label: 'rep2.fmtHtml' }, { id: 'json', label: 'rep2.fmtJson' },
+const FORMATS: { id: ReportFormat; label: 'rep2.fmtMarkdown' | 'rep2.fmtHtml' | 'rep2.fmtJson' | 'rep2.fmtPdf' }[] = [
+  { id: 'markdown', label: 'rep2.fmtMarkdown' }, { id: 'html', label: 'rep2.fmtHtml' }, { id: 'json', label: 'rep2.fmtJson' }, { id: 'pdf', label: 'rep2.fmtPdf' },
 ];
 const GENERATOR_ROLES = new Set(['OWNER', 'EDITOR', 'REVIEWER']);
 
@@ -114,7 +114,7 @@ function Versions({ caseId, canGenerate }: { caseId: string; canGenerate: boolea
               </div>
             )}
           <div className="actions">
-            {FORMATS.map((f) => (
+            {FORMATS.filter((f) => r.formats.includes(f.id)).map((f) => (
               <Button key={f.id} variant="secondary" busy={busy === `${r.version}:${f.id}`} icon={<Download aria-hidden="true" />} onClick={() => download(r, f.id)}>
                 {t(f.label)}
               </Button>

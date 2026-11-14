@@ -112,11 +112,11 @@ Same auth, 404/403, 503 and error rules as the cases API; requires migration `a7
 
 ## Case reports (IMPLEMENTED — ABB-26)
 
-Same auth, 404/403 and 503 rules as the cases API; requires migration `d5f3a8b21c64` (after `a7c2e9d4b158`). Method, privacy rules and limits: `docs/science/CASE_REPORT.md`.
+Same auth, 404/403 and 503 rules as the cases API; requires migrations `d5f3a8b21c64` (after `a7c2e9d4b158`) and `e8a4c1d7f905` (PDF). Method, privacy rules and limits: `docs/science/CASE_REPORT.md`.
 
 - `POST /api/v1/cases/{case_id}/reports` (OWNER, EDITOR, REVIEWER) `{rotation?: RotationCompareRequest}` → 201 `ReportView` `{id, version, generated_at, status PRELIMINARY, case_version, generated_by, formats, checksum_sha256 (Markdown), html_sha256, snapshot_sha256, sources_sha256, source_manifest_ids, changes{initial, previous_version, case_version, items[{section, change ADDED|REMOVED|CHANGED, id, label}]}, limitations, downloads}`. Unknown body fields → 422. The server computes the optional rotation comparison itself; client-computed rotations are not accepted. Records `REPORT_GENERATED` in the case history without bumping the case version. At most 200 versions per case (409).
 - `GET /api/v1/cases/{case_id}/reports` (every member) → `{items: ReportView[]}`, newest first; `GET …/reports/{version}` → `ReportView`.
-- `GET …/reports/{version}/download?format=markdown|html|json` (every member) → the stored bytes with `Content-Disposition: attachment`, `X-Report-SHA256`, `no-store`, `nosniff` and a sandboxing CSP. No role receives coordinates, notes, e-mails, names or comment text. `format=pdf` → 422 (not built).
+- `GET …/reports/{version}/download?format=markdown|html|json` (every member) → the stored bytes with `Content-Disposition: attachment`, `X-Report-SHA256`, `no-store`, `nosniff` and a sandboxing CSP. No role receives coordinates, notes, e-mails, names or comment text. `format=pdf` serves the stored PDF (ADR-0007, `pdf_sha256`); 404 for versions stored before migration `e8a4c1d7f905`; unknown formats → 422. `ReportView.formats`/`downloads` list `pdf` only when one is stored.
 - `GET …/reports/{version}/verify` → `{version, valid, checks{markdown_sha256, html_sha256, snapshot_sha256, sources_sha256, markdown_matches_snapshot, source_ids_match}, detail}`.
 - Stored versions are write-once: a database trigger rejects any later UPDATE of their content.
 
