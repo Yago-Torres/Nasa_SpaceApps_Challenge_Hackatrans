@@ -26,10 +26,10 @@ function report(version: number, over: Partial<ReportView> = {}): ReportView {
   const base = `/api/v1/cases/${CASE_ID}/reports/${version}/download`;
   return {
     id: `r${version}`, case_id: CASE_ID, version, generated_at: `2026-11-1${version}T10:00:00Z`, status: 'PRELIMINARY', case_version: 4,
-    generated_by: { id: 'u1', display_name: 'Synthetic owner' }, formats: ['markdown', 'html', 'json'], checksum_sha256: HASH,
+    generated_by: { id: 'u1', display_name: 'Synthetic owner' }, formats: version === 1 ? ['markdown', 'html', 'json'] : ['markdown', 'html', 'json', 'pdf'], checksum_sha256: HASH,
     html_sha256: HASH, snapshot_sha256: HASH, sources_sha256: 'b'.repeat(64), source_manifest_ids: ['m1'], limitations: ['L'],
     changes: { initial: version === 1, previous_version: version === 1 ? null : version - 1, previous_case_version: 3, case_version: 4, items: [] },
-    downloads: { markdown: `${base}?format=markdown`, html: `${base}?format=html`, json: `${base}?format=json` }, ...over,
+    downloads: { markdown: `${base}?format=markdown`, html: `${base}?format=html`, json: `${base}?format=json`, ...(version === 1 ? {} : { pdf: `${base}?format=pdf` }) }, ...over,
   };
 }
 
@@ -79,6 +79,9 @@ describe('Case report tab (ABB-26)', () => {
     expect(within(v1).getByText(/First stored version/)).toBeTruthy();
     expect(screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Version 2', 'Version 1']);
     expect(screen.getByText(/Print → Save as PDF/)).toBeTruthy();
+    // PDF only where the server stored one: version 2 has it, the older version 1 does not
+    expect(within(v2).getByRole('button', { name: 'PDF' })).toBeTruthy();
+    expect(within(v1).queryByRole('button', { name: 'PDF' })).toBeNull();
   });
 
   it('generates a version on the server and shows it, sending the bearer token and no client data', async () => {
@@ -99,26 +102,29 @@ describe('Case report tab (ABB-26)', () => {
     expect(post.auth).toBe('Bearer synthetic-token');
   });
 
-  it('downloads the stored Markdown, HTML and JSON with the token', async () => {
+  it('downloads the stored Markdown, HTML, JSON and PDF with the token', async () => {
     URL.createObjectURL = vi.fn(() => 'blob:synthetic');
     URL.revokeObjectURL = vi.fn();
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
     const calls = mockFetch({
       [`GET /cases/${CASE_ID}`]: () => json(200, caseView('OWNER')),
-      'GET /reports': () => json(200, { items: [report(1)] }),
+      'GET /reports': () => json(200, { items: [report(2)] }),
       'GET /download?format=markdown': () => new Response('# Synthetic', { headers: { 'X-Report-SHA256': HASH } }),
       'GET /download?format=html': () => new Response('<!doctype html>', { headers: { 'X-Report-SHA256': HASH } }),
       'GET /download?format=json': () => new Response('{}', { headers: { 'X-Report-SHA256': HASH } }),
+      'GET /download?format=pdf': () => new Response('%PDF-1.4', { headers: { 'X-Report-SHA256': HASH } }),
     });
     const user = userEvent.setup();
     renderEn();
     await user.click(await screen.findByRole('button', { name: 'Markdown' }));
-    expect(await screen.findByText('Downloaded cropstory-case-report-v1.md')).toBeTruthy();
+    expect(await screen.findByText('Downloaded cropstory-case-report-v2.md')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'HTML' }));
-    expect(await screen.findByText('Downloaded cropstory-case-report-v1.html')).toBeTruthy();
+    expect(await screen.findByText('Downloaded cropstory-case-report-v2.html')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'JSON snapshot' }));
-    expect(await screen.findByText('Downloaded cropstory-case-report-v1.json')).toBeTruthy();
-    expect(click).toHaveBeenCalledTimes(3);
+    expect(await screen.findByText('Downloaded cropstory-case-report-v2.json')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'PDF' }));
+    expect(await screen.findByText('Downloaded cropstory-case-report-v2.pdf')).toBeTruthy();
+    expect(click).toHaveBeenCalledTimes(4);
     expect(calls.filter((c) => c.path.includes('/download')).every((c) => c.auth === 'Bearer synthetic-token')).toBe(true);
   });
 

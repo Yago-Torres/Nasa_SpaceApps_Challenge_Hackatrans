@@ -7,6 +7,7 @@ names what changed.
 """
 from __future__ import annotations
 
+import hashlib
 import os
 from datetime import UTC, datetime
 from pathlib import Path
@@ -138,6 +139,7 @@ def assert_private(text_: str):
 
 def test_report_migration_and_write_once_trigger(api_engine):
     command.downgrade(alembic_config(), "a7c2e9d4b158")
+    assert "content_pdf" not in {c["name"] for c in inspect(api_engine).get_columns("reports")}
     assert "snapshot" not in {c["name"] for c in inspect(api_engine).get_columns("reports")}
     command.upgrade(alembic_config(), "head")
     assert {"snapshot", "content_markdown", "content_html", "sources_sha256"} <= {
@@ -156,6 +158,27 @@ async def test_stored_version_cannot_be_updated_in_the_database(client, factory)
     with pytest.raises(DBAPIError, match="immutable"):
         with factory.begin() as s:
             s.execute(text("UPDATE reports SET snapshot = '{}'::jsonb WHERE case_id = :c"), {"c": case["id"]})
+    with pytest.raises(DBAPIError, match="immutable"):
+        with factory.begin() as s:
+            s.execute(text("UPDATE reports SET content_pdf = '\\x00'::bytea WHERE case_id = :c"), {"c": case["id"]})
+
+
+@pytest.mark.asyncio
+async def test_report_stored_before_pdf_existed_answers_404_for_pdf_only(client, factory, api_engine):
+    owner = await account(client, "owner@example.test", "Synthetic owner")
+    case = await make_case(client, owner)
+    cid = case["id"]
+    assert (await client.post(f"{V1}/cases/{cid}/reports", json={}, headers=owner)).status_code == 201
+    with api_engine.begin() as conn:  # emulate a row stored by the previous migration
+        conn.execute(text("ALTER TABLE reports DISABLE TRIGGER trg_reports_immutable"))
+        conn.execute(text("UPDATE reports SET content_pdf = NULL, pdf_sha256 = NULL"))
+        conn.execute(text("ALTER TABLE reports ENABLE TRIGGER trg_reports_immutable"))
+    meta = (await client.get(f"{V1}/cases/{cid}/reports/1", headers=owner)).json()
+    assert "pdf" not in meta["formats"] and "pdf" not in meta["downloads"] and meta["pdf_sha256"] is None
+    assert (await download(client, owner, cid, 1, "pdf")).status_code == 404
+    assert (await download(client, owner, cid, 1, "markdown")).status_code == 200
+    verify = (await client.get(f"{V1}/cases/{cid}/reports/1/verify", headers=owner)).json()
+    assert verify["valid"] is True and "pdf_sha256" not in verify["checks"]
 
 
 # ── the complete report, with real NASA, reviewed evidence and collaboration ──
@@ -221,8 +244,16 @@ async def test_complete_report_has_traceable_content_and_no_private_data(client,
     assert query["start"] == "20100101" and query["end"] == "20221231"
     assert not {"latitude", "longitude"} & set(query)
 
+    pdf = await download(client, owner, cid, 1, "pdf")
+    assert pdf.status_code == 200 and pdf.headers["content-type"] == "application/pdf"
+    assert pdf.content.startswith(b"%PDF-") and pdf.content.rstrip().endswith(b"%%EOF")
+    assert pdf.headers["x-report-sha256"] == meta["pdf_sha256"] == hashlib.sha256(pdf.content).hexdigest()
+    assert 'filename="cropstory-case-report-v1.pdf"' in pdf.headers["content-disposition"]
+    assert "pdf" in meta["formats"] and meta["downloads"]["pdf"].endswith("download?format=pdf")
+    assert str(EXACT_LAT).encode() not in pdf.content and NOTE.encode() not in pdf.content
+
     verify = (await client.get(f"{V1}/cases/{cid}/reports/1/verify", headers=owner)).json()
-    assert verify["valid"] is True and all(verify["checks"].values())
+    assert verify["valid"] is True and all(verify["checks"].values()) and verify["checks"]["pdf_sha256"] is True
     history = (await client.get(f"{V1}/cases/{cid}/history", headers=owner)).json()
     generated = [h for h in history if h["action"] == "REPORT_GENERATED"]
     assert len(generated) == 1 and generated[0]["changes"]["report_version"] == 1
@@ -292,7 +323,7 @@ async def test_roles_and_tamper_detection(client, factory, api_engine):
     for path in ("", "/1", "/1/download", "/1/verify"):
         assert (await client.get(f"{V1}/cases/{cid}/reports{path}", headers=stranger)).status_code == 404
     assert (await client.get(f"{V1}/cases/{cid}/reports/9", headers=owner)).status_code == 404
-    assert (await client.get(f"{V1}/cases/{cid}/reports/1/download", params={"format": "pdf"}, headers=owner)
+    assert (await client.get(f"{V1}/cases/{cid}/reports/1/download", params={"format": "docx"}, headers=owner)
             ).status_code == 422
 
     # bypassing the trigger (superuser) changes the text: verify must say so
@@ -302,7 +333,12 @@ async def test_roles_and_tamper_detection(client, factory, api_engine):
         conn.execute(text("ALTER TABLE reports ENABLE TRIGGER trg_reports_immutable"))
     verify = (await client.get(f"{V1}/cases/{cid}/reports/1/verify", headers=owner)).json()
     assert verify["valid"] is False and verify["checks"]["markdown_sha256"] is False
-    assert verify["checks"]["snapshot_sha256"] is True
+    assert verify["checks"]["snapshot_sha256"] is True and verify["checks"]["pdf_sha256"] is True
+    with api_engine.begin() as conn:
+        conn.execute(text("ALTER TABLE reports DISABLE TRIGGER trg_reports_immutable"))
+        conn.execute(text("UPDATE reports SET content_pdf = '\\x255044462d'::bytea"))
+        conn.execute(text("ALTER TABLE reports ENABLE TRIGGER trg_reports_immutable"))
+    assert (await client.get(f"{V1}/cases/{cid}/reports/1/verify", headers=owner)).json()["checks"]["pdf_sha256"] is False
 
 
 @pytest.mark.asyncio

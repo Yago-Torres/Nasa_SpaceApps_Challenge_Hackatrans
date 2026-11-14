@@ -11,11 +11,13 @@ who generates or downloads it. Source endpoints lose their query string and only
 parameters are kept. A final guard removes any stored coordinate value that still appears as text.
 
 Roles: OWNER, EDITOR and REVIEWER generate; every member lists, downloads and verifies.
-PDF is not produced (no new dependency, ADR required); the HTML has print styles for "Save as PDF".
+The PDF (ReportLab, ADR-0007) is rendered once from the same blocks and stored with the version; versions created
+before migration e8a4c1d7f905 have none and answer 404 for it.
 """
 from __future__ import annotations
 
 import calendar
+import hashlib
 from collections import Counter
 from datetime import datetime
 from typing import Any, Literal
@@ -32,6 +34,7 @@ from ..db.models import (
     Paper, Report, Rotation, SourceManifest, User, utcnow,
 )
 from ..services import case_report as cr
+from ..services.case_report_pdf import render_pdf
 from ..services.rotations import RotationCompareRequest, RotationComparison, compare_rotations
 from .cases import _load, _record, _require_role, _summary
 from .deps import CurrentPrincipal, DbSession
@@ -43,9 +46,10 @@ router = APIRouter(prefix="/api/v1/cases", tags=["case reports (ABB-26)"])
 GENERATOR_ROLES = frozenset({"OWNER", "EDITOR", "REVIEWER"})
 REPORT_NOT_FOUND = "Report version not found."
 MAX_VERSIONS = 200
-DownloadFormat = Literal["markdown", "html", "json"]
+DownloadFormat = Literal["markdown", "html", "json", "pdf"]
 _MEDIA = {"markdown": ("text/markdown; charset=utf-8", "md"), "html": ("text/html; charset=utf-8", "html"),
-          "json": ("application/json", "json")}
+          "json": ("application/json", "json"),
+          "pdf": ("application/pdf", "pdf")}
 
 
 class ReportCreate(RequestModel):
@@ -66,6 +70,7 @@ class ReportView(schemas.ContractModel):
     formats: list[str]
     checksum_sha256: str | None = PydanticField(description="SHA-256 of the Markdown text")
     html_sha256: str | None
+    pdf_sha256: str | None = None
     snapshot_sha256: str | None
     sources_sha256: str | None = PydanticField(description="One hash over every source manifest ID and checksum")
     source_manifest_ids: list[str]
@@ -254,10 +259,10 @@ def _view(report: Report, users: dict[UUID, User]) -> ReportView:
         id=report.id, case_id=report.case_id, version=report.version, generated_at=report.generated_at,
         status=report.status, case_version=report.case_version,
         generated_by=_summary(users.get(report.generated_by_id)) if report.generated_by_id else None,
-        formats=["markdown", "html", "json"], checksum_sha256=report.checksum_sha256, html_sha256=report.html_sha256,
-        snapshot_sha256=report.snapshot_sha256, sources_sha256=report.sources_sha256,
+        formats=[f for f in _MEDIA if f != "pdf" or report.content_pdf is not None], checksum_sha256=report.checksum_sha256, html_sha256=report.html_sha256,
+        pdf_sha256=report.pdf_sha256, snapshot_sha256=report.snapshot_sha256, sources_sha256=report.sources_sha256,
         source_manifest_ids=list(report.source_manifest_ids or []), changes=report.changes,
-        limitations=list(report.limitations), downloads={f: f"{base}/download?format={f}" for f in _MEDIA},
+        limitations=list(report.limitations), downloads={f: f"{base}/download?format={f}" for f in _MEDIA if f != "pdf" or report.content_pdf is not None},
     )
 
 
@@ -292,12 +297,14 @@ def create_report(case_id: UUID, body: ReportCreate, principal: CurrentPrincipal
     blocks = cr.build_blocks(snapshot)
     markdown = cr.render_markdown(blocks)
     html_doc = cr.render_html(blocks, f"CropStory case report v{version}")
+    pdf = render_pdf(blocks, f"CropStory case report v{version} - preliminary, not peer reviewed")
     report = Report(
         case_id=case_id, version=version, generated_at=now, status="PRELIMINARY", format="MARKDOWN",
         content_uri=None, checksum_sha256=cr.sha256_text(markdown),
         source_manifest_ids=[s["id"] for s in snapshot["sources"]], limitations=snapshot["limitations"],
         snapshot=snapshot, snapshot_sha256=cr.sha256_text(cr.canonical_json(snapshot)), content_markdown=markdown,
-        content_html=html_doc, html_sha256=cr.sha256_text(html_doc), sources_sha256=snapshot["source_hash"],
+        content_html=html_doc, html_sha256=cr.sha256_text(html_doc), content_pdf=pdf,
+        pdf_sha256=hashlib.sha256(pdf).hexdigest(), sources_sha256=snapshot["source_hash"],
         case_version=case.version, changes=snapshot["changes"], generated_by_id=principal.user.id,
     )
     db.add(report)
@@ -332,7 +339,11 @@ def download_report(case_id: UUID, version: int, principal: CurrentPrincipal, db
     _load(db, case_id, principal.user.id)
     report = _get(db, case_id, version)
     media, ext = _MEDIA[format]
-    if format == "markdown":
+    if format == "pdf":
+        if report.content_pdf is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="This version was stored before PDF export existed.")
+        content, digest = bytes(report.content_pdf), report.pdf_sha256
+    elif format == "markdown":
         content, digest = report.content_markdown, report.checksum_sha256
     elif format == "html":
         content, digest = report.content_html, report.html_sha256
@@ -344,7 +355,7 @@ def download_report(case_id: UUID, version: int, principal: CurrentPrincipal, db
         "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer",
         "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
     }
-    return Response(content=content or "", media_type=media, headers=headers)
+    return Response(content=content if content is not None else "", media_type=media, headers=headers)
 
 
 @router.get("/{case_id}/reports/{version}/verify", response_model=VerifyResult)
@@ -359,6 +370,8 @@ def verify_report(case_id: UUID, version: int, principal: CurrentPrincipal, db: 
         "snapshot_sha256": cr.sha256_text(cr.canonical_json(report.snapshot)) == report.snapshot_sha256,
         "sources_sha256": cr.sources_hash(report.snapshot["sources"]) == report.sources_sha256,
         "markdown_matches_snapshot": cr.render_markdown(blocks) == report.content_markdown,
+        **({"pdf_sha256": hashlib.sha256(bytes(report.content_pdf)).hexdigest() == report.pdf_sha256}
+           if report.content_pdf is not None else {}),
         "source_ids_match": [s["id"] for s in report.snapshot["sources"]] == list(report.source_manifest_ids or []),
     }
     ok = all(checks.values())
