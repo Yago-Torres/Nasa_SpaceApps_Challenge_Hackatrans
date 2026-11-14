@@ -63,6 +63,15 @@ Same auth, 503 and error rules as ABB-14; requires migration `c4d82e1f9a37`. See
 - `POST …/claims/disagreements/{disagreement_id}/review` `{decision, note, claim_a_version, claim_b_version}`; OWNER/EDITOR/REVIEWER who did not write either claim; CONFIRMED_CONTRADICTION needs both claims ACCEPTED; a decision stops applying when either claim version changes.
 - `POST …/claims/{claim_id}/applicability` `{farm_profile?, country_code?, koppen_climate?}` → `ApplicabilityReport` (per-dimension MATCH/PARTIAL/MISMATCH/UNKNOWN with reasons, `transfer_status`, `stored: false`). No numeric score, weight, probability or confidence.
 
+## Uncertainty Hunter (IMPLEMENTED — ABB-19)
+
+Same auth, 503 and error rules as the cases API; requires migration `a19f3b7c2d64` (after `f4b81d2c6e93`). See `docs/science/UNCERTAINTY_HUNTER.md`.
+
+- `GET /api/v1/cases/{case_id}/uncertainty` (all members) and `POST` with `{farm_profile?, country_code?, koppen_climate?, horizon_years?}` (nothing stored) → `UncertaintyReport` (`gaps[]` with deterministic id, category, cause, sources, question_ids, would_change; `questions[]` with `question, why_it_matters, measurement, units, would_change[{target_type, target_id, label, current_state, how}]`, link counts, `position`/`tied_with`, `resolution`; `prioritisation` `ORDERED_BY_LINK_COUNTS | NO_BASIS_TO_PRIORITISE | NO_OPEN_QUESTIONS`, `is_value_of_information: false`).
+- `POST …/uncertainty/questions/{question_id}/answers` (OWNER/EDITOR) `{value_text?, value_number?+unit, observed_from?, observed_to?, origin, method?, source_reference?, note?, replaces_answer_id?}` → `AnswerView` (FARMER_REPORTED; corrections supersede, 409 when stale; analysis tasks 422).
+- `POST …/uncertainty/answers/{answer_id}/review` `{version, decision: REVIEWED|REJECTED, note}` (OWNER/EDITOR/REVIEWER, not the author: 403). `POST …/questions/{question_id}/dismiss|reopen` `{note}` (OWNER/EDITOR). `GET …/uncertainty/answers`, `GET …/questions/{question_id}/history`, `GET /api/v1/uncertainty/question-catalogue`.
+- Hypothesis evidence links additively accept local answer ids (`EvidenceRef.evidence_type: LOCAL_ANSWER`, `kind: FARMER_REPORTED`). No score, weight, probability, confidence or value-of-information field exists.
+
 ## Case observations, timeline and hypotheses (IMPLEMENTED — ABB-10)
 
 Same authentication and 401/403/404/409/422/503 rules as the cases API; requires migration `e3a9c71f5b20` (chained after `e3c91f5a7d24`). See `docs/science/TIMELINE_HYPOTHESES.md`.
