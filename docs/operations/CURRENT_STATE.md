@@ -12,6 +12,7 @@
 | React app shell, design system, EN/ES (ABB-20) | IN PROGRESS — LOCALLY VERIFIED; CI ON PR | `frontend/src/app`, `frontend/src/design`, `frontend/src/i18n`, `frontend/src/features`, 17 Vitest tests | persisted cases (ABB-06), map (ABB-21), timeline (ABB-22), graph (ABB-23) |
 | Reproducible development toolchain | IMPLEMENTED & TESTED | tracked Python/npm locks, `.github/workflows/ci.yml`, `scripts/check_context.py`, CI run `43593848025` | keep locks and runtime pins synchronized when dependencies change |
 | User accounts / permissions | NOT BUILT | — | auth flow, privacy, role tests |
+| Incident wizard + location privacy UI (ABB-21) | IN PROGRESS — UI TESTED, DEV STORAGE ONLY | `frontend/src/cases`, `frontend/src/features/cases`, 12 Vitest tests (privacy redaction, validation, create → list → edit flow) | real `/api/v1/cases` + auth (ABB-05/06), server-side guest redaction, basemap after tile-provider decision |
 | Persistent case storage | NOT BUILT | — | SQL models, migrations, repository layer |
 | GPM / HLS | NOT BUILT | — | source adapter(s), QA, geospatial comparability |
 | Evidence graph & reviewed claims | NOT BUILT | — | schema, reviewer signoff, graph UI |

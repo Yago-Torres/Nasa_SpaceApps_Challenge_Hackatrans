@@ -56,8 +56,8 @@ describe('App shell', () => {
     expect(document.documentElement.lang).toBe('es');
   });
 
-  it('marks unbuilt screens as pending instead of showing fake cases', () => {
-    window.location.hash = '#/cases';
+  it('marks unbuilt screens as pending instead of showing sample data', () => {
+    window.location.hash = '#/collaboration';
     renderApp();
     expect(screen.getByText('Not built yet')).toBeTruthy();
     expect(screen.queryByRole('table')).toBeNull();

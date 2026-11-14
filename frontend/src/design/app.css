@@ -209,3 +209,96 @@ table.data tbody tr:hover { background: var(--surface-sunken); }
 .list-plain { margin: 0; padding-left: 1.1rem; display: grid; gap: var(--space-1); }
 
 .footer-note { color: var(--ink-3); font-size: var(--text-xs); }
+
+/* ── Forms: textarea, choices, checkbox ── */
+.field .ctl--area { min-height: 0; }
+.field textarea { flex: 1; min-width: 0; width: 100%; border: 0; background: none; font: inherit; color: var(--ink); padding: var(--space-2) var(--space-3); outline: none; resize: vertical; line-height: var(--leading-body); }
+.field textarea.voice-input { font-family: var(--font-serif); font-style: italic; font-size: var(--text-lg); line-height: var(--leading-serif); }
+.choices { border: 0; margin: 0; padding: 0; display: grid; gap: var(--space-2); min-width: 0; }
+.choices legend { font-weight: var(--weight-bold); font-size: var(--text-sm); padding: 0; margin-bottom: var(--space-2); }
+.choices .hint { color: var(--ink-3); font-size: var(--text-sm); }
+.choice-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: var(--space-2); }
+.choice { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: start; padding: var(--space-3) var(--space-4); border: 1px solid var(--rule-2); border-radius: var(--radius-m); background: var(--surface); cursor: pointer;
+  transition: border-color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out); }
+.choice:hover { border-color: var(--rule-3); background: var(--surface-sunken); }
+.choice.is-on { border: 2px solid var(--c-may-ink); padding: calc(var(--space-3) - 1px) calc(var(--space-4) - 1px); background: var(--surface-tint); }
+.choice:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+.choice input, .check input { width: 1.15rem; height: 1.15rem; margin: .2rem 0 0; }
+.choice input:focus-visible, .check input:focus-visible { outline: none; }
+.choice b, .check b { display: block; font-size: var(--text-md); }
+.choice small, .check small { display: block; color: var(--ink-2); font-size: var(--text-sm); margin-top: 2px; }
+.check { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: start; cursor: pointer; padding: var(--space-2) 0; }
+.check:focus-within { outline: 3px solid var(--focus); outline-offset: 4px; border-radius: var(--radius-s); }
+.form-row--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 36rem) { .form-row--2 { grid-template-columns: minmax(0, 1fr); } }
+
+/* ── Wizard ── */
+.wizard { display: grid; grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr); gap: var(--space-5); align-items: start; }
+.stepper { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; position: sticky; top: var(--space-5); }
+.stepper button { width: 100%; display: grid; grid-template-columns: 1.75rem minmax(0, 1fr); gap: var(--space-3); align-items: center; min-height: var(--tap); padding: 0 var(--space-3);
+  border: 0; border-radius: var(--radius-m); background: none; color: var(--ink); font: var(--weight-medium) var(--text-md) var(--font-sans); text-align: left; cursor: pointer; transition: background-color var(--dur-1) var(--ease-out); }
+.stepper button:hover:not(:disabled) { background: var(--surface-tint); }
+.stepper button:disabled { color: var(--ink-3); cursor: not-allowed; }
+.stepper button[aria-current="step"] { background: var(--surface); box-shadow: inset 0 0 0 1px var(--rule-2); font-weight: var(--weight-bold); }
+.stepper .n { width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; font-size: var(--text-sm); font-weight: var(--weight-bold); border: 1.5px solid var(--rule-2); background: var(--surface); }
+.stepper .n svg { width: 1rem; height: 1rem; }
+.stepper .done .n { background: var(--c-calpoly); border-color: var(--c-calpoly); color: var(--ink-on-shell); }
+.stepper [aria-current="step"] .n { background: var(--action); border-color: var(--action-edge); color: var(--action-ink); }
+.wizard-form h2:focus { outline: none; }
+.wizard-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); border-top: 1px solid var(--rule); padding-top: var(--space-4); }
+.save-state { margin-left: auto; font-size: var(--text-sm); color: var(--ink-3); }
+.save-state--error { color: var(--error-ink); font-weight: var(--weight-bold); }
+.crop-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.crop-row { display: grid; grid-template-columns: 7rem minmax(0, 1fr) minmax(0, 1.2fr) auto; gap: var(--space-3); align-items: end; padding-bottom: var(--space-3); border-bottom: 1px solid var(--rule); }
+.crop-remove { align-self: end; min-height: var(--tap); }
+.review-block { display: grid; gap: var(--space-3); }
+.review-block h3 { font-size: var(--text-lg); font-weight: var(--weight-bold); }
+.review-list { margin: 0; display: grid; gap: var(--space-2); }
+.review-list > div { display: grid; grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr); gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--rule); }
+.review-list dt { color: var(--ink-3); font-size: var(--text-sm); }
+.review-list dd { margin: 0; white-space: pre-line; }
+.gap-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.gap-list li { display: flex; gap: var(--space-2); align-items: baseline; }
+.confirm { display: inline-flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; font-size: var(--text-sm); }
+.row-actions { white-space: nowrap; display: flex; gap: var(--space-2); justify-content: flex-end; }
+.cases-table th[scope="row"] { font-weight: var(--weight-bold); }
+@media (max-width: 64rem) {
+  .wizard { grid-template-columns: minmax(0, 1fr); }
+  .stepper { position: static; grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding-bottom: var(--space-1); }
+}
+@media (max-width: 40rem) {
+  .crop-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .crop-row > :nth-child(3) { grid-column: 1 / -1; }
+  .wizard-bar { position: sticky; bottom: 0; background: var(--surface); margin: 0 calc(-1 * var(--space-5)) calc(-1 * var(--space-5)); padding: var(--space-3) var(--space-5) calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -8px 16px -12px rgb(20 32 25 / .3); }
+  .save-state { flex-basis: 100%; margin-left: 0; }
+  .review-list > div { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
+}
+
+/* ── Privacy preview ── */
+.privacy { margin: 0; display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--rule-2); border-radius: var(--radius-m); background: var(--surface-sunken); }
+.privacy-svg { width: 100%; max-width: 22rem; height: auto; border-radius: var(--radius-s); border: 1px solid var(--rule-2); }
+.pv-ground { fill: var(--surface); }
+.pv-gridline { stroke: var(--rule); stroke-width: 1; }
+.pv-power { fill: var(--c-celestial-100); stroke: var(--ev-observed); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.pv-shared { fill: var(--surface-tint); stroke: var(--c-may-ink); stroke-width: 2; fill-opacity: .7; }
+.pv-shared-dot { fill: var(--c-may-ink); }
+.pv-you { fill: var(--c-calpoly); stroke: var(--c-white); stroke-width: 2.5; }
+.pv-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); font-size: var(--text-sm); color: var(--ink-2); }
+.pv-legend li { display: flex; gap: var(--space-2); align-items: center; }
+.pv-key { width: .9rem; height: .9rem; display: inline-block; }
+.pv-key--you { border-radius: 50%; background: var(--c-calpoly); }
+.pv-key--shared { background: var(--surface-tint); border: 2px solid var(--c-may-ink); }
+.pv-key--power { background: var(--c-celestial-100); border: 1.5px dashed var(--ev-observed); }
+.pv-says { margin: 0; display: grid; gap: var(--space-1); font-size: var(--text-sm); }
+.pv-says dd { margin: 0; }
+
+/* Cases table stacks into one block per case under 48rem (screens.md responsive rules). */
+@media (max-width: 48rem) {
+  .cases-table { min-width: 0; }
+  .cases-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .cases-table, .cases-table tbody, .cases-table tr, .cases-table th, .cases-table td { display: block; text-align: left; }
+  .cases-table tr { padding: var(--space-3) 0; border-bottom: 1px solid var(--rule-2); }
+  .cases-table th, .cases-table td { border: 0; padding: var(--space-1) 0; }
+  .cases-table td[data-label]::before { content: attr(data-label) ": "; color: var(--ink-3); }
+  .cases-table .row-actions { justify-content: flex-start; flex-wrap: wrap; white-space: normal; padding-top: var(--space-2); }
+}

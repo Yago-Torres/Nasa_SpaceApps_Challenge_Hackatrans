@@ -10,4 +10,6 @@
 
 - ABB-20 (local, unpublished): new app shell with seven routes (Overview, Cases, Investigation, Evidence, Rotations, Collaboration, Report), Field Survey design system, EN/ES switch, keyboard navigation and focus management, loading/empty/error/partial/not-built states, accessible anomaly chart with table view and source label. Cases and Collaboration show "not built yet" instead of sample data.
 
+- ABB-21 (in progress): incident wizard in Cases (`#/cases/new`, `#/cases/<id>`) with location privacy tiers, consent, privacy preview, missing-data list and autosave to development-only browser storage (clearly labelled); cases list stacks on mobile.
+
 A successful specification or design document is not a completed product feature. Add entries only when user-visible behavior actually changes.

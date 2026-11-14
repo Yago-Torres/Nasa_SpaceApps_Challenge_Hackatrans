@@ -3,7 +3,7 @@
  * (.claude/skills/agro-design-system/references/components.md). Changing one is a
  * cross-team change under ABB-20.
  */
-import { forwardRef, useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
+import React, { forwardRef, useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
 import { AlertTriangle, Check, Clock, Construction, Info, LoaderCircle } from 'lucide-react';
 import { useI18n } from '../i18n/I18n';
 
@@ -196,5 +196,64 @@ export function SourceLabel({ name, kind, rows, limitations }: { name: string; k
         {limitations && <dd className="lim">{limitations}</dd>}
       </dl>
     </article>
+  );
+}
+
+/* ── TextArea ────────────────────────────────────────────────────── */
+
+type TextAreaProps = Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'id'> & { label: string; hint?: string; error?: string };
+
+export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea({ label, hint, error, ...area }, ref) {
+  const id = useId();
+  const describedBy = [error ? `${id}-err` : null, hint ? `${id}-hint` : null].filter(Boolean).join(' ') || undefined;
+  return (
+    <div className={`field${error ? ' bad' : ''}`}>
+      <label htmlFor={id}>{label}</label>
+      <div className="ctl ctl--area">
+        <textarea ref={ref} id={id} rows={4} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...area} />
+      </div>
+      {error && <span className="err" id={`${id}-err`}><AlertTriangle aria-hidden="true" />{error}</span>}
+      {hint && !error && <span className="hint" id={`${id}-hint`}>{hint}</span>}
+    </div>
+  );
+});
+
+/* ── Radio group (native radios, arrow keys work) ───────────────── */
+
+export type Choice<T extends string> = { value: T; label: string; hint?: string };
+
+export function RadioGroup<T extends string>({ legend, name, value, options, onChange, hint }: { legend: string; name: string; value: T; options: Choice<T>[]; onChange: (v: T) => void; hint?: string }) {
+  const id = useId();
+  return (
+    <fieldset className="choices" aria-describedby={hint ? `${id}-hint` : undefined}>
+      <legend>{legend}</legend>
+      {hint && <p className="hint" id={`${id}-hint`}>{hint}</p>}
+      <div className="choice-list">
+        {options.map((o) => (
+          <label key={o.value} className={`choice${value === o.value ? ' is-on' : ''}`}>
+            <input type="radio" name={name} value={o.value} checked={value === o.value} onChange={() => onChange(o.value)} />
+            <span>
+              <b>{o.label}</b>
+              {o.hint && <small>{o.hint}</small>}
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+/* ── Checkbox ────────────────────────────────────────────────────── */
+
+export function Checkbox({ label, hint, checked, onChange, name }: { label: string; hint?: string; checked: boolean; onChange: (v: boolean) => void; name: string }) {
+  const id = useId();
+  return (
+    <label className="check" htmlFor={id}>
+      <input id={id} type="checkbox" name={name} checked={checked} onChange={(e) => onChange(e.target.checked)} aria-describedby={hint ? `${id}-hint` : undefined} />
+      <span>
+        <b>{label}</b>
+        {hint && <small id={`${id}-hint`}>{hint}</small>}
+      </span>
+    </label>
   );
 }
