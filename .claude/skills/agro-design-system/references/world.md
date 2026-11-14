@@ -32,9 +32,9 @@ The users are farmers, agronomists and community reviewers (pilot: Ebro valley, 
 
 ## Allowed ornament budget
 
-- Workspace screens (Operate): zero ornament. The world is only palette, type, legend and the title block.
-- Landing page (Persuade): the celestial hero band and the legend section. Optional: team-made line illustrations (1.5px stroke, one accent colour), credited, never photoreal fake fields.
-- Report (Read): the title block at the top, the legend at the end, print-friendly.
+- Workspace screens (Operate): no images, no ornament. The world is palette, type, legend and the title block.
+- Landing page (Persuade): the celestial hero band with one large NASA Ames painting, one image per step, one image in the dark band. Images come from open sources only (`imagery.md`).
+- Report (Read): the title block at the top, the legend at the end, print-friendly, no decorative images.
 
 ## Ban list (with sources)
 

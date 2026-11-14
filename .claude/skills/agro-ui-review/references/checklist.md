@@ -48,6 +48,8 @@ Check in order; A and B matter most in this product. IDs are cited in findings (
 - **D7** Copy tells absent: slop words (seamless, empower, unlock, robust, revolutionary, cutting-edge…), stock lines, "X. Y." two-fragment headings, stat strips, invented specifics, em-dash-heavy prose, arrows glued to every link.
 - **D8** Browser surfaces themed: `::selection`, `caret-color`, `accent-color`, scrollbar colours, focus ring, link underline offset.
 - **D9** Shared components reused from `frontend/src/design/`; a new shared component or token change is called out in the PR.
+- **D11** Motion follows `motion.md`: buttons have hover (lift + soft shadow) and press (scale .98) states; links, rows, inputs and linked images have hover feedback; tabs, disclosures, menus and toasts animate with the duration tokens; nothing animates without a user action; reduced motion leaves the page complete.
+- **D12** Images follow `imagery.md`: real artwork from an allowed open source (NASA, Wikimedia Commons with a compatible licence, team-made), listed in `CREDITS.md`, credited in the footer; no Pinterest/Behance/Google Images copies, no AI-generated images, nothing that could pass for an observation of the user's field; `alt` text in EN and ES, `width`/`height` set, scan borders trimmed.
 - **D10** Charts follow `dataviz.md`: BrBG rain, RdBu temperature, zero line, one honest scale, units, text summary and table alternative; horizontal bars on mobile.
 
 ## E. Interaction, content, performance, i18n (adapted from Vercel Web Interface Guidelines)

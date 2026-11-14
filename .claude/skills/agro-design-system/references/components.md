@@ -1,6 +1,6 @@
 # Component recipes — Field Survey
 
-Reference implementations for `frontend/src/design/components/`. All strings go through i18n (`t('…')`); they're inlined here for readability. UI icons: `lucide-react` (already a dependency) at `strokeWidth={2}`, `aria-hidden="true"` next to text. Evidence symbols: the SVG sprite below. `assets/specimen.html` renders every recipe.
+Reference implementations for `frontend/src/design/components/`. All strings go through i18n (`t('…')`); they're inlined here for readability. UI icons: `lucide-react` (already a dependency) at `strokeWidth={2}`, `aria-hidden="true"` next to text. Evidence symbols: the SVG sprite below. `assets/landing.html` and `assets/system.html` render every recipe; hover and press behaviour follows `motion.md`.
 
 ## Contents
 

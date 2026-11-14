@@ -173,11 +173,17 @@
 
   --shadow-float: 0 2px 4px rgb(25 33 29 / 0.06), 0 14px 32px -10px rgb(25 33 29 / 0.22);
 
-  /* ───────── 9. Motion: exponential ease-out, no bounce ───────── */
+  /* ───────── 9. Motion (standard in references/motion.md) ─────────
+     Exponential ease-out for UI, slow ease-in-out only for ambient illustration loops. */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --dur-1: 120ms;
-  --dur-2: 200ms;
-  --dur-3: 320ms;
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-press: 80ms;    /* button press */
+  --dur-1: 120ms;       /* hover colour, border */
+  --dur-2: 200ms;       /* small moves: lift, arrow nudge, tab indicator, toast */
+  --dur-3: 320ms;       /* panels: drawer, disclosure, menu */
+  --dur-4: 600ms;       /* data arriving: chart bars grow (after a user action only) */
+  --lift: -1px;         /* hover lift for buttons; linked blocks use -2px */
+  --shadow-hover: 0 6px 14px -6px rgb(20 32 25 / 0.28);
 
   /* ───────── 10. Layout ───────── */
   --rail: 15.5rem;
@@ -190,5 +196,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root { --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms; }
+  :root { --dur-press: 0ms; --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms; --dur-4: 0ms; --lift: 0px; }
 }

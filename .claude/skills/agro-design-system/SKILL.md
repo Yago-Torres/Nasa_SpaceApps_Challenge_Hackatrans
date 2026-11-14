@@ -14,7 +14,7 @@ description: The "Field Survey" design language for AGRO BLACK BOX — light mod
 1. Read `docs/product/UX_FLOWS.md`, `frontend/AGENTS.md` and `docs/science/SCIENTIFIC_POLICY.md`. This skill serves them and never overrides them.
 2. Check `docs/operations/CURRENT_STATE.md` / `docs/architecture/API_CONTRACTS.md`. A screen for an endpoint that doesn't exist shows a *not built yet* state, never invented content.
 3. Make sure `frontend/src/design/tokens.css` exists; if not, copy `assets/tokens.css` there (part of the design-system Issue). Never declare colours locally.
-4. Open `assets/specimen.html` in a browser. It shows two real screens (forensics workspace, landing) and the system sheet. Match it.
+4. Open `assets/landing.html` (the public landing page with a working example case) and `assets/system.html` (tokens, controls, states, motion) in a browser. Hover, press and tab through them; match them.
 5. Decide the **mode** of the surface (from impeccable): **Operate** for app screens (cases, cockpit, science desk, rotation lab, review, settings): scanability and standard controls beat expression. **Persuade** for the landing page: the world can speak louder. **Read** for the case report and docs.
 
 ## The world, in one paragraph
@@ -48,7 +48,9 @@ node .claude/skills/agro-design-system/scripts/check-contrast.mjs
 
 **Space and shape:** 4px base (`--space-1…9`). Radii by role: `--radius-s` 3px (inputs, labels, table cells), `--radius-m` 8px (buttons, panels), `--radius-l` 14px (review slips, dialogs, screen frames). Structure comes from rules (`--rule`, `--rule-3`), not shadows; only floating layers use `--shadow-float`.
 
-**Motion:** exponential ease-out (`--ease-out`), 120–320ms, only in answer to a user action (drawer opens, row expands). A spinner only while a request is in flight. No bounce, no pulsing dots, no entrance animations on scroll. Reduced motion zeroes the durations.
+**Motion and interaction:** full standard in `references/motion.md`. Exponential ease-out, 80–600ms tokens. Buttons lift 1px with a soft shadow on hover and sink to 98% on press; links draw or thicken their underline; linked images zoom 1.03 in their frame; tabs slide an indicator; disclosures open by height; toasts rise and auto-close; chart bars grow once when data arrives. No bounce, pulsing dots, parallax or scroll fade-ins. Reduced motion zeroes every duration.
+
+**Imagery:** real artwork only, from open sources, never drawn by an agent and never copied from Pinterest. Today: public-domain NASA Ames space-settlement paintings (Don Davis, Rick Guidice, 1975–1977) in `assets/images/`, credited in the footer. Rules and allowed sources: `references/imagery.md`.
 
 ## The evidence legend (the system's backbone)
 
@@ -117,10 +119,14 @@ Feature folders own their screens; shared visuals live only in `design/`. Changi
 ## Reference files
 
 - `assets/tokens.css` — all tokens (copy to `frontend/src/design/tokens.css`).
-- `assets/specimen.html` — rendered reference: forensics workspace, landing page, system sheet.
+- `assets/landing.html` — the reference page: landing for the hackathon with a working example case (tabs, chart with tooltips and table view, disclosures, EN/ES switch, form validation, toasts).
+- `assets/system.html` — system sheet: palette, type, buttons, fields, legend, states and the motion table, all interactive.
+- `assets/images/` + `CREDITS.md` — public-domain NASA artwork used on the pages.
 - `references/components.md` — recipes: base CSS, Button, Field, EvidenceLabel/legend sprite, TitleBlock, StepRail, SourceLabel, ReviewSlip, StatusMessage, hypotheses table.
 - `references/screens.md` — layouts and wireframes for the landing page and the 8 UX_FLOWS screens.
 - `references/dataviz.md` — chart rules.
+- `references/motion.md` — animation and interaction standard.
+- `references/imagery.md` — allowed image sources, credits, how images are framed.
 - `references/world.md` — where the world comes from, how industrial and solarpunk show up, the full ban list and its sources.
 - `scripts/check-contrast.mjs` — WCAG check of every documented token pair.
 
