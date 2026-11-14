@@ -36,11 +36,17 @@ See `docs/architecture/ADRs/0002-versioned-shared-contracts.md`.
 
 ABB-03 persists the shared domains in PostgreSQL through SQLAlchemy models and Alembic migrations. The internal `CaseRepository` creates private cases with an owner permission and uses an explicit version for concurrent updates. This does not expose new routes or bypass the future authentication/authorization work. See ADR-0003.
 
+## Accounts and cases (IMPLEMENTED — ABB-05/ABB-06, ADR-0004)
+
+Require `DATABASE_URL` (PostgreSQL, migrated to `b7e2d4a91c03`); otherwise 503 `Persistent storage is not available on this server.` Authentication: `Authorization: Bearer <token>` from `POST /api/v1/auth/login`; opaque token, 12 h, revocable with `POST /api/v1/auth/logout`. Errors use `{detail}`: 401 unauthenticated, 404 no access or nonexistent (same body), 403 role not allowed, 409 stale `version` / invalid transition / case not editable, 422 validation, 429 account locked (`Retry-After`).
+
+- `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, `GET /api/v1/auth/me`.
+- `POST|GET /api/v1/cases`, `GET|PATCH|DELETE /api/v1/cases/{case_id}`, `POST /api/v1/cases/{case_id}/status`, `POST /api/v1/cases/{case_id}/archive`, `GET /api/v1/cases/{case_id}/history`, `POST /api/v1/cases/{case_id}/fields`, `PATCH|DELETE /api/v1/cases/{case_id}/fields/{field_id}`, `GET|POST /api/v1/cases/{case_id}/permissions`, `DELETE /api/v1/cases/{case_id}/permissions/{user_id}`.
+- Responses `CaseView` / `CaseFieldView` extend the shared `Case` / `Field` additively (`version`, `status` DRAFT|INVESTIGATING|REVIEWED|PUBLISHED, `archived_at`, `owner`, `my_role`; `location_precision`, `rounding_deg`, `precise_location_consent`). Coordinates are redacted server-side for REVIEWER/VIEWER: APPROXIMATE → grid-cell centre of `rounding_deg`; REGION_ONLY/WITHHELD → null; exact only with owner consent. Every content change requires the current `version` and appends author, time and before/after values to the history. `PUBLISHED` does not make a case public; `PUBLIC_ROUNDED` is not served.
+
 ## Proposed release 1.0 routes (NOT IMPLEMENTED)
 
-Formalize versioned `/api/v1` resources through their owning roadmap Issues:
-
-- `/api/v1/cases` — typed case CRUD and permission tiers.
+Formalize versioned `/api/v1` resources through their owning roadmap Issues (`/api/v1/cases` is implemented, see above):
 - `/api/v1/cases/{case_id}/observations` — evidence source manifest, jobs, quality flags.
 - `/api/v1/cases/{case_id}/timeline` — observed, local and hypothetical event layers.
 - `/api/v1/evidence/search` and `/api/v1/evidence/findings` — DOI discovery and human-verified findings.

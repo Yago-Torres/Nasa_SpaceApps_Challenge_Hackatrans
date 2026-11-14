@@ -9,9 +9,11 @@ from .services.literature import LiteratureSearchResult, LiteratureSourceError, 
 from .services.rotations import rotation_examples
 from .services.report import build_report
 from .rotation_api import router as rotation_router
+from .api import include_api_v1
 
 app=FastAPI(title='AGRO BLACK BOX API',version='0.1.0')
 app.include_router(rotation_router)
+include_api_v1(app)  # ABB-05/ABB-06: auth + cases; 503 when DATABASE_URL is not configured
 
 
 def versioned_openapi():
