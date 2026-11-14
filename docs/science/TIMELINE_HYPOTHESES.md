@@ -62,7 +62,7 @@ What it is not: a probability, percentile, return period, significance test, agr
 
 `SUPPORTED`, `CHALLENGED` and `REJECTED` are never set by this API (422) and remain only for compatibility; `SUPPORTED` would read as proof. No status is assigned automatically, no hypothesis is ranked, and no numeric score exists. Editing the statement, evidence links or missing evidence resets an evaluation to `OPEN`, because the evaluation referred to the previous content.
 
-**Evidence links** must reference evidence of the same case: observation ids, anomaly ids or evidence-claim ids. Unknown ids and ids from another case are rejected with the same 422; an id cannot both support and contradict one hypothesis. Links to superseded retrievals stay valid and are shown with `active=false`.
+**Evidence links** must reference evidence of the same case: observation ids, anomaly ids, evidence-claim ids or ABB-19 local answer ids (`evidence_type: LOCAL_ANSWER`, `kind: FARMER_REPORTED`; see `UNCERTAINTY_HUNTER.md`). Unknown ids and ids from another case are rejected with the same 422; an id cannot both support and contradict one hypothesis. Links to superseded retrievals stay valid and are shown with `active=false`.
 
 **Templates.** `GET /api/v1/hypothesis-templates` lists six starting points — water deficit, excess water/waterlogging, heat stress, pest or disease, management or irrigation-system failure, soil limitation — each phrased "may have contributed", with missing evidence and verification questions. `POST /api/v1/cases/{case_id}/hypotheses/templates` adds them (all or `codes`) as `OPEN`, origin `TEMPLATE`; already-added templates are skipped. Templates are not derived from case evidence.
 
