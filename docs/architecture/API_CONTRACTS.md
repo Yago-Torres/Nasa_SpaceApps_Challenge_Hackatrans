@@ -29,6 +29,10 @@ The current React baseline still declares local `Climate`, `Paper` and `Rotation
 
 See `docs/architecture/ADRs/0002-versioned-shared-contracts.md`.
 
+## PostgreSQL persistence (IMPLEMENTED INTERNAL LAYER; API ROUTES PENDING)
+
+ABB-03 persists the shared domains in PostgreSQL through SQLAlchemy models and Alembic migrations. The internal `CaseRepository` creates private cases with an owner permission and uses an explicit version for concurrent updates. This does not expose new routes or bypass the future authentication/authorization work. See ADR-0003.
+
 ## Proposed release 1.0 routes (NOT IMPLEMENTED)
 
 Formalize versioned `/api/v1` resources through their owning roadmap Issues:
