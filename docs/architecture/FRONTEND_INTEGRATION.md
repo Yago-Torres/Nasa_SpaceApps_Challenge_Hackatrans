@@ -95,7 +95,7 @@ Reading back: `APPROXIMATE`/`EXACT` → Approximate area (an `EXACT` field is no
 
 **Not in this UI yet:** sharing/permissions management, workflow status changes, archive, history view, multiple fields per case, basemap (tile provider decision pending).
 
-## 7. Case timeline and rival hypotheses (IN REVIEW, ABB-22)
+## 7. Case timeline and rival hypotheses (IMPLEMENTED, ABB-22)
 
 The case workspace owns a shared tab route: `#/cases/<id>` is Details and
 `#/cases/<id>/timeline` is Timeline. Future ABB-23/25/26 case tabs extend the explicit
