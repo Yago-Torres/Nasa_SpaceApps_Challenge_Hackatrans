@@ -97,6 +97,15 @@ Reading back: `APPROXIMATE`/`EXACT` → Approximate area (an `EXACT` field is no
 
 **Not in this UI yet:** sharing/permissions management, workflow status changes, archive, history view, multiple fields per case, basemap (tile provider decision pending).
 
+## 6.1 Case report tab (IMPLEMENTED, ABB-26)
+
+`#/cases/<id>/report` (tab "Report"/"Informe", `features/cases/report/*`) lists the stored versions from `GET /api/v1/cases/{id}/reports`
+and, for OWNER/EDITOR/REVIEWER, generates a new one with `POST` (empty body: the server builds everything from the case; the browser sends
+no scientific data). Each version shows date, author, case version, truncated report and source hashes, the server's change list, and buttons
+to download Markdown, HTML and the JSON snapshot (fetch with the bearer token, saved as a blob) and to call the verify endpoint. A failed
+verification is shown as an error, never hidden. PDF is not offered (note tells users to print the HTML). No sample data is substituted when the
+API fails. The legacy stateless `#/report` page and `POST /api/report` remain unchanged.
+
 ## 7. Case timeline and rival hypotheses (IMPLEMENTED, ABB-22)
 
 The case workspace owns a shared tab route: `#/cases/<id>` is Details and

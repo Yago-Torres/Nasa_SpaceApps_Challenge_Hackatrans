@@ -110,13 +110,22 @@ Same auth, 404/403, 503 and error rules as the cases API; requires migration `a7
 - `GET /api/v1/shared/{token}` (no account) → `SharedCaseView`: never exact coordinates, case id, e-mails, user ids, observations, invitations, member lists or history; same 404 for unknown, revoked and expired tokens; `Cache-Control: no-store`, `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex`.
 - `POST /api/v1/account/delete` (ABB-28) additionally revokes pending invitations addressed to the deleted account's e-mail and scrubs that address from every invitation row.
 
+## Case reports (IMPLEMENTED — ABB-26)
+
+Same auth, 404/403 and 503 rules as the cases API; requires migration `d5f3a8b21c64` (after `a7c2e9d4b158`). Method, privacy rules and limits: `docs/science/CASE_REPORT.md`.
+
+- `POST /api/v1/cases/{case_id}/reports` (OWNER, EDITOR, REVIEWER) `{rotation?: RotationCompareRequest}` → 201 `ReportView` `{id, version, generated_at, status PRELIMINARY, case_version, generated_by, formats, checksum_sha256 (Markdown), html_sha256, snapshot_sha256, sources_sha256, source_manifest_ids, changes{initial, previous_version, case_version, items[{section, change ADDED|REMOVED|CHANGED, id, label}]}, limitations, downloads}`. Unknown body fields → 422. The server computes the optional rotation comparison itself; client-computed rotations are not accepted. Records `REPORT_GENERATED` in the case history without bumping the case version. At most 200 versions per case (409).
+- `GET /api/v1/cases/{case_id}/reports` (every member) → `{items: ReportView[]}`, newest first; `GET …/reports/{version}` → `ReportView`.
+- `GET …/reports/{version}/download?format=markdown|html|json` (every member) → the stored bytes with `Content-Disposition: attachment`, `X-Report-SHA256`, `no-store`, `nosniff` and a sandboxing CSP. No role receives coordinates, notes, e-mails, names or comment text. `format=pdf` → 422 (not built).
+- `GET …/reports/{version}/verify` → `{version, valid, checks{markdown_sha256, html_sha256, snapshot_sha256, sources_sha256, markdown_matches_snapshot, source_ids_match}, detail}`.
+- Stored versions are write-once: a database trigger rejects any later UPDATE of their content.
+
 ## Proposed release 1.0 routes (NOT IMPLEMENTED)
 
 Formalize versioned `/api/v1` resources through their owning roadmap Issues (cases, observations, timeline, hypotheses and claims are implemented, see above):
 - `/api/v1/evidence/search` — DOI discovery (today `GET /api/literature`); `/api/v1/evidence/findings` is superseded by the ABB-14 claims routes above.
 - `/api/v1/cases/{case_id}/rotations/compare` — three+ feasible options with explicit scenarios (the stateless `/api/v1/rotations/compare` exists; the case-bound route waits for persisted profiles, ABB-06).
 - `/api/v1/cases/{case_id}/reviews` — superseded: comments are `…/comments` (ABB-25) and decisions stay on each record's review route (ABB-10/14/15/16/19).
-- `/api/v1/cases/{case_id}/reports` — versioned human-readable case reports.
 
 Do not migrate existing consumers without coordination with affected domains. Breaking changes require a compatibility plan, contract tests, updated docs and a new contract version when compatibility cannot be preserved.
 

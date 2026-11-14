@@ -789,4 +789,15 @@ class Report(IdMixin, Base):
     checksum_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     source_manifest_ids: Mapped[list[str]] = mapped_column(JSONB, default=list)
     limitations: Mapped[list[str]] = mapped_column(JSONB)
+    # ABB-26 immutable snapshot: the content columns below are written once (a database trigger rejects
+    # any later change). ``checksum_sha256`` is the SHA-256 of ``content_markdown``.
+    snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    snapshot_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    content_markdown: Mapped[str | None] = mapped_column(Text, nullable=True)
+    content_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    html_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    sources_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    case_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    changes: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    generated_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     __table_args__ = (UniqueConstraint("case_id", "version"),)
