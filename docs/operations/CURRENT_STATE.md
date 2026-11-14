@@ -6,7 +6,7 @@
 |---|---|---|---|
 | NASA POWER fetch | IMPLEMENTED DEVELOPMENT BASELINE | `backend/agroblackbox/services/power.py` | validate live requests, edge cases, timezone, rates, provenance |
 | Climate anomalies | IMPLEMENTED DEVELOPMENT BASELINE | `services/metrics.py`, `backend/tests/test_metrics.py` | scientific baseline validation / source comparability |
-| Scientific bibliography search | IMPLEMENTED DEVELOPMENT BASELINE | `services/literature.py` | DOI verification, review workflow, Crossref, evidence record |
+| Scientific bibliography search + DOI verification (ABB-13) | IMPLEMENTED & TESTED (metadata only) | `services/literature.py`, `backend/tests/test_literature.py`, PR #35 | team OpenAlex API key, caching/retries (ABB-27), persistence (ABB-03), reviewed claims (ABB-14); non-Crossref DOI agencies not checked |
 | Rotation examples | IMPLEMENTED *ILLUSTRATIVE ONLY* | `services/rotations.py` | user inputs, crop constraints, meaningful comparison |
 | Case note Markdown export | IMPLEMENTED DEVELOPMENT BASELINE | `services/report.py` | persisted cases, citations, report snapshot and download |
 | React app baseline | IMPLEMENTED DEVELOPMENT BASELINE | `frontend/src/main.tsx` | full case/graph/map/collaboration UX, accessibility, tests |
@@ -28,6 +28,8 @@
 - Real NASA/OpenAlex network path: **not verified by archive creation**; each team must test and log successful retrieved dataset/source.
 
 ABB-01 verification on 2026-11-14: context policy found 22 required files; `uv lock --check` and strict sync succeeded; backend reported `3 passed`; Node `v24.22.3` with npm `11.19.1` completed `npm ci` and the production build with zero reported vulnerabilities and no unreviewed install scripts. GitHub Actions run `43593848025` passed `api-tests`, `web-build` and `context-policy` for commit `7081f6990684cb3e058e404dae4ca63c7593260e`.
+
+ABB-13 verification on 2026-11-14 (branch `feat/13-openalex-crossref` merged with `main` at `e6c030a`, WSL Ubuntu, uv 0.12.21): `uv lock --check` resolved 25 packages; `uv run --locked --extra dev pytest -q` reported `36 passed` (33 offline literature tests with simulated OpenAlex/Crossref); context policy found 22 required files. Live network path at 12:05 UTC without API key: anonymous OpenAlex search first returned HTTP 503 (search paused under load; service raised 502, no fabricated content); retry returned 6 works, all `VERIFIED_CROSSREF`, including `10.1038/s41467-022-32464-0`; 3 had OpenAlex/Crossref publication-year differences recorded in `metadata_discrepancies`. Results are bibliographic metadata only, not reviewed scientific claims.
 
 ## Dependency-management note
 

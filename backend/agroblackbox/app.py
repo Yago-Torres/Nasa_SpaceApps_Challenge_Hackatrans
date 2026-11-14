@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 from .services.power import fetch_power
 from .services.metrics import summarize_power
-from .services.literature import query_literature
+from .services.literature import LiteratureSearchResult, LiteratureSourceError, search_literature
 from .services.rotations import rotation_examples
 from .services.report import build_report
 
@@ -30,9 +30,13 @@ async def climate(latitude:float=Query(ge=-90,le=90), longitude:float=Query(ge=-
             'monthly':monthly,
             'disclaimer':'Gridded regional meteorology, not a field reading. Anomalies are descriptive and do not establish crop-failure causes. Short reference period.'}
 
-@app.get('/api/literature')
+@app.get('/api/literature', response_model=LiteratureSearchResult)
 async def literature(query:str=Query(min_length=3,max_length=180)):
-    return {'results':await query_literature(query)}
+    try:
+        return await search_literature(query)
+    except LiteratureSourceError as e:
+        # public_message never contains request URLs, API keys or contact data.
+        raise HTTPException(status_code=502, detail=e.public_message) from e
 
 @app.get('/api/rotations/demo')
 def rotations():return {'rotations':rotation_examples()}

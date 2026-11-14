@@ -6,7 +6,7 @@
 
 - `GET /api/health` — API status and version.
 - `GET /api/climate?latitude=&longitude=&event_year=&reference_start=&reference_end=` — NASA POWER daily-based monthly anomalies, SHA-256 and caveats. Live upstream request required; errors may return 502. Small reference windows should not be called climatological normals.
-- `GET /api/literature?query=` — OpenAlex bibliographic results, not full-text validated claims.
+- `GET /api/literature?query=` — OpenAlex bibliographic results with per-DOI Crossref verification (ABB-13), not full-text validated claims. Typed `LiteratureSearchResult` (see OpenAPI). Baseline item fields `title, year, doi (https://doi.org/ URL), openalex_id, kind, source, caveat` are kept; additive fields: `source_kind=LITERATURE_METADATA`, `evidence_status=BIBLIOGRAPHIC_MATCH_ONLY`, `doi_id`, `doi_status` (`VERIFIED_CROSSREF | METADATA_MISMATCH | NOT_FOUND_IN_CROSSREF | VERIFICATION_UNAVAILABLE | MALFORMED_DOI | NO_DOI`), `authors`, `venue`, `publication_type`, `licenses` (as reported by source), `landing_page_url`, `is_open_access`, `metadata_discrepancies`, `retrievals` (source, endpoint without credentials, `retrieved_at`, HTTP status) and `processing_version`; top level adds `query`, `retrieved_at`, `total_openalex_matches`, `duplicates_removed`, `limitations`. OpenAlex failure/rate limit returns 502 with a generic message (no URL/credentials); Crossref failure degrades to `VERIFICATION_UNAVAILABLE`. A DOI is never inferred.
 - `GET /api/rotations/demo` — three illustrative rotations, not water/yield forecasts.
 - `POST /api/report` — Markdown case note from submitted payload; preliminary and not independently validated.
 
