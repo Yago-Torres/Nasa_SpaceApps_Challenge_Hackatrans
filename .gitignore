@@ -30,3 +30,5 @@ backend/cache/
 *.db
 # UI review screenshots (agro-ui-review skill)
 .ui-shots/
+# Local NASA POWER response cache written by the backend at runtime
+backend/.cache/

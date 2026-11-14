@@ -1,0 +1,19 @@
+# Review routing (ABB-04). GitHub accepts approval from ANY one listed owner of a path.
+# C (frontend, UX, design system, auth/collaboration UI): Yago-Torres
+# A (NASA sources, backend, contracts) and B (science, evidence, rotations): CarlosTristan, M-a-t-e-o
+# Refine the A/B split by editing this file once the team confirms who stewards which domain.
+
+*                         @Yago-Torres @CarlosTristan @M-a-t-e-o
+
+/frontend/                @Yago-Torres
+/.claude/skills/          @Yago-Torres
+/docs/product/UX_FLOWS.md @Yago-Torres
+/docs/architecture/FRONTEND_INTEGRATION.md @Yago-Torres
+
+/backend/                 @CarlosTristan @M-a-t-e-o
+/docs/science/            @CarlosTristan @M-a-t-e-o
+/docs/architecture/API_CONTRACTS.md @CarlosTristan @M-a-t-e-o @Yago-Torres
+
+/.github/                 @Yago-Torres @CarlosTristan @M-a-t-e-o
+/docs/governance/         @Yago-Torres @CarlosTristan @M-a-t-e-o
+/AGENTS.md                @Yago-Torres @CarlosTristan @M-a-t-e-o
