@@ -1,5 +1,7 @@
 import { ApiError, casesApi } from '../api/client';
-import type { CaseView } from '../api/types';
+import type {
+  CaseView, HypothesisCreate, HypothesisList, HypothesisStatusChange, HypothesisTemplateRequest, HypothesisView, Timeline,
+} from '../api/types';
 import { caseAttributes, changedKeys, fromCaseView, toCaseCreate, toFieldInput } from './mapping';
 import type { IncidentCase } from './model';
 
@@ -17,6 +19,23 @@ export interface CaseRepository {
   remove(id: string, version: number): Promise<void>;
   /** Make `latest` the base for the next save (after the user resolved a conflict). */
   adopt(latest: IncidentCase): void;
+  /**
+   * ABB-22: the case's forensic timeline (observed / farmer-reported / hypothesis /
+   * missing-data layers) and its rival hypotheses. These are read-mostly forensic views, not
+   * part of the `IncidentCase` wizard model, so they are returned as the backend sent them
+   * (snake_case, like `CaseView`) rather than mapped into a local shape. Throws `ApiError` on
+   * failure (401/403/404/503 handled by the caller, same as the other methods here).
+   */
+  getTimeline(id: string): Promise<Timeline>;
+  /** Returns the full list envelope, including the backend's list-level `limitations`
+   * (e.g. "a hypothesis is not a demonstrated cause") — never dropped (frontend/AGENTS.md: every
+   * limitation the API sends is rendered). */
+  getHypotheses(id: string): Promise<HypothesisList>;
+  createHypothesis(id: string, body: HypothesisCreate): Promise<HypothesisView>;
+  /** Adds default rival-hypothesis templates; omit `codes` for all of them. Already-added ones are skipped. */
+  addHypothesisTemplates(id: string, codes?: string[]): Promise<HypothesisList>;
+  /** Sets or clears a hypothesis's human evaluation (OPEN/COMPATIBLE/CONTRADICTED/NOT_EVALUABLE). */
+  evaluateHypothesis(id: string, hypothesisId: string, body: HypothesisStatusChange): Promise<HypothesisView>;
 }
 
 /** 409 because someone else saved first. `latest` is the case as it is now on the server. */
@@ -91,6 +110,27 @@ export class HttpCaseRepository implements CaseRepository {
   async remove(id: string, version: number) {
     await casesApi.remove(id, version);
     this.base.delete(id);
+  }
+
+  async getTimeline(id: string) {
+    return casesApi.timeline(id);
+  }
+
+  async getHypotheses(id: string) {
+    return casesApi.hypotheses(id);
+  }
+
+  async createHypothesis(id: string, body: HypothesisCreate) {
+    return casesApi.createHypothesis(id, body);
+  }
+
+  async addHypothesisTemplates(id: string, codes?: string[]) {
+    const req: HypothesisTemplateRequest = { codes: codes ?? null };
+    return casesApi.addHypothesisTemplates(id, req);
+  }
+
+  async evaluateHypothesis(id: string, hypothesisId: string, body: HypothesisStatusChange) {
+    return casesApi.evaluateHypothesis(id, hypothesisId, body);
   }
 }
 
