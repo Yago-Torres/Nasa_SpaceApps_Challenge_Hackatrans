@@ -1184,6 +1184,8 @@ export type SharedCaseView = {
  * Transcribed from backend/agroblackbox/api/evidence_dto.py, comparability_dto.py, graph_dto.py and
  * comparability.py. A claim is reviewed literature only when `is_reviewed` (ACCEPTED); everything else
  * is shown as not reviewed. DOIs are only ever the backend's registered https://doi.org/ URL. */
+/** schemas.SourceKind (shared 1.0 contract). */
+export type SharedSourceKind = 'OBSERVED' | 'FARMER_REPORTED' | 'LITERATURE_METADATA' | 'LITERATURE_REVIEWED' | 'HYPOTHESIS' | 'MODEL_SCENARIO' | 'ILLUSTRATIVE';
 export type DoiStatus = 'VERIFIED_CROSSREF' | 'METADATA_MISMATCH' | 'NOT_FOUND_IN_CROSSREF' | 'VERIFICATION_UNAVAILABLE' | 'MALFORMED_DOI' | 'NO_DOI';
 export type StudyDesign =
   | 'META_ANALYSIS' | 'SYSTEMATIC_REVIEW' | 'FIELD_EXPERIMENT' | 'CONTROLLED_EXPERIMENT' | 'OBSERVATIONAL_STUDY'
@@ -1255,7 +1257,8 @@ export type ClaimView = {
   schema_version: '1.0';
   id: string;
   paper_id: string;
-  source_kind: 'LITERATURE_METADATA' | 'LITERATURE_REVIEWED';
+  /** Declared as the shared SourceKind in OpenAPI; a backend validator only ever sends LITERATURE_METADATA or LITERATURE_REVIEWED here. The UI decides on `is_reviewed`. */
+  source_kind: SharedSourceKind;
   claim_text: string;
   study_context: string;
   review_status: ClaimReviewStatus;
@@ -1331,7 +1334,8 @@ export type DisagreementClaimRef = {
   study_design: StudyDesign;
   review_status: ClaimReviewStatus;
   is_reviewed: boolean;
-  source_kind: 'LITERATURE_METADATA' | 'LITERATURE_REVIEWED';
+  /** Declared as the shared SourceKind in OpenAPI; a backend validator only ever sends LITERATURE_METADATA or LITERATURE_REVIEWED here. The UI decides on `is_reviewed`. */
+  source_kind: SharedSourceKind;
   paper: PaperSummary;
 };
 export type DisagreementReviewView = {
