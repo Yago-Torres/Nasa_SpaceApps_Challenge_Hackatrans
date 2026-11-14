@@ -93,7 +93,9 @@ Reading back: `APPROXIMATE`/`EXACT` → Approximate area (an `EXACT` field is no
 
 **Roles and status.** List columns: Case · Status · Your role · Shared as · Incident year · Updated. Case screens open with the title block (ID, location as this user may see it, status, role, owner, updated). Reviewers and viewers, and cases that are REVIEWED, PUBLISHED or archived, open read-only; their location is exactly what the server returned (rounded cell, region label or "Not shared with you"). Status labels avoid implying scientific validation ("Reviewed by a team reviewer", "Final (team only, not public)").
 
-**Not in this UI yet:** sharing/permissions management, workflow status changes, archive, history view, multiple fields per case, basemap (tile provider decision pending).
+**Map:** the wizard and read-only case view use Leaflet with opt-in OpenStreetMap tiles (ADR-0006). The exact marker is local; tile requests use a 1°-rounded centre or the server-redacted shared centre. Loading, partial and error states keep the local privacy overlay visible.
+
+**Not in this UI yet:** sharing/permissions management, workflow status changes, archive, history view and multiple fields per case.
 
 ## 7. Case timeline and rival hypotheses (IMPLEMENTED, ABB-22)
 

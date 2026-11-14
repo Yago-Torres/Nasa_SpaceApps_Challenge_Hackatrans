@@ -3,7 +3,7 @@ import { displayedLocation, parseNumber, roundToCell, type CaseLocation } from '
 
 /**
  * To-scale diagram of what the owner and reviewers see (sizes, not real geography). Nothing
- * here contacts any server. The real basemap (ADR-0005, Leaflet + OpenStreetMap) is the
+ * here contacts any server. The opt-in basemap (ADR-0006, Leaflet + OpenStreetMap) is the
  * sibling `LocationMap` component, rendered alongside this diagram as a visual complement,
  * not a replacement: this diagram is the one place that explains the privacy mechanics
  * (grid cell size, NASA POWER cell) to scale.

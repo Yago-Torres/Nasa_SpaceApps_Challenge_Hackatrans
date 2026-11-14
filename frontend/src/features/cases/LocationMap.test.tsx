@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { I18nProvider } from '../../i18n/I18n';
 import { emptyCase, type IncidentCase } from '../../cases/model';
-import { LocationMap, viewerLocationForReadOnlyCase } from './LocationMap';
+import { LocationMap, tileRequestCenter, viewerLocationForReadOnlyCase } from './LocationMap';
 
 afterEach(cleanup);
 
@@ -17,7 +17,7 @@ function withServer(overrides: Partial<IncidentCase['server']>, locOverrides: Pa
 }
 
 /**
- * ABB-21 / ADR-0005 hard privacy requirement: LocationMap never draws a precise marker for a
+ * ABB-21 / ADR-0006 hard privacy requirement: LocationMap never draws a precise marker for a
  * viewer who is not authorized to see it. `viewerLocationForReadOnlyCase` is the function that
  * decides this for the read-only case view (reviewers/viewers); these tests exercise exactly the
  * same branches `CaseTitleBlock.sharedAsText` uses, with the server-redacted fields as the only
@@ -64,6 +64,13 @@ describe('viewerLocationForReadOnlyCase (never over-shares to reviewers/viewers)
 });
 
 describe('LocationMap rendering (text alternative + no precise marker without authorization)', () => {
+  it('never uses a precise point as the third-party tile-request centre', () => {
+    expect(tileRequestCenter({ kind: 'precise', latitude: 41.6537, longitude: -0.8773 }))
+      .toEqual({ lat: 42, lon: -1 });
+    expect(tileRequestCenter({ kind: 'rounded', latitude: 41.65, longitude: -0.85, rounding: 0.1 }))
+      .toEqual({ lat: 41.65, lon: -0.85 });
+  });
+
   it('hidden: shows a caption, no map canvas, and no coordinates anywhere in the DOM', () => {
     const { container } = render(<I18nProvider lang="en"><LocationMap viewer={{ kind: 'hidden' }} /></I18nProvider>);
     expect(screen.getByText(/not shown a location/i)).toBeTruthy();
@@ -94,6 +101,7 @@ describe('LocationMap rendering (text alternative + no precise marker without au
     );
     await waitFor(() => expect(container.querySelector('.locmap-canvas')).not.toBeNull());
     expect(screen.getByText(/exact point/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Load map background' })).toBeTruthy();
   });
 
   it('every state renders a figure with a figcaption, giving a text alternative even if tiles never load', () => {

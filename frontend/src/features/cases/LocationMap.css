@@ -1,5 +1,5 @@
 /*
- * LocationMap (ABB-21, ADR-0005). Uses only tokens already defined in design/tokens.css
+ * LocationMap (ABB-21, ADR-0006). Uses only tokens already defined in design/tokens.css
  * (loaded globally by main.tsx); no new colours. Scoped here because this component lives
  * outside the shared design/ folder for this change (see the ABB-21 scope note in the PR).
  */
@@ -10,14 +10,15 @@
 .locmap-canvas:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
 .locmap-overlay { position: absolute; inset: 0; display: grid; align-items: start; justify-items: start; padding: var(--space-3); pointer-events: none; }
 .locmap-overlay .msg { pointer-events: auto; background: var(--surface); box-shadow: var(--shadow-float); }
+.locmap-overlay--partial { inset: auto 0 0; }
 .locmap-caption { margin: 0; }
 
 /* Leaflet overlays, restyled with design tokens instead of Leaflet's defaults. This file is
  * a plain global stylesheet (not a CSS module), so no :global() wrapper is needed. */
 .locmap .leaflet-control-attribution { background: color-mix(in srgb, var(--surface) 85%, transparent); font-size: var(--text-xs); }
 /* Same colour key as PrivacyPreview's SVG diagram (.pv-you / .pv-shared) for the same point. */
-.lm-pin--precise { fill: var(--c-calpoly); stroke: var(--c-white); stroke-width: 2.5; }
-.lm-pin--area { fill: var(--surface-tint); fill-opacity: 0.55; stroke: var(--c-may-ink); stroke-width: 2; }
+.lm-pin--precise { fill: var(--ev-farmer); stroke: var(--surface); stroke-width: 2.5; }
+.lm-pin--area { fill: var(--surface-tint); fill-opacity: 0.55; stroke: var(--ev-farmer); stroke-width: 2; }
 
 /* Touch target size (checklist C8: >=44px) for Leaflet's own zoom buttons. */
 .locmap .leaflet-bar a { width: 2.75rem; height: 2.75rem; line-height: 2.75rem; }

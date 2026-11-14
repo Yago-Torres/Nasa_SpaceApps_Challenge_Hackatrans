@@ -7,14 +7,14 @@ import { Button, StatusMessage } from '../../design/components';
 import './LocationMap.css';
 
 /**
- * Real basemap for a case location (ABB-21, ADR-0005). A visual COMPLEMENT to
+ * Real basemap for a case location (ABB-21, ADR-0006). A visual COMPLEMENT to
  * `PrivacyPreview`'s to-scale diagram, not a replacement: that diagram explains the privacy
  * mechanics (grid cell, NASA POWER cell); this draws the same point/area on real geography.
  *
- * Tile provider: OpenStreetMap raster tiles, free and keyless (ADR-0005). No autoplay/polling:
- * tiles load once per pan/zoom, driven by the user.
+ * Tile provider: OpenStreetMap raster tiles (ADR-0006). Tiles are opt-in because requesting
+ * them discloses the viewer's IP/referrer and a coarse map area to that third party.
  *
- * PRIVACY CONTRACT (hard requirement, see ADR-0005 and LocationMap.test.tsx): this component
+ * PRIVACY CONTRACT (hard requirement, see ADR-0006 and LocationMap.test.tsx): this component
  * never decides what a viewer may see. The caller must pass `viewer`, already the result of
  * `cases/model.ts` `displayedLocation()` for an owner/editor, or `viewerLocationForReadOnlyCase`
  * below for a reviewer/viewer reading the server-redacted field. A `viewer.kind === 'precise'`
@@ -22,16 +22,13 @@ import './LocationMap.css';
  * component performs no rounding, consent or role check of its own.
  */
 
-const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const TILE_SUBDOMAINS = ['a', 'b', 'c'];
+const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const OSM_COPYRIGHT_URL = 'https://www.openstreetmap.org/copyright';
 const MAX_ZOOM = 18;
 
-/** Degrees of latitude to metres, used only to size the approximate-area circle (same linear approximation PrivacyPreview's SVG diagram already uses for its square; not a geodesic calculation). */
-const METERS_PER_DEGREE = 111_320;
-
 function zoomFor(viewer: DisplayedLocation): number {
-  if (viewer.kind === 'precise') return 14;
+  // Precise points use a 1°-rounded tile centre, so zoom 8 keeps the local point visible.
+  if (viewer.kind === 'precise') return 8;
   if (viewer.kind === 'rounded') {
     if (viewer.rounding <= 0.1) return 11;
     if (viewer.rounding <= 0.5) return 9;
@@ -40,13 +37,20 @@ function zoomFor(viewer: DisplayedLocation): number {
   return 10;
 }
 
-type TileState = 'loading' | 'ok' | 'error';
+type TileState = 'idle' | 'loading' | 'ok' | 'partial' | 'error';
+
+/** Centre sent to the tile provider. Exact coordinates never determine a tile request. */
+export function tileRequestCenter(viewer: Extract<DisplayedLocation, { kind: 'precise' | 'rounded' }>) {
+  if (viewer.kind === 'rounded') return { lat: viewer.latitude, lon: viewer.longitude };
+  return { lat: Math.round(viewer.latitude), lon: Math.round(viewer.longitude) };
+}
 
 export function LocationMap({ viewer, title }: { viewer: DisplayedLocation; title?: string }) {
   const { t, num, lang } = useI18n();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const [tiles, setTiles] = useState<TileState>('loading');
+  const [tiles, setTiles] = useState<TileState>('idle');
+  const [tilesRequested, setTilesRequested] = useState(false);
   const [retryTick, setRetryTick] = useState(0);
   const headingId = useId();
 
@@ -54,9 +58,10 @@ export function LocationMap({ viewer, title }: { viewer: DisplayedLocation; titl
 
   useEffect(() => {
     if (!point || !containerRef.current) return undefined;
-    setTiles('loading');
+    const remoteCenter = tileRequestCenter(viewer as Extract<DisplayedLocation, { kind: 'precise' | 'rounded' }>);
+    setTiles(tilesRequested ? 'loading' : 'idle');
     const map = L.map(containerRef.current, {
-      center: [point.lat, point.lon],
+      center: [remoteCenter.lat, remoteCenter.lon],
       zoom: zoomFor(viewer),
       scrollWheelZoom: false, // never trap page scroll inside the form
       attributionControl: false, // added manually below, without Leaflet's own unlocalised self-credit
@@ -73,21 +78,20 @@ export function LocationMap({ viewer, title }: { viewer: DisplayedLocation; titl
       .addTo(map);
     L.control.zoom({ position: 'topright', zoomInTitle: t('map2.zoomIn'), zoomOutTitle: t('map2.zoomOut') }).addTo(map);
 
-    const layer = L.tileLayer(TILE_URL, { subdomains: TILE_SUBDOMAINS, maxZoom: MAX_ZOOM });
-    let loaded = false;
-    layer.on('tileload', () => {
-      loaded = true;
-      setTiles('ok');
-    });
-    layer.on('tileerror', () => {
-      if (!loaded) setTiles('error');
-    });
-    layer.addTo(map);
+    if (tilesRequested) {
+      const layer = L.tileLayer(TILE_URL, { maxZoom: MAX_ZOOM });
+      let loaded = 0;
+      let failed = 0;
+      layer.on('tileload', () => { loaded += 1; });
+      layer.on('tileerror', () => { failed += 1; });
+      layer.on('load', () => setTiles(failed ? (loaded ? 'partial' : 'error') : 'ok'));
+      layer.addTo(map);
+    }
 
     if (viewer.kind === 'rounded') {
-      // Leaflet's default fillOpacity (0.2) is deliberately kept here: a translucent area, not a pin.
-      const radiusMeters = (viewer.rounding / 2) * METERS_PER_DEGREE;
-      L.circle([point.lat, point.lon], { radius: radiusMeters, fillOpacity: 0.35, className: 'lm-pin lm-pin--area', interactive: false }).addTo(map);
+      const half = viewer.rounding / 2;
+      L.rectangle([[point.lat - half, point.lon - half], [point.lat + half, point.lon + half]],
+        { fillOpacity: 0.35, className: 'lm-pin lm-pin--area', interactive: false }).addTo(map);
     } else {
       // Leaflet's default fillOpacity (0.2) would make a solid point marker nearly invisible against busy tiles.
       L.circleMarker([point.lat, point.lon], { radius: 9, fillOpacity: 1, className: 'lm-pin lm-pin--precise', interactive: false }).addTo(map);
@@ -100,7 +104,7 @@ export function LocationMap({ viewer, title }: { viewer: DisplayedLocation; titl
     // Re-create the map only when the point, its kind, the UI language (control titles/credit
     // text) or an explicit retry changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [point?.lat, point?.lon, viewer.kind, lang, retryTick]);
+  }, [point?.lat, point?.lon, viewer.kind, viewer.kind === 'rounded' ? viewer.rounding : null, lang, retryTick, tilesRequested]);
 
   const caption =
     viewer.kind === 'precise' ? t('map2.capPrecise')
@@ -130,6 +134,14 @@ export function LocationMap({ viewer, title }: { viewer: DisplayedLocation; titl
       <figcaption id={headingId}>{title ?? t('map2.title')}</figcaption>
       <div className="locmap-frame">
         <div ref={containerRef} className="locmap-canvas" role="group" aria-label={caption} />
+        {tiles === 'idle' && (
+          <div className="locmap-overlay">
+            <StatusMessage tone="pending" title={t('map2.tilesConsentTitle')}
+              action={<Button onClick={() => setTilesRequested(true)}>{t('map2.loadTiles')}</Button>}>
+              {t('map2.tilesConsentBody')}
+            </StatusMessage>
+          </div>
+        )}
         {tiles === 'loading' && (
           <div className="locmap-overlay">
             <StatusMessage tone="loading" title={t('map2.loading')} />
@@ -142,6 +154,12 @@ export function LocationMap({ viewer, title }: { viewer: DisplayedLocation; titl
               title={t('map2.tileError')}
               action={<Button onClick={() => setRetryTick((n) => n + 1)}>{t('state.retry')}</Button>}
             />
+          </div>
+        )}
+        {tiles === 'partial' && (
+          <div className="locmap-overlay locmap-overlay--partial">
+            <StatusMessage tone="partial" title={t('map2.tilePartial')}
+              action={<Button variant="secondary" onClick={() => setRetryTick((n) => n + 1)}>{t('state.retry')}</Button>} />
           </div>
         )}
       </div>
