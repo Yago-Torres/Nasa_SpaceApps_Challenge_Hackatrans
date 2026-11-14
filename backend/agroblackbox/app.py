@@ -8,8 +8,10 @@ from .climate import router as climate_router
 from .services.literature import LiteratureSearchResult, LiteratureSourceError, search_literature
 from .services.rotations import rotation_examples
 from .services.report import build_report
+from .rotation_api import router as rotation_router
 
 app=FastAPI(title='AGRO BLACK BOX API',version='0.1.0')
+app.include_router(rotation_router)
 
 
 def versioned_openapi():
