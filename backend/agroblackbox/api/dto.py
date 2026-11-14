@@ -253,3 +253,39 @@ class PermissionView(schemas.ContractModel):
     display_name: str
     email: str | None = PydanticField(default=None, description="Shown to the case owner only")
     role: Role
+
+
+# ── Account data export / deletion (ABB-28) ────────────────────────────────────
+
+class SessionSummary(schemas.ContractModel):
+    """Session metadata only; never the raw token or its digest."""
+    id: UUID
+    created_at: datetime
+    expires_at: datetime
+    revoked: bool
+    current: bool = PydanticField(description="Whether this is the session used for this request")
+
+
+class AccountExport(schemas.ContractModel):
+    """Everything the account itself can see: profile, every case it is a member of (with the
+    same server-side location redaction applied to the caller's role on each case) and its own
+    session metadata. Never another user's data, a password hash, or a token."""
+    profile: UserOut
+    cases: list[CaseView]
+    sessions: list[SessionSummary]
+    exported_at: datetime
+
+
+class AccountDeleteRequest(RequestModel):
+    """Re-enter the current password as a confirmation step before an irreversible action."""
+    password: SecretStr
+
+
+class AccountDeletionReceipt(schemas.ContractModel):
+    """Summary of what the irreversible delete actually did, so the user is told the truth
+    about data minimisation rather than a bare 'deleted'."""
+    cases_deleted: int = PydanticField(ge=0, description="Cases owned by this account, erased with their fields, permissions, history and all case-scoped records")
+    memberships_revoked: int = PydanticField(ge=0, description="Access to other members' cases that was revoked")
+    sessions_revoked: int = PydanticField(ge=0, description="Active sessions revoked")
+    anonymized: Literal[True] = True
+    deleted_at: datetime
