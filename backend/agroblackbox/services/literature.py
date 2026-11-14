@@ -414,3 +414,114 @@ async def query_literature(query: str) -> list[dict]:
     """Backward-compatible helper returning plain dicts."""
     result = await search_literature(query)
     return [p.model_dump(mode='json') for p in result.results]
+
+
+# ---------------------------------------------------------------- single-work lookup (ABB-14)
+
+_OPENALEX_ID_RE = re.compile(r'^(?:https?://(?:www\.)?openalex\.org/)?(w\d{1,12})$', re.IGNORECASE)
+
+
+class PaperNotFoundError(LiteratureSourceError):
+    """Neither OpenAlex nor Crossref knows the requested identifier."""
+
+
+def normalize_openalex_id(raw: Any) -> str | None:
+    """Return ``https://openalex.org/W…`` (the form OpenAlex search returns) or None."""
+    if not isinstance(raw, str):
+        return None
+    match = _OPENALEX_ID_RE.match(raw.strip())
+    return f'https://openalex.org/{match.group(1).upper()}' if match else None
+
+
+async def _openalex_work(path: str, client: httpx.AsyncClient) -> tuple[dict | None, SourceRetrieval]:
+    """Fetch one OpenAlex work. Never raises: failures are reported in the retrieval outcome."""
+    endpoint = f'{OPENALEX_WORKS_URL}/{path}'
+    params: dict[str, Any] = {'select': OPENALEX_SELECT}
+    api_key = os.getenv('OPENALEX_API_KEY', '').strip()
+    if api_key:
+        params['api_key'] = api_key
+    status_code: int | None = None
+    try:
+        response = await client.get(endpoint, params=params)
+        status_code = response.status_code
+        if status_code == 404:
+            return None, _retrieval('OpenAlex', endpoint, None, 404, 'not_found')
+        if status_code == 429:
+            return None, _retrieval('OpenAlex', endpoint, None, 429, 'rate_limited')
+        response.raise_for_status()
+        work = response.json()
+        if not isinstance(work, dict) or not isinstance(work.get('id'), str):
+            raise ValueError('unexpected OpenAlex payload')
+    except (httpx.HTTPError, ValueError):
+        return None, _retrieval('OpenAlex', endpoint, None, status_code, 'error')
+    return work, _retrieval('OpenAlex', endpoint, work['id'], status_code, 'found')
+
+
+def _crossref_only_record(check: DoiVerification, openalex_retrieval: SourceRetrieval) -> dict | None:
+    if check.status != 'VERIFIED_CROSSREF' or not check.title:
+        return None
+    doi_id = normalize_doi(check.crossref_doi) or check.doi_id
+    discrepancies = [f'Crossref canonical DOI is {doi_id}.'] if doi_id != check.doi_id else []
+    return {
+        'title': check.title, 'year': check.year, 'doi_id': doi_id, 'doi': doi_url(doi_id),
+        'doi_status': 'VERIFIED_CROSSREF', 'openalex_id': None, 'authors': check.authors,
+        'venue': check.venue, 'publication_type': check.publication_type, 'licenses': check.licenses,
+        'landing_page_url': None, 'is_open_access': None, 'metadata_discrepancies': discrepancies,
+        'retrievals': [openalex_retrieval, check.retrieval],
+        'source': 'Crossref metadata (no OpenAlex record available)',
+    }
+
+
+async def lookup_paper(
+    *, doi: str | None = None, openalex_id: str | None = None, client: httpx.AsyncClient | None = None,
+) -> PaperRecord:
+    """Resolve ONE work by DOI or OpenAlex ID from the upstream sources (never from client metadata).
+
+    The DOI is checked in Crossref with the same rules as the search (title agreement, canonical
+    DOI). Raises ``ValueError`` for malformed identifiers, ``PaperNotFoundError`` when no source
+    knows the work and ``LiteratureSourceError`` when the sources cannot be consulted.
+    """
+    if (doi is None) == (openalex_id is None):
+        raise ValueError('Provide exactly one of doi or openalex_id')
+    own_client = client is None
+    client = client or _make_client()
+    try:
+        if doi is not None:
+            doi_id = normalize_doi(doi)
+            if doi_id is None:
+                raise ValueError('Not a valid DOI')
+            work, oa_retrieval = await _openalex_work('doi:' + quote(doi_id, safe='/'), client)
+            check = await verify_doi(doi_id, client)
+            record = _base_record(work, oa_retrieval) if work else None
+            if record is not None and record['doi_id'] != doi_id:
+                # OpenAlex resolved the DOI to a work that reports another DOI: do not mix identities.
+                oa_retrieval = oa_retrieval.model_copy(update={'outcome': 'doi_mismatch_ignored'})
+                record = None
+            if record is not None:
+                record = _merge_crossref(record, check)
+            else:
+                record = _crossref_only_record(check, oa_retrieval)
+            if record is None:
+                if oa_retrieval.outcome in ('not_found', 'doi_mismatch_ignored') \
+                        and check.status == 'NOT_FOUND_IN_CROSSREF':
+                    raise PaperNotFoundError('No OpenAlex or Crossref record exists for this DOI; nothing was stored.')
+                raise LiteratureSourceError(
+                    'Literature sources unavailable: the DOI could not be resolved now; nothing was stored.')
+        else:
+            work_id = normalize_openalex_id(openalex_id)
+            if work_id is None:
+                raise ValueError('Not a valid OpenAlex work ID')
+            work, oa_retrieval = await _openalex_work(work_id.rsplit('/', 1)[1], client)
+            if work is None:
+                if oa_retrieval.outcome == 'not_found':
+                    raise PaperNotFoundError('OpenAlex has no work with this ID; nothing was stored.')
+                raise LiteratureSourceError('OpenAlex source unavailable: the work could not be retrieved now.')
+            record = _base_record(work, oa_retrieval)
+            if record is None:
+                raise LiteratureSourceError('OpenAlex returned a work without a title; nothing was stored.')
+            if record['doi_id'] is not None:
+                record = _merge_crossref(record, await verify_doi(record['doi_id'], client))
+    finally:
+        if own_client:
+            await client.aclose()
+    return PaperRecord(**record, caveat=_CAVEATS[record['doi_status']])
