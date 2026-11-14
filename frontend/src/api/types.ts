@@ -467,3 +467,32 @@ export type HypothesisTemplateRequest = { codes?: string[] | null };
 
 /** POST /api/v1/cases/{id}/hypotheses/{hid}/status. A note is required for every status but OPEN. */
 export type HypothesisStatusChange = { version: number; status: EvaluationStatus; note?: string | null };
+
+export type GraphNodeKind = 'OBSERVED' | 'FARMER_REPORTED' | 'LITERATURE_METADATA' | 'LITERATURE_REVIEWED' | 'HYPOTHESIS' | 'CONCLUSION' | 'MISSING_DATA';
+export type GraphRelation = 'SUPPORTS' | 'CONTRADICTS' | 'LIMITS' | 'ADDRESSES' | 'DERIVED_FROM' | 'CITES';
+export type GraphProvenance = {
+  source_kind: string; description: string; provider: string | null; dataset: string | null;
+  source_uri: string | null; retrieved_at: string | null; processing_version: string | null;
+  doi: string | null; doi_id: string | null; doi_status: string | null; openalex_id: string | null;
+  reviewed_by: UserSummary | null; reviewed_at: string | null;
+};
+export type GraphNode = {
+  id: string; node_type: string; kind: GraphNodeKind; label: string; status: string | null;
+  active: boolean; original_evidence: boolean; linkable: boolean; provenance: GraphProvenance;
+  limitations: string[]; details: Record<string, unknown>;
+};
+export type GraphEdge = {
+  id: string; from: string; to: string; relation: GraphRelation; origin: string;
+  note: string | null; review_status: string;
+};
+export type EvidenceGraph = {
+  case_id: string; generated_at: string; nodes: GraphNode[]; edges: GraphEdge[];
+  counts: { total_nodes: number; total_edges: number; nodes_by_kind: Record<string, number> };
+  orphan_references: { referenced_by: string; missing_node: string; relation: string; origin: string }[];
+  limitations: string[];
+};
+export type EvidenceTrace = {
+  root: GraphNode; complete: boolean; original_evidence: string[]; dead_ends: string[];
+  nodes: GraphNode[]; edges: GraphEdge[]; limiting_edges: GraphEdge[]; contradiction_edges: GraphEdge[];
+  review_blockers: string[]; limitations: string[];
+};

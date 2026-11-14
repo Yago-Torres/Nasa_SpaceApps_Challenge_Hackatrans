@@ -1,0 +1,15 @@
+.eg-graph { width: 100%; min-width: 52rem; height: auto; }
+.eg-edge { stroke: var(--rule-3); stroke-width: 2; }
+.eg-edge--contradicts { stroke: var(--error-ink); stroke-dasharray: 6 4; }
+.eg-edge--limits { stroke: var(--warn-ink); stroke-dasharray: 3 3; }
+.eg-node { cursor: pointer; }
+.eg-node rect { fill: var(--surface); stroke: var(--rule-3); stroke-width: 2; }
+.eg-node text { fill: var(--ink); font: var(--text-xs) var(--font-sans); pointer-events: none; }
+.eg-node:focus-visible rect, .eg-node:hover rect { stroke: var(--focus); stroke-width: 3; }
+.eg-node--observed rect { fill: var(--info-bg); }
+.eg-node--farmer_reported rect { fill: var(--ok-bg); }
+.eg-node--hypothesis rect { fill: var(--warn-bg); stroke-dasharray: 5 3; }
+.eg-node--missing_data rect { fill: var(--neutral-bg); stroke-dasharray: 2 2; }
+.eg-node--literature_reviewed rect { stroke: var(--ev-literature); }
+.eg-node--conclusion rect { stroke: var(--ink); stroke-width: 3; }
+.eg-conclusion { font-weight: var(--weight-bold); }

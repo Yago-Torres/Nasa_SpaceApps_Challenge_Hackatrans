@@ -1,7 +1,7 @@
 import type {
   CaseCreate, CaseList, CaseUpdate, CaseView, ClimateResponse, FieldPatch, HypothesisCreate, HypothesisList,
   HypothesisStatusChange, HypothesisTemplateCatalog, HypothesisTemplateRequest, HypothesisView, LoginRequest, Paper,
-  RegisterRequest, ReportRequest, ReportResponse, Rotation, SessionOut, Timeline, UserOut,
+  EvidenceGraph, EvidenceTrace, RegisterRequest, ReportRequest, ReportResponse, Rotation, SessionOut, Timeline, UserOut,
 } from './types';
 import { clearSession, getSession } from './session';
 
@@ -148,5 +148,11 @@ export const casesApi = {
   },
   evaluateHypothesis(id: string, hypothesisId: string, body: HypothesisStatusChange) {
     return request<HypothesisView>(`${casePath(id)}/hypotheses/${encodeURIComponent(hypothesisId)}/status`, { method: 'POST', auth: true, json: body });
+  },
+  evidenceGraph(id: string, signal?: AbortSignal) {
+    return request<EvidenceGraph>(`${casePath(id)}/evidence-graph`, { auth: true, signal });
+  },
+  evidenceTrace(id: string, nodeId: string, signal?: AbortSignal) {
+    return request<EvidenceTrace>(`${casePath(id)}/evidence-graph/trace/${encodeURIComponent(nodeId)}`, { auth: true, signal });
   },
 };

@@ -16,6 +16,7 @@ Owner: C (frontend). Status of each item is explicit: **IMPLEMENTED** means it e
 | Report (`#/report`) | `POST /api/report` | Preliminary |
 | Cases (`#/cases`, `#/cases/new`, `#/cases/<id>`) | `/api/v1/auth/*`, `/api/v1/cases*` (see §6) | Farmer reported (wizard answers); status/role as returned |
 | Case timeline (`#/cases/<id>/timeline`) | `GET /api/v1/cases/{id}/timeline`, `GET/POST /api/v1/cases/{id}/hypotheses*`, `GET /api/v1/hypothesis-templates` (see §7) | Observed, Farmer reported, Hypothesis and Missing data |
+| Case evidence (`#/cases/<id>/evidence`) | `GET /api/v1/cases/{id}/evidence-graph`, `GET …/evidence-graph/trace/{node_id}` (see §8) | Backend node kind; metadata-only literature remains distinct |
 | Collaboration | none yet | "Not built yet" state, no sample data |
 
 - The frontend computes no statistics. It only scales returned values for drawing (`features/chartScale.ts`).
@@ -113,3 +114,12 @@ add a template or custom statement; OWNER/EDITOR/REVIEWER may set the ABB-10 eva
 with the backend-required note. Catalogue and mutation failures are explicit and retryable.
 Observation evidence IDs are resolved to their anomaly timeline event before opening the
 provenance panel, matching the backend's `to_event_ids` mapping.
+
+## 8. Case evidence graph (IN REVIEW, ABB-23)
+
+The Evidence graph case tab consumes the ABB-16 graph verbatim. Its SVG and table are two
+views of the same nodes and edges; selecting a node requests its encoded graph trace and shows
+provenance, limitations, completeness and review blockers. DOI anchors use only the registered
+backend URL. `LITERATURE_METADATA` is labelled “Metadata only”, never promoted to reviewed
+literature, and relationship styling is supplemented by text/table content rather than colour
+alone. API failure produces an explicit retry state with no local substitute data.
