@@ -384,3 +384,53 @@ table.data.hyp-table th[scope="row"] p, table.data.hyp-table td p { margin: 0 0 
   table.data.hyp-table th, table.data.hyp-table td { border: 0; padding: var(--space-1) 0; }
   table.data.hyp-table td[data-label]::before { content: attr(data-label) ": "; color: var(--ink-3); display: block; }
 }
+
+/* ── Collaboration (ABB-25): ReviewSlip recipe (components.md §8) for people's words, audit list ── */
+.stack { display: grid; gap: var(--space-3); min-width: 0; }
+.stack-tight { display: grid; gap: var(--space-1); min-width: 0; }
+.block { display: block; }
+.check-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 0 var(--space-4); }
+.inline-confirm { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+p.err { display: flex; gap: var(--space-2); color: var(--error-ink); font-size: var(--text-sm); font-weight: var(--weight-bold); }
+.consent { padding: var(--space-2) var(--space-3); border: 1px solid var(--rule-2); border-radius: var(--radius-m); }
+.consent.bad { border: 2px solid var(--error-ink); }
+.share-once { display: grid; gap: var(--space-2); padding: var(--space-4); border: 1px solid var(--rule-3); border-radius: var(--radius-m); background: var(--surface-tint); }
+.share-form { padding-top: var(--space-2); border-top: 1px solid var(--rule); }
+table.data.collab-table th[scope="row"], table.data.collab-table td { text-align: left; vertical-align: top; }
+table.data.collab-table { min-width: 0; }
+.collab-table th[scope="row"] .block { font-weight: var(--weight-regular, 400); }
+@media (max-width: 36rem) {
+  table.data.collab-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  table.data.collab-table, table.data.collab-table tbody, table.data.collab-table tr, table.data.collab-table th, table.data.collab-table td { display: block; text-align: left; }
+  table.data.collab-table tr { padding: var(--space-3) 0; border-bottom: 1px solid var(--rule-2); }
+  table.data.collab-table th, table.data.collab-table td { border: 0; padding: var(--space-1) 0; overflow-wrap: anywhere; }
+  table.data.collab-table td[data-label]::before { content: attr(data-label) ": "; color: var(--ink-3); }
+  table.data.collab-table td:empty { display: none; }
+}
+
+.slip { background: var(--surface); border: 1px solid var(--rule-2); border-radius: var(--radius-l); padding: var(--space-4); display: grid; gap: var(--space-2); min-width: 0; }
+.slip h3 { font-size: var(--text-lg); font-weight: var(--weight-bold); }
+.slip blockquote { margin: 0; font: italic var(--text-lg)/var(--leading-serif) var(--font-serif); white-space: pre-wrap; overflow-wrap: anywhere; max-width: var(--measure); }
+.slip .who { font-size: var(--text-xs); color: var(--ink-3); }
+.slip .who b { color: var(--ink-2); }
+.slip--deleted { background: var(--surface-sunken); }
+.slip-actions { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-left: calc(-1 * var(--space-2)); }
+.revisions { list-style: none; margin: 0; padding: var(--space-3) 0 0; border-top: 1px solid var(--rule); display: grid; gap: var(--space-3); }
+.revisions blockquote { font-size: var(--text-md); color: var(--ink-2); }
+.thread, .invites { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.thread .thread { padding-left: var(--space-6); margin-top: var(--space-3); }
+.thread .slip.reply { margin-left: var(--space-6); }
+
+.activity { list-style: none; margin: 0; padding: 0; display: grid; }
+.activity > li { display: grid; grid-template-columns: minmax(8rem, 11rem) minmax(0, 1fr); gap: var(--space-3); padding: var(--space-3) 0; border-bottom: 1px solid var(--rule); font-size: var(--text-sm); }
+.activity > li > time { font-variant-numeric: tabular-nums; }
+.json-list { margin: var(--space-2) 0 0; display: grid; gap: var(--space-1); font-size: var(--text-sm); }
+.json-list > div { display: grid; grid-template-columns: minmax(6rem, 12rem) minmax(0, 1fr); gap: var(--space-2); }
+.json-list dd { margin: 0; min-width: 0; }
+.json-list .json-list { margin: 0; }
+.json-value { overflow-wrap: anywhere; }
+@media (max-width: 36rem) {
+  .activity > li, .json-list > div { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
+  .thread .thread { padding-left: var(--space-4); }
+  .thread .slip.reply { margin-left: var(--space-4); }
+}

@@ -3,7 +3,7 @@ import { Menu, X } from 'lucide-react';
 import { useI18n } from '../i18n/I18n';
 import type { Lang } from '../i18n/messages';
 import { LegendSprite } from '../design/components';
-import { ROUTES, hrefFor, useRoute, type RouteId } from './routes';
+import { ROUTES, hrefFor, useRoute, useSharedToken, type RouteId } from './routes';
 import { InvestigationProvider } from './investigation';
 import { Dashboard } from '../features/Dashboard';
 import { Cases } from '../features/Cases';
@@ -12,6 +12,7 @@ import { Evidence } from '../features/Evidence';
 import { Rotations } from '../features/Rotations';
 import { Collaboration } from '../features/Collaboration';
 import { Report } from '../features/Report';
+import { SharedCase } from '../features/SharedCase';
 import { AccountStatus } from '../features/account/AccountStatus';
 
 const SCREENS: Record<RouteId, () => ReactElement> = {
@@ -37,27 +38,29 @@ function Mark() {
 export function App() {
   const { t, lang, setLang } = useI18n();
   const route = useRoute();
+  const sharedToken = useSharedToken();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const firstRender = useRef(true);
   const Screen = SCREENS[route];
   const current = ROUTES.find((r) => r.id === route)!;
+  const pageLabel = sharedToken ? 'shared.title' : current.label;
 
   // On navigation: close the mobile menu, update the title and move focus to the page heading.
   useEffect(() => {
     setMenuOpen(false);
-    document.title = `${t(current.label)} · ${t('app.name')}`;
+    document.title = `${t(pageLabel)} · ${t('app.name')}`;
     if (firstRender.current) {
       firstRender.current = false;
       return;
     }
     window.scrollTo({ top: 0 });
     document.querySelector<HTMLElement>('[data-page-title]')?.focus();
-  }, [route]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [route, sharedToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    document.title = `${t(current.label)} · ${t('app.name')}`;
-  }, [lang, current.label, t]);
+    document.title = `${t(pageLabel)} · ${t('app.name')}`;
+  }, [lang, pageLabel, t]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -90,7 +93,7 @@ export function App() {
           <ol className="nav">
             {ROUTES.map((r, i) => (
               <li key={r.id} className={r.available ? undefined : 'pending'}>
-                <a href={hrefFor(r.id)} aria-current={r.id === route ? 'page' : undefined}>
+                <a href={hrefFor(r.id)} aria-current={!sharedToken && r.id === route ? 'page' : undefined}>
                   <span className="n" aria-hidden="true">{i === 0 ? '·' : i}</span>
                   <span>{t(r.label)}</span>
                   {!r.available && <small>{t('nav.notBuilt')}</small>}
@@ -113,7 +116,7 @@ export function App() {
 
         <main className="main" id="content" tabIndex={-1}>
           <div className="page">
-            <Screen />
+            {sharedToken ? <SharedCase key={sharedToken} token={sharedToken} /> : <Screen />}
           </div>
         </main>
       </div>

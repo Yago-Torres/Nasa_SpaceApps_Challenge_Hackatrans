@@ -71,7 +71,8 @@ The deletion response states exactly what was deleted (counts of cases erased, m
 
 ### Known gaps (not yet built — do not claim otherwise)
 
-- No e-mail verification, password reset, multi-factor authentication or invitation-acceptance flow (ADR-0004).
+- No e-mail verification, password reset or multi-factor authentication (ADR-0004). Invitations (ABB-25) are matched to the signed-in e-mail without verification: whoever registers an address first receives its invitations, and the invitation form says so. No invitation e-mail is sent.
+- Deleting an account also revokes pending invitations to its e-mail and scrubs that address from invitation rows (ABB-25); comments it wrote on cases owned by others stay, attributed to "Deleted account", like its other contributions to shared evidence trails.
 - No IP-based rate limiting; brute-force protection is per-account lockout only (ADR-0004; still true after ABB-28).
 - Session purge is a manual/maintenance function, not an automatic scheduled job.
 - NASA POWER's raw response payload (including the queried coordinates) is cached on the server's local filesystem under `backend/.cache/power/` for 24 hours (`services/power.py`), **without the case-level role/consent redaction** that protects coordinates everywhere else in the API. This cache is never committed to the repository (`backend/.cache/` is git-ignored) and is keyed only by a hash of the query parameters, but it is a real at-rest exposure on a running server that should be addressed (e.g. encryption at rest, access-controlled storage, or a shorter TTL) before handling real farm locations in production; filed for the team owning caching/resilience work (ABB-27) rather than fixed here, since it is outside this change's scope.

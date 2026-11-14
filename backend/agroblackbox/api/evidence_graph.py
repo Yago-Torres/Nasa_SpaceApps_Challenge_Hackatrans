@@ -593,13 +593,18 @@ def review_conclusion(case_id: UUID, conclusion_id: UUID, body: GraphReview, pri
     row.review_status, row.reviewed_by, row.reviewed_at, row.review_note = body.decision, principal.user.id, now, body.note
     row.version += 1
     row.updated_at = now
+    citations = []
     for edge in _conclusion_edges(db, row.id):
         edge.review_status, edge.reviewed_by, edge.reviewed_at = body.decision, principal.user.id, now
         edge.review_note = body.note
         edge.version += 1
+        citations.append({"edge_id": str(edge.id), "from": edge.source_node, "to": edge.target_node,
+                          "relation": edge.relation})
     _record(db, case, principal.user, "CONCLUSION_REVIEWED",
             {"conclusion_id": str(row.id), "conclusion_version": row.version,
-             "review_status": {"before": previous, "after": body.decision}}, bump=False, note=body.note)
+             "review_status": {"before": previous, "after": body.decision},
+             "evidence": {"citations": citations}},  # ABB-25: what the reviewer accepted or rejected
+            bump=False, note=body.note)
     db.commit()
     return _conclusion_views(db, case, _access(case, role, principal.user), [row])[0]
 
@@ -737,6 +742,8 @@ def review_edge(case_id: UUID, edge_id: UUID, body: GraphReview, principal: Curr
     row.updated_at = row.reviewed_at
     _record(db, case, principal.user, "GRAPH_EDGE_REVIEWED",
             {"edge_id": str(row.id), "edge_version": row.version,
-             "review_status": {"before": previous, "after": body.decision}}, bump=False, note=body.note)
+             "review_status": {"before": previous, "after": body.decision},
+             "evidence": {"from": row.source_node, "to": row.target_node, "relation": row.relation}},  # ABB-25
+            bump=False, note=body.note)
     db.commit()
     return _edge_response(db, case, role, principal.user, row)

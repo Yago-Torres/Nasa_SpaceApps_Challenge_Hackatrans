@@ -30,7 +30,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import delete, func, select, update
 
-from ..db.models import AuthSession, Case, CasePermission, User, utcnow
+from ..db.models import AuthSession, Case, CaseInvitation, CasePermission, User, utcnow
 from ..security import LOCKOUT_DURATION, MAX_FAILED_LOGINS, verify_password
 from .cases import _case_view
 from .deps import CurrentPrincipal, DbSession
@@ -110,7 +110,21 @@ def delete_account(body: AccountDeleteRequest, principal: CurrentPrincipal, db: 
         .values(revoked_at=now)
     )
 
-    user.email = f"deleted-{user.id}@deleted.invalid"
+    # ABB-25 invitations are addressed by e-mail, not by user id. Revoke the ones still pending
+    # (nobody can accept them for this account any more) and scrub the address from every row on
+    # cases owned by others, so the deleted account's e-mail does not survive in shared records.
+    scrubbed_email = f"deleted-{user.id}@deleted.invalid"
+    db.execute(
+        update(CaseInvitation)
+        .where(func.lower(CaseInvitation.email) == user.email.lower(), CaseInvitation.status == "PENDING")
+        .values(status="REVOKED", revoked_at=now, revoked_by_id=None)
+    )
+    db.execute(
+        update(CaseInvitation).where(func.lower(CaseInvitation.email) == user.email.lower())
+        .values(email=scrubbed_email)
+    )
+
+    user.email = scrubbed_email
     user.display_name = "Deleted account"
     user.password_hash = None
     user.failed_login_count = 0

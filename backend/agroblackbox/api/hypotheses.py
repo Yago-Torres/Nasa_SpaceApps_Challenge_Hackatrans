@@ -380,8 +380,13 @@ def evaluate_hypothesis(case_id: UUID, hypothesis_id: UUID, body: HypothesisStat
     hypothesis.evaluated_at = utcnow()
     hypothesis.version += 1
     hypothesis.updated_at = hypothesis.evaluated_at
+    # ABB-25: the evidence the evaluator saw is kept with the decision (the activity feed serves it).
+    evidence = {"supporting_evidence_ids": list(hypothesis.supporting_evidence_ids or []),
+                "contradicting_evidence_ids": list(hypothesis.contradicting_evidence_ids or []),
+                "missing_evidence": list(hypothesis.missing_evidence or [])}
     _record(db, case, principal.user, "HYPOTHESIS_EVALUATED",
-            {"hypothesis_id": str(hypothesis.id), "hypothesis_version": hypothesis.version, **changes},
+            {"hypothesis_id": str(hypothesis.id), "hypothesis_version": hypothesis.version, **changes,
+             "evidence": evidence},
             bump=False, note=body.note)
     db.commit()
     return views(db, case_id, [hypothesis])[0]

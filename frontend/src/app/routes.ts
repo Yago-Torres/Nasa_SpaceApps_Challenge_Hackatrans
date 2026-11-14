@@ -8,7 +8,7 @@ export const ROUTES = [
   { id: 'investigation', label: 'nav.investigation', available: true },
   { id: 'evidence', label: 'nav.evidence', available: true },
   { id: 'rotations', label: 'nav.rotations', available: true },
-  { id: 'collaboration', label: 'nav.collaboration', available: false },
+  { id: 'collaboration', label: 'nav.collaboration', available: true },
   { id: 'report', label: 'nav.report', available: true },
 ] as const satisfies readonly { id: string; label: MessageKey; available: boolean }[];
 
@@ -46,6 +46,26 @@ export function hrefFor(id: RouteId, param?: string) {
 /** Link to a case sub-tab. "details" stays at the canonical "#/cases/<id>" (no third segment). */
 export function hrefForCaseTab(caseId: string, tab: string) {
   return tab === 'details' ? hrefFor('cases', caseId) : `#/cases/${encodeURIComponent(caseId)}/${encodeURIComponent(tab)}`;
+}
+
+/**
+ * Token of a consented public share link, from "#/shared/<token>" (ABB-25), or null. Kept out of
+ * ROUTES on purpose: it is not a navigation destination, and the token stays in the URL fragment,
+ * which browsers never send to a server or in a Referer header.
+ */
+export function parseSharedToken(hash: string): string | null {
+  const parts = hash.replace(/^#\/?/, '').split('?')[0].split('/');
+  return parts[0] === 'shared' && parts[1] ? decodeURIComponent(parts[1]) : null;
+}
+
+export function useSharedToken(): string | null {
+  const [token, setToken] = useState<string | null>(() => parseSharedToken(window.location.hash));
+  useEffect(() => {
+    const onChange = () => setToken(parseSharedToken(window.location.hash));
+    window.addEventListener('hashchange', onChange);
+    return () => window.removeEventListener('hashchange', onChange);
+  }, []);
+  return token;
 }
 
 export function useRouteParam(): string | null {
