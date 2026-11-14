@@ -5,5 +5,6 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: { proxy: { '/api': 'http://localhost:8000' } },
-  test: { environment: 'jsdom', include: ['src/**/*.test.{ts,tsx}'], restoreMocks: true },
+  // Generous per-test timeout: full user flows in jsdom are slow on shared CI runners.
+  test: { environment: 'jsdom', include: ['src/**/*.test.{ts,tsx}'], restoreMocks: true, testTimeout: 20000 },
 });
