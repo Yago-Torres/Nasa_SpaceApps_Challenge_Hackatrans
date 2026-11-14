@@ -35,7 +35,7 @@ Owner: C (frontend). Status of each item is explicit: **IMPLEMENTED** means it e
 | A9 | Optional: a single request that updates case attributes and one field with one version bump | A title change now sends two PATCHes (case title + field label) | ABB-06 |
 | A5 | ~~Timeline endpoint with typed layers, dates and provenance~~ **Implemented in ABB-10 and consumed by the case Timeline tab**; see §7 | ABB-22 timeline lanes | ABB-10, ABB-22 |
 | A6 | Decide whether `backend/.cache/` (now in `.gitignore`) should be untracked; one cache file is still versioned | Avoid committing runtime data | ABB-01 |
-| A7 | Generate and publish the OpenAPI schema in CI so the frontend can switch to generated types | Replace hand-written `types.ts` | ABB-02, ABB-29 |
+| A7 | Generate and publish the OpenAPI schema in CI so the frontend can switch to generated types. **Partly done in ABB-29:** CI exports and publishes `openapi.json` and `frontend/src/api/contract.test.ts` checks `types.ts` against it; replacing the hand-written types by generated ones is still open | Replace hand-written `types.ts` | ABB-02, ABB-29 |
 
 ## 3. Requests to B (science, evidence, rotations)
 

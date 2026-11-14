@@ -35,3 +35,6 @@ backend/.cache/
 
 # Windows download metadata (alternate data streams copied as files)
 *:Zone.Identifier
+# Generated OpenAPI contract (ABB-29)
+/frontend/.openapi.json
+/openapi.json
