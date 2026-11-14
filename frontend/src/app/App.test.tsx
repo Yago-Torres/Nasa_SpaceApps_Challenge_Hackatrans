@@ -63,10 +63,11 @@ describe('App shell', () => {
     expect(document.documentElement.lang).toBe('es');
   });
 
-  it('marks unbuilt screens as pending instead of showing sample data', () => {
+  it('asks to sign in on Collaboration instead of showing sample data', () => {
     window.location.hash = '#/collaboration';
     renderApp();
-    expect(screen.getByText('Not built yet')).toBeTruthy();
+    expect(screen.getByText('Sign in with the address you were invited with to see your invitations.')).toBeTruthy();
+    expect(screen.queryByText('Not built yet')).toBeNull();
     expect(screen.queryByRole('table')).toBeNull();
   });
 });

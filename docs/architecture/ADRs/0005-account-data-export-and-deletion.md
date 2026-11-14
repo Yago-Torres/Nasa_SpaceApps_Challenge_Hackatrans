@@ -39,7 +39,7 @@ Session retention: `agroblackbox/retention.py` adds `purge_stale_sessions`, a ma
 - Re-registration with the same e-mail works immediately after deletion (the address is freed), which means a new account cannot be distinguished from "the same person signed up again" at the database level; this is accepted because no identity-continuity guarantee is promised anywhere in the product.
 - The password-confirmation lockout shares `failed_login_count`/`locked_until` with the login endpoint: five wrong attempts on either locks both for 15 minutes. This is intentional (one brute-force budget per account) and is covered by a test.
 - Session purge has no retention exception for legal hold or active investigation; a future Issue may need one if that becomes relevant.
-- This ADR does not add e-mail verification, password reset, invitation acceptance or IP-based rate limiting; those remain open (ADR-0004, `docs/operations/CURRENT_STATE.md`).
+- This ADR does not add e-mail verification, password reset or IP-based rate limiting; those remain open (ADR-0004, `docs/operations/CURRENT_STATE.md`). Invitation acceptance arrived with ABB-25; since invitations are addressed by e-mail rather than user id, deletion revokes pending invitations to the account's address and scrubs it from every invitation row (added with ABB-25, covered by `test_delete_revokes_pending_invitations_and_scrubs_the_invited_email`).
 
 ## Rollout / rollback
 

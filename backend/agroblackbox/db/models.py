@@ -641,6 +641,121 @@ class EvidenceGraphEdge(IdMixin, Base):
     )
 
 
+INVITATION_ROLES = ("EDITOR", "REVIEWER", "VIEWER")
+INVITATION_STATUSES = ("PENDING", "ACCEPTED", "DECLINED", "REVOKED", "EXPIRED")
+COMMENT_TARGET_KINDS = (
+    "CASE", "FIELD", "OBSERVATION", "ANOMALY", "HYPOTHESIS", "CLAIM", "CONCLUSION", "GRAPH_EDGE", "TIMELINE_EVENT",
+)
+COMMENT_MAX_LENGTH = 4000
+
+
+class CaseInvitation(IdMixin, Base):
+    """Invitation to join a case with a role, accepted or declined by the invitee (ABB-25).
+
+    Matched to the invitee by the e-mail of the signed-in account; no token is issued. A PENDING row
+    whose ``expires_at`` has passed is treated as EXPIRED on read. Only one PENDING row per e-mail.
+    """
+    __tablename__ = "case_invitations"
+    case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), index=True)
+    email: Mapped[str] = mapped_column(String(320), index=True)
+    role: Mapped[str] = mapped_column(String(24))
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(16), default="PENDING", server_default=text("'PENDING'"))
+    created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    responded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    responded_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    __table_args__ = (
+        CheckConstraint(_in("role", INVITATION_ROLES), name="ck_invitation_role"),
+        CheckConstraint(_in("status", INVITATION_STATUSES), name="ck_invitation_status"),
+        CheckConstraint("expires_at > created_at", name="ck_invitation_expiry"),
+        CheckConstraint("note IS NULL OR char_length(note) <= 500", name="ck_invitation_note"),
+        Index("uq_invitation_pending_email", "case_id", "email", unique=True,
+              postgresql_where=text("status = 'PENDING'")),
+    )
+
+
+class CaseComment(IdMixin, Base):
+    """Plain-text comment by a case member on the case or one of its records (ABB-25).
+
+    The body is stored exactly as validated (control characters removed) and is never interpreted
+    as markup. Edits keep the replaced text in ``case_comment_revisions``. Deletion is a tombstone:
+    the row and its revisions stay for audit but the API no longer serves the text.
+    """
+    __tablename__ = "case_comments"
+    case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), index=True)
+    author_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    target_kind: Mapped[str] = mapped_column(String(24))
+    target_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
+    parent_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True, index=True)
+    body: Mapped[str] = mapped_column(Text)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default=text("1"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    deleted_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    __table_args__ = (
+        UniqueConstraint("id", "case_id", name="uq_comment_case"),
+        ForeignKeyConstraint(
+            ["parent_id", "case_id"], ["case_comments.id", "case_comments.case_id"],
+            ondelete="CASCADE", name="fk_comment_parent_same_case",
+        ),
+        CheckConstraint(_in("target_kind", COMMENT_TARGET_KINDS), name="ck_comment_target_kind"),
+        CheckConstraint("(target_kind = 'CASE') = (target_id IS NULL)", name="ck_comment_target_id"),
+        CheckConstraint(
+            f"char_length(body) BETWEEN 1 AND {COMMENT_MAX_LENGTH}", name="ck_comment_body_length"
+        ),
+        CheckConstraint("parent_id IS NULL OR parent_id != id", name="ck_comment_not_own_parent"),
+        CheckConstraint("version >= 1", name="ck_comment_version"),
+        CheckConstraint("deleted_at IS NOT NULL OR deleted_by_id IS NULL", name="ck_comment_deleted_by"),
+        Index("ix_case_comments_case_target", "case_id", "target_kind", "target_id"),
+    )
+
+
+class CaseCommentRevision(IdMixin, Base):
+    """Text a comment had before an edit (ABB-25). ``created_at`` is the instant it was replaced."""
+    __tablename__ = "case_comment_revisions"
+    comment_id: Mapped[UUID] = mapped_column(Uuid, index=True)
+    case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), index=True)
+    revision: Mapped[int] = mapped_column(Integer)
+    body: Mapped[str] = mapped_column(Text)
+    edited_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["comment_id", "case_id"], ["case_comments.id", "case_comments.case_id"],
+            ondelete="CASCADE", name="fk_comment_revision_same_case",
+        ),
+        UniqueConstraint("comment_id", "revision", name="uq_comment_revision"),
+        CheckConstraint("revision >= 1", name="ck_comment_revision_number"),
+    )
+
+
+class CaseShareLink(IdMixin, Base):
+    """Owner-consented, revocable, read-only link to a redacted view of a case (ABB-25).
+
+    Only the SHA-256 digest of the random token is stored. ``sections`` records what the owner
+    consented to share; the public view never contains exact coordinates, e-mails or user ids.
+    """
+    __tablename__ = "case_share_links"
+    case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), index=True)
+    token_sha256: Mapped[str] = mapped_column(String(64), unique=True)
+    label: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    sections: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    consent_statement: Mapped[str] = mapped_column(Text)
+    created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    __table_args__ = (CheckConstraint("expires_at > created_at", name="ck_share_link_expiry"),)
+
+
 class Rotation(IdMixin, Base):
     __tablename__ = "rotations"
     case_id: Mapped[UUID] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), index=True)

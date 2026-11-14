@@ -240,6 +240,25 @@ async def test_delete_only_revokes_membership_on_cases_owned_by_others(client, f
 
 
 @pytest.mark.asyncio
+async def test_delete_revokes_pending_invitations_and_scrubs_the_invited_email(client, factory):
+    owner = await account(client, "owner@example.test")
+    invitee = await account(client, "invitee@example.test", "Synthetic invitee")
+    case = await new_case(client, owner)
+    sent = await client.post(f"{V1}/cases/{case['id']}/invitations", headers=owner,
+                             json={"email": "invitee@example.test", "role": "REVIEWER"})
+    assert sent.status_code == 201, sent.text
+
+    result = await client.post(f"{V1}/account/delete", json={"password": PASSWORD}, headers=invitee)
+    assert result.status_code == 200, result.text
+
+    listed = await client.get(f"{V1}/cases/{case['id']}/invitations", headers=owner)
+    assert listed.status_code == 200, listed.text
+    [row] = listed.json()["items"]
+    assert row["status"] == "REVOKED"
+    assert "invitee@example.test" not in listed.text
+
+
+@pytest.mark.asyncio
 async def test_delete_never_breaks_a_restrict_foreign_key_from_a_shared_case_review_trail(client, factory):
     """A reviewer who authored an evidence claim on someone else's case is referenced by
     ``evidence_claims.created_by`` with ``ON DELETE RESTRICT`` (see db.models and ADR-0005). A

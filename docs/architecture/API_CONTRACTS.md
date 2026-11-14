@@ -98,12 +98,24 @@ Same authentication and 401/503 rules as the cases API. See ADR-0005 and `docs/o
 - `GET /api/v1/account/export` → `AccountExport` {`profile` (`UserOut`), `cases` (`CaseView[]`, same role-aware coordinate redaction as `GET /api/v1/cases`), `sessions` (`SessionSummary[]`: `id`, `created_at`, `expires_at`, `revoked`, `current`; never a token or its digest), `exported_at`}.
 - `POST /api/v1/account/delete` `{password}` → `AccountDeletionReceipt` {`cases_deleted`, `memberships_revoked`, `sessions_revoked`, `anonymized: true`, `deleted_at`}. 401 wrong password; 429 after 5 wrong confirmations (`Retry-After`, shares the account's existing login-lockout counters). Irreversible: erases every case the account owns (cascading fields/permissions/history/evidence exactly like `DELETE /api/v1/cases/{id}`), revokes membership on cases owned by others, revokes every session, and anonymises (does not row-delete) the account so `ON DELETE RESTRICT` references from other members' case evidence (`evidence_claims.created_by`, review/author columns on claims, disagreement reviews, uncertainty answers, graph conclusions/edges) stay valid.
 
+## Collaboration: invitations, comments, activity, share links (IMPLEMENTED — ABB-25)
+
+Same auth, 404/403, 503 and error rules as the cases API; requires migration `a7c2e9d4b158` (after `a19f3b7c2d64`). Full rules, roles and limitations: `docs/architecture/COLLABORATION.md`. Free text (comments, notes, labels) is plain text returned verbatim with `body_format: "text/plain"`; clients render it as text, never HTML.
+
+- `POST|GET /api/v1/cases/{case_id}/invitations` (OWNER) `{email, role EDITOR|REVIEWER|VIEWER, note?, expires_in_days 1–30}` → `InvitationView` / `InvitationList`; `DELETE …/invitations/{id}` revokes a PENDING invitation (409 otherwise). No e-mail is sent; no account enumeration.
+- `GET /api/v1/invitations` → `ReceivedInvitationList` (pending invitations for the signed-in e-mail); `POST /api/v1/invitations/{id}/accept|decline` → `InvitationDecision`. Anything that is not a pending, unexpired invitation for the caller returns 404.
+- `GET|POST /api/v1/cases/{case_id}/comments` (every member, VIEWER included; 409 on archived cases), `GET|PATCH|DELETE …/comments/{id}` (edit: author with `version`; delete: author or OWNER, tombstone), `GET …/comments/{id}/revisions` (410 once deleted).
+- `GET /api/v1/cases/{case_id}/activity?limit=&offset=&order=` → `ActivityPage` (case history, claim events, disagreement reviews and comments merged; actor, instant, target, `evidence`, `changes`; coordinates REDACTED for guests).
+- `POST|GET /api/v1/cases/{case_id}/share-links` (OWNER) `{consent: true, sections{incident_notes, field_labels, location_detail NONE|REGION|APPROXIMATE, hypotheses, evidence_claims, conclusions, member_names, comments}, label?, expires_in_days 1–30}` → `ShareLinkCreated` (token shown once) / `ShareLinkList`; `DELETE …/share-links/{id}`.
+- `GET /api/v1/shared/{token}` (no account) → `SharedCaseView`: never exact coordinates, case id, e-mails, user ids, observations, invitations, member lists or history; same 404 for unknown, revoked and expired tokens; `Cache-Control: no-store`, `Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex`.
+- `POST /api/v1/account/delete` (ABB-28) additionally revokes pending invitations addressed to the deleted account's e-mail and scrubs that address from every invitation row.
+
 ## Proposed release 1.0 routes (NOT IMPLEMENTED)
 
 Formalize versioned `/api/v1` resources through their owning roadmap Issues (cases, observations, timeline, hypotheses and claims are implemented, see above):
 - `/api/v1/evidence/search` — DOI discovery (today `GET /api/literature`); `/api/v1/evidence/findings` is superseded by the ABB-14 claims routes above.
 - `/api/v1/cases/{case_id}/rotations/compare` — three+ feasible options with explicit scenarios (the stateless `/api/v1/rotations/compare` exists; the case-bound route waits for persisted profiles, ABB-06).
-- `/api/v1/cases/{case_id}/reviews` — reviewer comments and decisions with access control.
+- `/api/v1/cases/{case_id}/reviews` — superseded: comments are `…/comments` (ABB-25) and decisions stay on each record's review route (ABB-10/14/15/16/19).
 - `/api/v1/cases/{case_id}/reports` — versioned human-readable case reports.
 
 Do not migrate existing consumers without coordination with affected domains. Breaking changes require a compatibility plan, contract tests, updated docs and a new contract version when compatibility cannot be preserved.

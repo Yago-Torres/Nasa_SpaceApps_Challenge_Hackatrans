@@ -12,12 +12,13 @@ Owner: C (frontend). Status of each item is explicit: **IMPLEMENTED** means it e
 |---|---|---|
 | Investigation (`#/investigation`) | `GET /api/climate` (reference fixed to 2010–2021) | Observed · NASA POWER |
 | Evidence (`#/evidence`) | `GET /api/literature` | Metadata only (never Reviewed literature) |
-| Rotations (`#/rotations`) | `GET /api/rotations/demo` | Illustrative (per CURRENT_STATE), although payload says `modelled_scenario` |
+| Rotations (`#/rotations`) | `GET /api/v1/crop-catalog`, `POST /api/v1/rotations/scenarios`, `/sensitivity` | Backend-returned MODEL_SCENARIO, with declared inputs and limitations |
 | Report (`#/report`) | `POST /api/report` | Preliminary |
 | Cases (`#/cases`, `#/cases/new`, `#/cases/<id>`) | `/api/v1/auth/*`, `/api/v1/cases*` (see §6) | Farmer reported (wizard answers); status/role as returned |
 | Case timeline (`#/cases/<id>/timeline`) | `GET /api/v1/cases/{id}/timeline`, `GET/POST /api/v1/cases/{id}/hypotheses*`, `GET /api/v1/hypothesis-templates` (see §7) | Observed, Farmer reported, Hypothesis and Missing data |
-| Case evidence (`#/cases/<id>/evidence`) | `GET /api/v1/cases/{id}/evidence-graph`, `GET …/evidence-graph/trace/{node_id}` (see §8) | Backend node kind; metadata-only literature remains distinct |
-| Collaboration | none yet | "Not built yet" state, no sample data |
+| Collaboration (`#/collaboration`) | `GET /api/v1/invitations`, `POST …/accept|decline` | Invitations for the signed-in e-mail (ABB-25) |
+| Case tabs `#/cases/<id>/collaboration` and `/discussion` | `…/permissions`, `…/invitations`, `…/share-links`, `…/comments`, `…/activity` | Members, invitations and consented share links (owner); text-only comments and the audit trail (every member) |
+| Shared view (`#/shared/<token>`, not in the nav) | `GET /api/v1/shared/{token}` | Account-free, read-only, only the sections the owner consented to |
 
 - The frontend computes no statistics. It only scales returned values for drawing (`features/chartScale.ts`).
 
@@ -42,7 +43,7 @@ Owner: C (frontend). Status of each item is explicit: **IMPLEMENTED** means it e
 | B1 | Configure `OPENALEX_API_KEY` (or polite-pool `mailto` set by the team, not by an agent) | OpenAlex answers `429 Too Many Requests` to shared egress; the Evidence screen currently shows the error state | ABB-13 |
 | B2 | Reviewed-claim object: `claim`, `doi`, `study_context` (region, crop, method), `limitations`, `reviewer`, `reviewed_at`, `status` | Promote a paper from *Metadata only* to *Reviewed literature* | ABB-14 |
 | B3 | Evidence-graph payload: nodes `{id, kind ∈ OBSERVED…MISSING_DATA, label, provenance}` and edges `{from, to, relation ∈ supports/contradicts, note}` | ABB-23 graph and its accessible list view | ABB-16 |
-| B4 | Rotation comparison payload: ≥3 options (current first), each with `years[][]`, `assumptions[]`, `tradeoffs[]` (qualitative, with source refs), `uncertainties[]`, `kind` (`MODEL_SCENARIO` or `ILLUSTRATIVE`), and **no numeric yield/water claims without a validated model + interval** | ABB-24 comparator | ABB-17, ABB-18 |
+| B4 | ~~Rotation comparison payload~~ **Implemented in ABB-17/18**: `/api/v1/rotations/scenarios` returns rule-generated strategies, ordinal ordering, trade-offs, exposure, explanations and limitations. No numeric yield/water claims or impact score. UI sends farmer-declared inputs and renders the response. | ABB-24 comparator | ABB-17, ABB-18 |
 | B5 | Uncertainty Hunter items: `{question, why_it_matters, measurement, would_change}` | "Would settle it" column of hypotheses | ABB-19 |
 
 ## 4. Design system rules that affect backend payloads
@@ -114,12 +115,3 @@ add a template or custom statement; OWNER/EDITOR/REVIEWER may set the ABB-10 eva
 with the backend-required note. Catalogue and mutation failures are explicit and retryable.
 Observation evidence IDs are resolved to their anomaly timeline event before opening the
 provenance panel, matching the backend's `to_event_ids` mapping.
-
-## 8. Case evidence graph (IN REVIEW, ABB-23)
-
-The Evidence graph case tab consumes the ABB-16 graph verbatim. Its SVG and table are two
-views of the same nodes and edges; selecting a node requests its encoded graph trace and shows
-provenance, limitations, completeness and review blockers. DOI anchors use only the registered
-backend URL. `LITERATURE_METADATA` is labelled “Metadata only”, never promoted to reviewed
-literature, and relationship styling is supplemented by text/table content rather than colour
-alone. API failure produces an explicit retry state with no local substitute data.

@@ -16,11 +16,12 @@ is not captured by ``/claims/{claim_id}``.
 """
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .. import schemas
@@ -201,9 +202,17 @@ def review_disagreement(case_id: UUID, disagreement_id: UUID, body: Disagreement
             "Cannot confirm a contradiction: both claims must be reviewed (ACCEPTED) first. Record INCONCLUSIVE "
             "or NOT_COMPARABLE, or review the claims."))
     papers = {pid: _paper_or_404(db, pid) for pid in {a.paper_id, b.paper_id}}
+    # The latest decision is read by (reviewed_at, id). If the wall clock steps back (seen under WSL2)
+    # a new decision could sort before the previous one and the stale one would be shown as current,
+    # so a decision is never timestamped before the last one recorded for the same pair.
+    previous = db.scalar(select(func.max(ClaimDisagreementReview.reviewed_at)).where(
+        ClaimDisagreementReview.case_id == case_id, ClaimDisagreementReview.pair_id == locked[0].id))
+    reviewed_at = utcnow()
+    if previous is not None and reviewed_at <= previous:
+        reviewed_at = previous + timedelta(microseconds=1)
     db.add(ClaimDisagreementReview(
         case_id=case_id, pair_id=locked[0].id, claim_a_id=a.id, claim_b_id=b.id, claim_a_version=a.version,
-        claim_b_version=b.version, decision=body.decision, note=body.note, reviewer_id=me.id, reviewed_at=utcnow(),
+        claim_b_version=b.version, decision=body.decision, note=body.note, reviewer_id=me.id, reviewed_at=reviewed_at,
         snapshot=_snapshot(locked[0], a, b, papers),
     ))
     db.commit()
