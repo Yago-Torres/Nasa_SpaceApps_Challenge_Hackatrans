@@ -121,8 +121,8 @@ describe('Rotations (ABB-24 comparator)', () => {
 
     await user.click(screen.getByRole('button', { name: /compare strategies/i }));
 
-    expect(await screen.findByText(/fields need fixing before comparing/i)).toBeInTheDocument();
-    expect(screen.getByText('Use a year between 1950 and 2100.')).toBeInTheDocument();
+    expect(await screen.findByText(/fields need fixing before comparing/i)).toBeTruthy();
+    expect(screen.getByText('Use a year between 1950 and 2100.')).toBeTruthy();
     expect(scenarioCalls).toBe(0);
   });
 
@@ -134,7 +134,7 @@ describe('Rotations (ABB-24 comparator)', () => {
     await fillTwoSeasons(user);
     await user.click(screen.getByRole('button', { name: /compare strategies/i }));
 
-    expect(await screen.findByText('Current rotation identified from two seasons.')).toBeInTheDocument();
+    expect(await screen.findByText('Current rotation identified from two seasons.')).toBeTruthy();
     expect(scenarioCalls).toBe(1);
     const sent = JSON.parse(String((fetchMock.mock.calls.find(([u]) => String(u).includes('/scenarios')) ?? [])[1]?.body ?? '{}'));
     expect(sent.profile.crop_history).toHaveLength(2);

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- ABB-24 rotation comparator (in review): the Rotations screen now sends the farmer's recorded crop history, local calendar, water/market/equipment constraints and ordinal priorities to the backend comparison/scenario endpoints. It displays returned strategies, trade-offs, missing inputs and review limitations; priority changes recompute through the backend. Outputs remain descriptive MODEL_SCENARIO results with no yield, savings or verified impact claims.
+
 - Product renamed to **CropStory: The Agricultural Blackbox** (formerly AGRO BLACK BOX) in the web app title and brand, API title, report heading, outbound User-Agent and documentation. Internal identifiers keep the old name: Python package `agroblackbox`, repository, `ABB-*` Issue IDs, design-skill folders and the stored wizard-notes marker.
 - ABB-03 adds the PostgreSQL persistence boundary, initial reversible Alembic migration, referential/privacy constraints, optimistic case updates and PostgreSQL integration tests in CI; authenticated persistence APIs remain separate Issues.
 - Development governance simplified: roadmap Issues are directly executable without vote or approval labels, while contract coordination, technical review, scientific integrity and security checks remain required.
