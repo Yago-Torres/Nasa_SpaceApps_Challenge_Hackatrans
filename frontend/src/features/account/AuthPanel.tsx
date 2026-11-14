@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { ApiError, authApi } from '../../api/client';
 import { setSession } from '../../api/session';
 import { Button, Field, StatusMessage } from '../../design/components';
@@ -31,6 +31,12 @@ export function AuthPanel({ notice, primary = true }: { notice?: string; primary
   const [failure, setFailure] = useState<{ title: string; body?: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const form = useRef<HTMLFormElement>(null);
+  const [focusRequest, setFocusRequest] = useState<{ field: Problem } | null>(null);
+
+  // Focus the first invalid field right after the render that shows its error.
+  useEffect(() => {
+    if (focusRequest) form.current?.querySelector<HTMLElement>(`[data-field="${focusRequest.field}"]`)?.focus();
+  }, [focusRequest]);
 
   function check(): Problem[] {
     const out: Problem[] = [];
@@ -58,7 +64,7 @@ export function AuthPanel({ notice, primary = true }: { notice?: string; primary
     setProblems(found);
     setFailure(null);
     if (found.length) {
-      requestAnimationFrame(() => form.current?.querySelector<HTMLElement>(`[data-field="${found[0]}"]`)?.focus());
+      setFocusRequest({ field: found[0] });
       return;
     }
     setBusy(true);

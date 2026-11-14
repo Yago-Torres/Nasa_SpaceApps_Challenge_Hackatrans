@@ -59,6 +59,14 @@ export function IncidentWizard({ caseId }: { caseId: string }) {
   const queue = useRef<Promise<unknown>>(Promise.resolve());
   const everSignedIn = useRef(!!session);
   if (session) everSignedIn.current = true;
+  // Focus requested by a step change or a validation error. Applied right after the render
+  // that shows the target (not in a later animation frame), so focus never jumps away while
+  // the user has already started typing in the new step.
+  const [focusRequest, setFocusRequest] = useState<{ selector: string } | null>(null);
+
+  useEffect(() => {
+    if (focusRequest) formRef.current?.querySelector<HTMLElement>(focusRequest.selector)?.focus();
+  }, [focusRequest]);
 
   useEffect(() => {
     if (caseId === 'new' || cRef.current || !session) return;
@@ -180,13 +188,13 @@ export function IncidentWizard({ caseId }: { caseId: string }) {
     let key: string = list[0];
     if (key === 'symptomsOrder') key = 'symptomsEnd';
     if (key === 'symptomsRange') key = monthOutOfRange(c!.symptomsStart) ? 'symptomsStart' : 'symptomsEnd';
-    requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>(`[data-field="${key}"]`)?.focus());
+    setFocusRequest({ selector: `[data-field="${key}"]` }); // new object: always applied once, after the errors render
   }
 
   function goTo(i: number) {
     setErrors([]);
     setStep(i);
-    requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('h2')?.focus());
+    setFocusRequest({ selector: 'h2' });
   }
 
   function next() {

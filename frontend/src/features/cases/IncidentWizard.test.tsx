@@ -301,6 +301,23 @@ describe('ABB-21 / ABB-06 incident wizard on the case API', { timeout: 30000 }, 
     expect((screen.getByLabelText('Latitude') as HTMLInputElement).value).toBe('95');
   });
 
+  it('moves focus to the new step heading as part of the step change, never later while the user types', async () => {
+    // Regression (CI): focus used to move in a later animation frame; on a slow runner it
+    // arrived after typing in the new step had started and swallowed keystrokes.
+    const user = userEvent.setup();
+    window.location.hash = '#/cases/new';
+    renderApp();
+    await user.type(await screen.findByLabelText('Case name'), 'Synthetic plot');
+    await user.type(screen.getByLabelText('Latitude'), '41.6');
+    await user.type(screen.getByLabelText('Longitude'), '-0.9');
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(document.activeElement).toBe(screen.getByRole('heading', { level: 2, name: 'What was grown' }));
+    await user.type(screen.getByLabelText('Year'), '2022');
+    await new Promise((resolve) => window.setTimeout(resolve, 50)); // a late focus move would land here
+    expect(document.activeElement).toBe(screen.getByLabelText('Year'));
+    expect((screen.getByLabelText('Year') as HTMLInputElement).value).toBe('2022');
+  });
+
   it('signed out, the wizard keeps the answers on the page and asks to sign in before saving (ES)', async () => {
     const user = userEvent.setup();
     window.location.hash = '#/cases/new';
