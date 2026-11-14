@@ -1,138 +1,129 @@
 ---
 name: agro-design-system
-description: The "Solar Industrial" design language for AGRO BLACK BOX — industrial web design (instrument panels, data plates, honest structure, high legibility) with a solarpunk layer (daylight-first palette, sun-arc journey, organic shapes for living and human data). Use this skill whenever you create, restyle or extend anything visual in frontend/ — React components, CSS, layouts, the landing page, charts, icons, empty/error states, copy on screens — and whenever someone asks about colours, fonts, spacing, theming, "the look", industrial or solarpunk style, or how a screen from docs/product/UX_FLOWS.md should look, even if they don't mention the design system by name.
+description: The "Field Survey" design language for AGRO BLACK BOX — light mode only, in the team's bright "hopecore" palette (Celestial Blue, Cal Poly Pomona Green, May Green, Yellow-Green, Pearl Aqua), with structure borrowed from survey-map legends, technical-drawing title blocks and herbarium labels, and explicit rules against AI-generated-looking UI (adapted from impeccable and taste-skill). Use this skill whenever you create, restyle or extend anything visual in frontend/ — React components, CSS, layouts, the landing page, charts, icons, empty/error states, UI copy — and whenever someone asks about colours, fonts, spacing, "the look", industrial or solarpunk style, or how a screen from docs/product/UX_FLOWS.md should look, even if they don't name the design system.
 ---
 
-# AGRO BLACK BOX — Solar Industrial design system
+# AGRO BLACK BOX — Field Survey design system
 
-> **Status: PROPOSED.** This is the team's draft design language. It becomes binding once the frontend design-system Issue is `team-approved` (see `docs/governance/FEATURE_POLICY.md`). Until then, follow it for consistency but don't describe it as an approved product decision.
+> **Status: PROPOSED.** Binding once the frontend design-system Issue is `team-approved` (`docs/governance/FEATURE_POLICY.md`). Until then follow it for consistency, but don't call it an approved decision.
 
-The product is a forensic lab for agricultural incidents. People open it after something went wrong in their field. The interface has two jobs at once: be as **trustworthy and legible as an instrument** (industrial), and feel like **a tool for a hopeful, repairable future** built with communities (solarpunk). The two layers aren't decoration on top of each other — each one encodes meaning.
+**What it must feel like:** a clear, hopeful working tool. Industrial in the sense of honest, legible and operable; solarpunk in the sense of bright, alive and on the side of the people who farm. It must not look generated: no template scaffolds, no costumes, no decoration without a job.
 
 ## Before you design anything
 
-1. Read `docs/product/UX_FLOWS.md`, `frontend/AGENTS.md` and `docs/science/SCIENTIFIC_POLICY.md`. The design system serves those rules; it never overrides them.
-2. Check `docs/operations/CURRENT_STATE.md` / `docs/architecture/API_CONTRACTS.md` for what the backend actually provides. A screen for an endpoint that doesn't exist must show a conspicuous *pending* state, not fake content.
-3. Make sure `frontend/src/design/tokens.css` exists. If it doesn't, copy `assets/tokens.css` there (that's part of the design-system Issue). Never re-declare colours locally.
-4. Open `assets/specimen.html` in a browser (or read it) to see every primitive rendered. It's the visual reference — when in doubt, match it.
+1. Read `docs/product/UX_FLOWS.md`, `frontend/AGENTS.md` and `docs/science/SCIENTIFIC_POLICY.md`. This skill serves them and never overrides them.
+2. Check `docs/operations/CURRENT_STATE.md` / `docs/architecture/API_CONTRACTS.md`. A screen for an endpoint that doesn't exist shows a *not built yet* state, never invented content.
+3. Make sure `frontend/src/design/tokens.css` exists; if not, copy `assets/tokens.css` there (part of the design-system Issue). Never declare colours locally.
+4. Open `assets/specimen.html` in a browser. It shows two real screens (forensics workspace, landing) and the system sheet. Match it.
+5. Decide the **mode** of the surface (from impeccable): **Operate** for app screens (cases, cockpit, science desk, rotation lab, review, settings): scanability and standard controls beat expression. **Persuade** for the landing page: the world can speak louder. **Read** for the case report and docs.
 
-## The core idea: structure is meaning
+## The world, in one paragraph
 
-| Layer | What it represents | Visual vocabulary |
+The visual world comes from graphic traditions the audience already knows, not from instruments: **survey-map legends** (a small symbol per kind of thing, explained once, used everywhere), **technical-drawing title blocks** (one ruled block that states what this sheet is, its ID, scale and date), and **herbarium labels and determination slips** (a provenance label on every specimen, and later reviewers adding signed notes). Those give us type rhythm, density and one signature move. The palette is the team's hopecore set. Layout, navigation and controls stay the standard web ones. Full rationale and the ban list: `references/world.md`.
+
+## Tokens (full source: `assets/tokens.css`)
+
+**Palette** — team colours, light mode only:
+
+| Colour | Hex | Role |
 |---|---|---|
-| **Industrial** | Machines, measurements, NASA observations, computations, provenance | Rectilinear panels with 2px radius, visible structural lines, data plates (equipment nameplates), dark instrument readouts, condensed grotesque labels, tabular numerals, safety-coded status |
-| **Solarpunk** | Living systems, people, communities, farmer knowledge, hope/repair | Daylight palette, sun-arc journey, chlorophyll and solar-gold accents, organic radii (leaf, seed), serif "human voice", curved mycelium connectors |
+| Cal Poly Pomona Green | `#144425` | App rail (`--surface-shell`), primary button text, literature symbol |
+| Yellow-Green | `#b5d98a` | **The one primary action per view** (`--action`), current-step marker on the rail |
+| May Green | `#46953d` | Farmer-reported symbol and success (text uses the darker `--c-may-ink`) |
+| Celestial Blue | `#4b9dd2` | Observed data, links, focus, info, landing hero band (text uses `--c-celestial-ink`) |
+| Pearl Aqua | `#88dbc0` | Grounds and tints (`--surface-sunken`, `--surface-tint`), model scenarios (`--c-aqua-ink` for text) |
 
-So a satellite reading *looks* like an instrument and a farmer's note *looks* like a person wrote it. This is what keeps the product honest: OBSERVED data and FARMER_REPORTED data must never be visually confusable (product invariant: "never confuse observed satellite/regional data with parcel ground truth").
-
-### Shape grammar
-
-- **Instrument** (`--radius-instrument`, 2px): panels, charts, data plates, observed values, tables.
-- **Control** (`--radius-control`, 6px): buttons, inputs, selects.
-- **Leaf** (`--radius-leaf`, two opposite rounded corners): FARMER_REPORTED chips, local notes.
-- **Organic** (`--radius-organic`, 20px): people, community review cards, avatars containers, invitations.
-- **Dashed outline**: unproven things — HYPOTHESIS, pending features.
-- **Hatched fill**: MODEL_SCENARIO (computed under assumptions).
-- **Striped "survey tape" border**: ILLUSTRATIVE / demo data. Loud on purpose.
-- **Empty hatched outline**: MISSING_DATA.
-
-Don't use one radius for everything. Hierarchy and meaning come from varying it.
-
-## Tokens (summary — full source in `assets/tokens.css`)
-
-**Colour roles** (semantic tokens only in components):
-
-- Chassis: `--surface-base` (galvanized steel in daylight), `--surface-raised` (panels), `--surface-sunken` (wells), `--surface-readout` (instrument displays — dark in both themes, like real gauges).
-- Ink: `--ink-strong`, `--ink`, `--ink-muted`, `--ink-readout` (phosphor green on readouts), `--ink-link`.
-- **Recorder orange** `--action-bg` / `--brand`: real flight recorders are painted international orange. Use it for the brand mark and **one primary action per view** (e.g. "Investigate with NASA"). Text on it is always `--action-ink` (dark), like a safety label. Never orange body text.
-- **Solar gold** `--sun`: the sun-arc, highlights of the incident window, HYPOTHESIS. Never for text on light backgrounds.
-- **Chlorophyll** `--growth`: healthy/complete state, living data, FARMER_REPORTED.
-- **Sky** `--focus-ring`, `--ink-link`, OBSERVED, water/precipitation.
-- Status pairs `--status-{ok,caution,danger,info,stale}-{bg,ink}` — always with an icon *and* a text label.
-
-**Type:**
-
-- `--font-industrial` (Archivo, variable width): UI, headings, numbers. Use `font-stretch: var(--stretch-condensed)` for instrument labels and dense tables, `--stretch-expanded` + heavy weight for display headings on the landing page.
-- `--font-human` (Fraunces, soft): only for human voice — farmer reports, community comments, quotes from verified literature, the hero statement. It signals "a person said this".
-- `--font-machine` (IBM Plex Mono): only for machine values a person may copy/compare — SHA-256, coordinates, request params, DOIs, IDs. Not for decorative labels.
-- Numbers in tables, readouts and charts: `font-variant-numeric: tabular-nums`.
-- Scale: major third on 16px (`--text-2xs` … `--text-4xl`). Prose max width `--measure` (68ch).
-- Sentence case everywhere. The only uppercase text allowed is the controlled epistemic vocabulary codes (`OBSERVED`, `HYPOTHESIS`…), because they are literal identifiers.
-
-**Space:** 4px base (`--space-1` … `--space-11`). Panels pad `--space-5`, dense instruments `--space-4`. Grid gutter `--gutter`.
-
-**Elevation:** structure comes from lines, not shadows. Panels: 1px `--line` border. Section dividers: 2px `--line-strong` ("structural beam"). Only floating layers (drawer, menus, toasts) use `--shadow-lift`. Readouts use `--shadow-inset-readout`.
-
-**Themes:** *Daylight* is default (farmers read screens outdoors in strong sun). *Night shift* (dark) via `prefers-color-scheme` or `data-theme="dark"` on `<html>`. Both themes pass WCAG AA — verify after any colour change:
+Rules: components use **semantic tokens only** (`--surface*`, `--ink*`, `--action*`, `--ev-*`, `--viz-*`, status pairs). The light brand hues fail contrast as text on white, so text always uses the `-ink` steps the tokens provide. Red and amber exist **only for status** (error, warning, hypothesis). Contrast check after any change:
 
 ```bash
 node .claude/skills/agro-design-system/scripts/check-contrast.mjs
 ```
 
-## Signature element: the sun-arc journey
+**Type** — one family for the interface:
+- `--font-sans` **Atkinson Hyperlegible Next**: UI, headings, numbers. It was designed by the Braille Institute for low-vision readers (it fits older users reading phones outdoors), and it isn't on the "overused AI fonts" lists. Display (landing h1, case name) uses weight 800 with slight negative tracking.
+- `--font-serif` **Source Serif 4 italic**: only for people's own words (farmer notes, review slips, verified quotes) and species names, the way maps set natural names in italic serif.
+- `--font-mono` **Atkinson Hyperlegible Mono**: only for values people copy or compare (case IDs, variable codes, checksums, DOIs). Never as a "technical" costume for labels.
+- Scale `--text-xs` … `--text-3xl`, `--text-display` (landing only). Body 16px minimum, prose ≤ 66ch, `tabular-nums` for numbers in tables and charts. Sentence case everywhere; no all-caps labels.
+- Self-hosting via `@fontsource` needs the dependency approved in an Issue; fallbacks in the tokens keep the UI usable meanwhile.
 
-Spend the boldness here and keep the rest disciplined. The canonical journey (PRODUCT.md) is a real sequence, so it earns numbered steps:
+**Space and shape:** 4px base (`--space-1…9`). Radii by role: `--radius-s` 3px (inputs, labels, table cells), `--radius-m` 8px (buttons, panels), `--radius-l` 14px (review slips, dialogs, screen frames). Structure comes from rules (`--rule`, `--rule-3`), not shadows; only floating layers use `--shadow-float`.
 
-`1 Intake → 2 NASA data → 3 Timeline → 4 Evidence → 5 Rotations → 6 Review → 7 Report`
+**Motion:** exponential ease-out (`--ease-out`), 120–320ms, only in answer to a user action (drawer opens, row expands). A spinner only while a request is in flight. No bounce, no pulsing dots, no entrance animations on scroll. Reduced motion zeroes the durations.
 
-It's drawn as the sun's path across a day: a thin arc with a station per step; the sun (solar gold disc) sits on the current step; completed steps are solid chlorophyll stations, future ones are hollow; a step blocked by missing backend support is dashed with a "pending" label. On desktop it's a header band above the cockpit; on mobile it collapses to a compact horizontal stepper with the arc as a progress line. When a step completes, the sun advances once with `--dur-sunrise` / `--ease-mechanical` — that's the one orchestrated motion moment in the app. Recipe in `references/components.md#sun-arc-journey`.
+## The evidence legend (the system's backbone)
+
+Every piece of evidence carries a legend symbol + its text label + its colour, drawn as inline SVG from one sprite (never Unicode glyphs or emoji):
+
+| Kind (UX_FLOWS code) | Symbol | Why this symbol |
+|---|---|---|
+| `OBSERVED` | filled square, celestial | a measured value, like a survey benchmark |
+| `FARMER_REPORTED` | filled circle, May green | a person on the land |
+| `LITERATURE_REVIEWED` | filled triangle, Cal Poly green | a triangulation vertex: a verified reference point |
+| `HYPOTHESIS` | dashed ring, amber | maps draw unconfirmed boundaries dashed |
+| `MODEL_SCENARIO` | hatched square, aqua ink | a computed area |
+| `ILLUSTRATIVE` | open diamond, red | not real data; always with a sentence saying so |
+| `MISSING_DATA` | dotted square, grey | no data here |
+
+OpenAlex search results are "Metadata only" (an info status), never `LITERATURE_REVIEWED`. The legend is explained once on the landing page and in the report, then used everywhere without explanation. Recipe: `references/components.md#legend`.
+
+## Signature move: the case title block
+
+Each case screen opens with a ruled title block, like the cartouche of a technical drawing: case name and one-line description (large cell), then case ID, location (privacy-rounded), status, data scale, period, reviewer. It answers "what am I looking at, at what resolution, how private, how sure" before any chart, and it's the one memorable element. Spend boldness there and keep the rest quiet. Recipe: `references/components.md#title-block`.
 
 ## Rules that are easy to get wrong
 
-1. **Every scientific value carries its epistemic tag** (`<EpistemicTag kind="OBSERVED">`), its unit and its source. A number without unit + provenance is a bug.
-2. **Provenance is a first-class object, not a footnote.** Use the Data plate component (dataset, endpoint, period, spatial/temporal resolution, retrieved at, SHA-256, limitations) and the provenance drawer. See `references/components.md#data-plate`.
-3. **Five states for every async widget**: loading, empty, error, partial, stale (+ "pending: not built yet"). Recipes in `references/components.md#state-views`. Failure copy says what happened and how to fix it; never substitute sample data.
-4. **ILLUSTRATIVE data is loud.** Survey-tape border + `ILLUSTRATIVE` tag + one-sentence explanation. E.g. `/api/rotations/demo` output is illustrative today.
-5. **Colour is never the only cue.** Status = icon + text + colour. Tags = code + shape + colour. Chart series = label + pattern/position + colour.
-6. **Charts** follow `references/dataviz.md`: diverging BrBG for precipitation anomaly, RdBu for temperature anomaly, zero baseline always visible, units in axis titles, incident window as a solar band, text description for screen readers.
-7. **Privacy shows in the UI.** Precise coordinates are private by default: show the privacy tier next to any location, round coordinates in shared/review contexts, and never put them in URLs.
-8. **Bilingual EN/ES from day one** (F-11). No hardcoded user-facing strings in components; units/dates/numbers through `Intl.*`. Spanish runs ~20–30% longer — design labels to wrap, not truncate.
-9. **No new runtime dependency without an approved Issue** (fonts via @fontsource, MapLibre, chart libs included). Until approved, use the fallback font stacks and plain SVG.
-10. **Motion**: one orchestrated moment (sun-arc). Otherwise only motion that answers a user action (drawer opening, row expanding). Animate `transform`/`opacity`, list properties explicitly (never `transition: all`). The recording indicator pulses only while a request is actually in flight. Reduced motion zeroes the duration tokens automatically.
+1. **Evidence honesty:** every scientific value has its legend symbol, unit, comparison basis and source. Provenance lives in a Sources panel of herbarium-style labels (dataset, variables, cell, resolution, retrieved, checksum, limitations): only fields the API returns; missing ones shown as `MISSING_DATA`.
+2. **States:** every async region handles loading, empty, error, partial, stale, and "not built yet". Errors name the source and the status and keep the user's input. A failed request never shows sample numbers.
+3. **ILLUSTRATIVE** data gets a red banner with the diamond symbol and a sentence. `/api/rotations/demo` output is illustrative today.
+4. **One primary action per view** (yellow-green). Everything else is secondary (outlined) or text buttons.
+5. **Colour is never the only cue:** status = icon + text; evidence = symbol + label; chart series = label + position.
+6. **Charts:** `references/dataviz.md`. BrBG for rain, RdBu for temperature, zero line drawn, one honest scale, units in labels, text summary + table alternative.
+7. **Privacy:** location shown with its rounding/privacy tier, never precise coordinates in shared views or URLs.
+8. **Bilingual EN/ES:** no hardcoded strings; `Intl.*` for numbers, dates, units; allow ~30% longer Spanish.
+9. **No new runtime dependency without an approved Issue** (fonts, MapLibre, chart libraries). Plain SVG until then.
+10. **Theme browser surfaces too:** `::selection` (highlight), `caret-color`, `accent-color`, scrollbar colours, focus ring, link underline offset. This is the cheapest sign a UI was built rather than assembled.
 
-## Solarpunk without kitsch
+## Not allowed (AI-generated tells, from impeccable/taste-skill, adapted)
 
-Solarpunk here is about **values made visible** — transparency (evidence brought into the light), community knowledge treated with the same dignity as satellites, repairability (every error explains its fix), and hope (the path from incident to a better rotation). It is *not* leaf clip-art, neon green gradients, or glassmorphism. Read `references/solarpunk-motifs.md` before adding any ornament; every motif there has a job and a place it's allowed.
-
-## Industrial without coldness
-
-Industrial here is **clarity, honesty of materials and operability** — visible structure, labelled controls, big tap targets (`--tap-min`), predictable placement, data plates that tell you exactly what a number is. It is *not* fake rivets, metal textures, hazard stripes everywhere, or dark-mode-only "hacker" UIs.
+- Eyebrow/kicker labels above headings; section numbers (01/02/03) unless the content is a real sequence (the 7 case steps are).
+- The hero-metric template (big number + small label + stat strip); rows of identical icon-heading-text cards; nested cards.
+- Gradient text, glassmorphism, decorative gradients or repeating stripes, hard offset shadows, coloured `border-left`/`border-top` accents on cards.
+- Monospace as a costume, pulsing "live" dots, bounce easing, entrance animations on every section.
+- Instrument/cockpit costumes on working screens (dark gauges, fake bezels, terminal styling).
+- Overused faces (Inter, Roboto, Fraunces, Geist, Space Grotesk, Plus Jakarta Sans) unless the team decides otherwise.
+- Copy tells: "seamless", "empower", "unlock", "revolutionary", "In today's world…", stat strips, "X. Y." two-fragment headings, em-dash-heavy prose, arrows glued to every link. Write plainly: buttons are a verb + object ("Download case report").
 
 ## Frontend file layout (proposed, so three people can work in parallel)
 
 ```
 frontend/src/
-  design/        tokens.css, base.css, motifs/*.tsx (SVG), components/* (Button, Field,
-                 Panel, EpistemicTag, DataPlate, StateView, SunArcJourney, ProvenanceDrawer)
-  features/      landing/ cases/ intake/ forensics/ science/ rotations/ review/ report/ settings/
-  i18n/          en.json, es.json, useT.ts
-  api/           typed client (generated from OpenAPI when schemas stabilise)
-  app/           App.tsx, routes, layout shell
+  design/     tokens.css, base.css, icons.svg (legend + UI sprite), components/
+              (Button, Field, EvidenceLabel, TitleBlock, SourceLabel, ReviewSlip, StatusMessage, StepRail)
+  features/   landing/ cases/ intake/ forensics/ science/ rotations/ review/ report/ settings/
+  i18n/       en.json, es.json, useT.ts
+  api/        typed client (generated from OpenAPI when schemas stabilise)
+  app/        App.tsx, routes, shell
 ```
 
-Feature folders own their screens; shared visuals live only in `design/`. Changing a shared component or token is a cross-team change: mention it in the PR and ping the other two.
+Feature folders own their screens; shared visuals live only in `design/`. Changing a shared component or token is a cross-team change: say so in the PR.
 
 ## Workflow for any UI task
 
-1. **Plan** (write it in the PR description or as a comment before coding): which screen/flow, which epistemic kinds appear, which states, which tokens/components you'll reuse, ASCII wireframe for desktop and mobile. Wireframes for every screen are in `references/screens.md` — start from them.
-2. **Check the plan against this skill**: is the boldness spent only on the sun-arc / the one memorable thing? Any generic default sneaking in (identical rounded cards everywhere, gradient washes, ALL-CAPS eyebrows above every heading, `01 / 02` numbering on things that aren't sequences, `→` glued to every button)? Revise.
-3. **Build** with semantic tokens and shared components. No raw hex, no magic pixel values outside tokens.
-4. **Critique**: screenshot desktop (1440) and mobile (390) in both themes and look at them. Run the `agro-ui-review` skill (it includes a screenshot script and the accessibility/scientific-honesty checklist). Remove one accessory before shipping.
-
-## Copy voice
-
-Plain, specific, calm — the tone of a good field technician. Name things as the user knows them ("rain compared with 2010–2021", not "PRECTOTCORR anomaly"); show the technical name in the data plate. Buttons say what happens ("Download case report", "Buscar artículos"). Errors don't apologise and always offer a next step. Uncertainty is stated, never hidden: "This is regional gridded weather, not a reading from your field."
+1. **Plan** in the PR description: surface and mode, which evidence kinds appear, which states, which components, and the copy. Start from the wireframes in `references/screens.md`.
+2. **Check the plan** against the "Not allowed" list. If any element would look the same on any other product, rewrite it from this product's content.
+3. **Build** with semantic tokens and shared components.
+4. **Look and check:** run the `agro-ui-review` skill. It screenshots desktop and mobile, runs the impeccable detector and the contrast check, and applies the checklist. Fix what one look shows, then look again once.
 
 ## Reference files
 
-- `assets/tokens.css` — the full token source. Copy to `frontend/src/design/tokens.css`.
-- `assets/specimen.html` — rendered specimen of palette, type, tags, data plate, states, sun-arc, buttons. Open it to see the system.
-- `references/components.md` — component recipes (TSX + CSS): Button, Field, Panel, EpistemicTag, DataPlate, StateView, SunArcJourney, ProvenanceDrawer, RotationCard, ReviewNote.
-- `references/screens.md` — layouts and ASCII wireframes for the landing page and the 8 screens in UX_FLOWS, desktop + mobile.
-- `references/dataviz.md` — chart rules for anomalies, timelines, rotation comparisons and the evidence graph.
-- `references/solarpunk-motifs.md` — the allowed motifs, their meaning and where they may appear.
-- `scripts/check-contrast.mjs` — WCAG contrast validation of all token pairs in both themes.
+- `assets/tokens.css` — all tokens (copy to `frontend/src/design/tokens.css`).
+- `assets/specimen.html` — rendered reference: forensics workspace, landing page, system sheet.
+- `references/components.md` — recipes: base CSS, Button, Field, EvidenceLabel/legend sprite, TitleBlock, StepRail, SourceLabel, ReviewSlip, StatusMessage, hypotheses table.
+- `references/screens.md` — layouts and wireframes for the landing page and the 8 UX_FLOWS screens.
+- `references/dataviz.md` — chart rules.
+- `references/world.md` — where the world comes from, how industrial and solarpunk show up, the full ban list and its sources.
+- `scripts/check-contrast.mjs` — WCAG check of every documented token pair.
 
-## Sources this skill builds on
+## Sources
 
-Anthropic's `frontend-design` skill (plan → review against brief → build → critique, avoiding templated defaults), Vercel's Web Interface Guidelines (MIT; used in `agro-ui-review`), ColorBrewer diverging palettes (BrBG, RdBu) and WCAG 2.2.
+impeccable by Paul Bakaus (Apache-2.0): Operate/Persuade modes, the craft floor and anti-pattern bans, the rule that a working screen's world lends only type, palette, density and one signature move. taste-skill by Leonxlnx (MIT): copy tells and plain-copy rules. Anthropic's frontend-design skill: plan → review → build → critique. Vercel Web Interface Guidelines (MIT): used in `agro-ui-review`. ColorBrewer (BrBG, RdBu), WCAG 2.2. Ideas are paraphrased; no text is copied from those projects.

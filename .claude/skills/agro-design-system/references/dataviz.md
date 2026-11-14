@@ -11,8 +11,8 @@ Until a chart library is approved by Issue, draw with plain SVG in React (the cu
 3. **Zero baseline always drawn** in `--viz-baseline` (2px) for anomaly charts; bars grow from it.
 4. **Honest scale**: one shared linear scale per chart, computed from the data range (symmetric around zero for anomalies). No visual caps that make values incomparable — if an outlier dominates, annotate it rather than clipping silently. (The current baseline UI caps bar widths; replace that.)
 5. **Missing values are visible**: a hatched empty cell with `n/a` and a `MISSING_DATA` note, never a zero-height bar.
-6. **Epistemic tag on every chart** (`OBSERVED` for POWER, `MODEL_SCENARIO`, `ILLUSTRATIVE`…). Mixed charts (observed + modelled) use solid marks for observed and hatched/dashed for modelled, with legend entries saying so.
-7. **Incident window** highlighted with `--viz-event-band` (a solar band) and labelled.
+6. **Evidence label on every chart** (■ Observed for POWER, ▨ Model scenario, ◇ Illustrative…), placed in the section heading. Mixed charts (observed + modelled) use solid marks for observed and hatched/dashed for modelled, with legend entries saying so.
+7. **Incident window** highlighted with `--viz-event` (pale yellow-green band) and labelled ("Damage reported, April–June").
 8. **Accessible**: `<figure>` + `<figcaption>`; SVG with `role="img"` and `aria-labelledby` pointing to a title and a one-sentence summary written from data the API returned ("Rain was below the reference in 5 of 6 months from April to September"); provide a "Show as table" toggle with the same values. Tooltips also reachable by keyboard focus.
 9. **Colour never alone**: diverging ramps are paired with sign and position (bars left/right or up/down of zero).
 10. **Tabular numerals** for all labels; axis ticks `--text-2xs` in `--viz-axis`; gridlines `--viz-grid` 1px, horizontal only.
@@ -23,18 +23,18 @@ Until a chart library is approved by Issue, draw with plain SVG in React (the cu
 |---|---|---|
 | Precipitation anomaly | `--viz-dry-3…1`, `--viz-neutral`, `--viz-wet-1…3` | ColorBrewer BrBG. Brown = drier than reference, teal = wetter. |
 | Temperature anomaly | `--viz-cold-3…1`, `--viz-neutral`, `--viz-hot-1…3` | ColorBrewer RdBu reversed. |
-| Rotation scenarios | `--viz-cat-1…5` | Current rotation always `--viz-cat-1`. Max 5 series. |
-| Event window | `--viz-event-band` | Solar gold at low opacity. |
+| Rotation scenarios | `--viz-cat-1…4` | Team palette (ink steps). Current rotation always `--viz-cat-1`. Max 4 series. |
+| Event window | `--viz-event` | Pale yellow-green band. |
 
 Bin anomaly magnitude into the 3 steps per side using thresholds **provided by the backend** (or plain sign + magnitude as length if none) — don't invent significance thresholds in the UI.
 
 ## Chart patterns
 
-- **Monthly anomalies** (`/api/climate`): two aligned small multiples sharing the month axis — rain bars (BrBG) and Tmax dot/lollipop (RdBu). Vertical on desktop (months on x), horizontal rows on mobile (months on y) so labels stay readable.
-- **Timeline** (F-04): horizontal time axis with lanes per epistemic kind: Observed lane (instrument styling), Farmer-reported lane (leaf markers), Hypothesis lane (dashed spans). Lanes make the separation of kinds structural.
+- **Monthly anomalies** (`/api/climate`): rain bars (BrBG) with a Tmax difference row of 12 labelled cells (RdBu) aligned under the months. Vertical bars on desktop; under 48rem switch to horizontal bars (one row per month) so labels stay at 12px, and wrap the Tmax row into 6 columns.
+- **Timeline** (F-04): horizontal time axis with one lane per evidence kind, each using its legend symbol as the marker (■ observed values, ● farmer events, dashed spans for hypotheses). Lanes make the separation of kinds structural.
 - **Rotation comparison** (F-07): crop-calendar strips (season cells) + a qualitative comparison matrix. No radar charts, no fabricated scores.
-- **Evidence graph** (F-06): nodes shaped by epistemic kind (square = observed, leaf = farmer, notched = literature, dashed = hypothesis); edges are curved "mycelium" connectors, solid for supports, dashed for contradicts, labelled. Provide an equivalent nested list view for keyboard and screen-reader users.
-- **Headline numbers**: Readout component (see components.md), max 2–3 per screen, each with unit, comparison basis and tag.
+- **Evidence graph** (F-06): nodes carry their legend symbol and label; edges are labelled lines, solid for "supports", dashed for "argues against". Provide an equivalent nested list (same as the hypotheses table) for keyboard and screen-reader users.
+- **Headline numbers**: put each number in the sentence or heading it supports ("Rain was 142 mm below average from April to June"), with unit and comparison basis. No big-number tiles or stat strips.
 
 ## Anti-patterns
 

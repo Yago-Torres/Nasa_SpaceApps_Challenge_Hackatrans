@@ -1,381 +1,274 @@
-# Component recipes — Solar Industrial
+# Component recipes — Field Survey
 
-These are reference implementations, not a library to paste blindly. Adapt them inside `frontend/src/design/components/`. All strings go through i18n (`t('…')`); they're inlined here only for readability. Icons come from `lucide-react` (already a dependency) at `strokeWidth={1.75}`, `aria-hidden="true"` when next to text.
+Reference implementations for `frontend/src/design/components/`. All strings go through i18n (`t('…')`); they're inlined here for readability. UI icons: `lucide-react` (already a dependency) at `strokeWidth={2}`, `aria-hidden="true"` next to text. Evidence symbols: the SVG sprite below. `assets/specimen.html` renders every recipe.
 
 ## Contents
 
-1. [Base CSS](#base-css)
-2. [Button](#button)
-3. [Field](#field)
-4. [Panel (instrument module)](#panel)
-5. [EpistemicTag](#epistemictag)
-6. [DataPlate](#data-plate)
-7. [Readout](#readout)
-8. [StateView](#state-views)
-9. [SunArcJourney](#sun-arc-journey)
-10. [ProvenanceDrawer](#provenancedrawer)
-11. [RotationCard](#rotationcard)
-12. [ReviewNote (human voice)](#reviewnote)
+1. Base CSS
+2. Button
+3. Field
+4. Legend sprite and EvidenceLabel
+5. TitleBlock (signature)
+6. StepRail
+7. SourceLabel
+8. ReviewSlip
+9. StatusMessage
+10. Hypotheses table
+11. Section heading
 
 ---
 
-## Base CSS
+## 1. Base CSS
 
-`frontend/src/design/base.css`, imported once after `tokens.css`.
+`frontend/src/design/base.css`, imported after `tokens.css`.
 
 ```css
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-body {
-  margin: 0;
-  background: var(--surface-base);
-  color: var(--ink);
-  font-family: var(--font-industrial);
-  font-size: var(--text-md);
-  line-height: var(--leading-body);
-  -webkit-font-smoothing: antialiased;
-}
-h1, h2, h3, h4 { color: var(--ink-strong); line-height: var(--leading-tight); text-wrap: balance; margin: 0; }
-p { max-width: var(--measure); text-wrap: pretty; }
-a { color: var(--ink-link); text-underline-offset: 0.18em; }
-:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+html { -webkit-text-size-adjust: 100%; accent-color: var(--c-may-ink);
+  scrollbar-color: var(--rule-2) var(--surface-sunken); }
+body { margin: 0; background: var(--surface-sunken); color: var(--ink); font-family: var(--font-sans);
+  font-size: var(--text-md); line-height: var(--leading-body); caret-color: var(--c-may-ink); }
+::selection { background: var(--highlight); color: var(--ink); }
+h1, h2, h3, h4 { margin: 0; line-height: var(--leading-tight); text-wrap: balance; }
+p { margin: 0; max-width: var(--measure); text-wrap: pretty; }
+a { color: var(--ink-link); text-underline-offset: 0.2em; text-decoration-thickness: 1px; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .num { font-variant-numeric: tabular-nums; }
-.machine { font-family: var(--font-machine); font-size: 0.92em; overflow-wrap: anywhere; }
-.human { font-family: var(--font-human); font-variation-settings: "SOFT" 100; line-height: var(--leading-human); }
-.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.skip-link { position: absolute; left: var(--space-4); top: -100px; }
-.skip-link:focus { top: var(--space-4); z-index: var(--z-toast); }
+.mono { font-family: var(--font-mono); font-size: 0.875em; overflow-wrap: anywhere; }
+.voice { font-family: var(--font-serif); font-style: italic; line-height: var(--leading-serif); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 ```
 
-## Button
+Grid containers that hold tables or charts need `grid-template-columns: minmax(0, 1fr)`; an implicit column grows to the table's min width and breaks mobile.
 
-Three variants: `primary` (recorder orange, max one per view), `secondary` (outlined steel), `quiet` (text-only, for tertiary actions). Minimum height `--tap-min`.
+## 2. Button
+
+Variants: `primary` (yellow-green, max one per view), `secondary` (white, green outline), `text` (link-styled, tertiary). Height ≥ `--tap`.
 
 ```tsx
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'secondary' | 'quiet';
-  busy?: boolean;           // request in flight: keeps width, shows recording dot
-  icon?: React.ReactNode;
-};
-export function Button({ variant = 'secondary', busy, icon, children, ...rest }: ButtonProps) {
+type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'text'; busy?: boolean };
+export function Button({ variant = 'secondary', busy, children, ...rest }: Props) {
   return (
     <button className={`btn btn--${variant}`} aria-busy={busy || undefined} disabled={busy || rest.disabled} {...rest}>
-      {busy ? <span className="rec-dot" aria-hidden="true" /> : icon}
-      <span>{children}</span>
+      {busy && <span className="spin" aria-hidden="true" />}
+      {children}
     </button>
   );
 }
 ```
 
 ```css
-.btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
-  min-height: var(--tap-min); padding: 0 var(--space-5);
-  border-radius: var(--radius-control); border: var(--line-structural) solid transparent;
-  font: var(--weight-semibold) var(--text-sm)/1 var(--font-industrial);
-  font-stretch: var(--stretch-condensed); letter-spacing: 0.02em;
-  cursor: pointer; touch-action: manipulation;
-  transition: background-color var(--dur-quick) var(--ease-mechanical), border-color var(--dur-quick) var(--ease-mechanical);
-}
-.btn--primary { background: var(--action-bg); color: var(--action-ink); border-color: var(--action-ink); }
-.btn--primary:hover { background: var(--action-bg-hover); }
-.btn--secondary { background: var(--action-secondary-bg); color: var(--action-secondary-ink); border-color: var(--action-secondary-line); }
-.btn--secondary:hover { background: var(--surface-sunken); }
-.btn--quiet { background: transparent; color: var(--ink-link); padding-inline: var(--space-2); }
-.btn:disabled { cursor: not-allowed; opacity: 0.55; }
-.btn[aria-busy="true"] { opacity: 1; cursor: progress; }
-
-/* Recording indicator: pulses only while a request is in flight. */
-.rec-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: currentColor; animation: rec 1.1s steps(2, jump-none) infinite; }
-@keyframes rec { 50% { opacity: 0.25; } }
-@media (prefers-reduced-motion: reduce) { .rec-dot { animation: none; } }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: var(--tap);
+  padding: 0 var(--space-5); border-radius: var(--radius-m); border: 1px solid transparent; cursor: pointer;
+  font: var(--weight-bold) var(--text-md)/1 var(--font-sans); touch-action: manipulation;
+  transition: background-color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out); }
+.btn--primary { background: var(--action); color: var(--action-ink); border-color: var(--action-edge); }
+.btn--primary:hover { background: var(--action-hover); }
+.btn--secondary { background: var(--action-2); color: var(--action-2-ink); border-color: var(--action-2-edge); }
+.btn--secondary:hover { background: var(--surface-tint); }
+.btn--text { background: none; color: var(--ink-link); padding-inline: var(--space-2); font-weight: var(--weight-medium); }
+.btn--text:hover { text-decoration: underline; }
+.spin { width: 1em; height: 1em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; opacity: .6; } }
 ```
 
-The primary button's dark border + orange fill is the "safety label" look. Busy label uses an ellipsis: "Fetching NASA data…".
+Labels are verb + object: "Investigate with NASA data", "Download case report". Busy label ends with "…": "Fetching NASA data…". A trailing arrow icon only on the button that moves to the next step.
 
-## Field
+## 3. Field
 
-Label above, hint below, error inline and announced. Units live in a suffix, not in the label.
+Label above, hint below, error inline. Units in a suffix cell, not in the label.
 
 ```tsx
-<div className="field" data-invalid={!!error || undefined}>
-  <label htmlFor="lat">Latitude</label>
-  <div className="field__control">
-    <input id="lat" name="latitude" type="text" inputMode="decimal" autoComplete="off"
-           aria-describedby="lat-hint lat-err" aria-invalid={!!error || undefined} />
-    <span className="field__unit" aria-hidden="true">°N</span>
+<div className={`field${error ? ' bad' : ''}`}>
+  <label htmlFor="lat">{t('intake.latitude')}</label>
+  <div className="ctl">
+    <input id="lat" name="latitude" inputMode="decimal" autoComplete="off"
+           aria-invalid={!!error || undefined} aria-describedby={error ? 'lat-err' : 'lat-hint'} />
+    <span className="unit" aria-hidden="true">°N</span>
   </div>
-  <p id="lat-hint" className="field__hint">Rounded to 0.1° when the case is shared.</p>
-  {error && <p id="lat-err" className="field__error" role="alert">{error}</p>}
+  {error ? <span id="lat-err" className="err"><AlertTriangle aria-hidden="true" />{error}</span>
+         : <span id="lat-hint" className="hint">{t('intake.roundedHint')}</span>}
 </div>
 ```
 
 ```css
-.field { display: grid; gap: var(--space-1); }
-.field label { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--ink-strong); }
-.field__control { display: flex; align-items: stretch; border: var(--line-hairline) solid var(--line-strong);
-  border-radius: var(--radius-control); background: var(--surface-raised); }
-.field__control:focus-within { outline: 3px solid var(--focus-ring); outline-offset: 1px; }
-.field input, .field select, .field textarea { flex: 1; min-width: 0; min-height: var(--tap-min);
-  border: 0; background: transparent; color: var(--ink-strong); font: inherit; padding: 0 var(--space-3); outline: none; }
-.field__unit { display: grid; place-items: center; padding: 0 var(--space-3); border-left: var(--line-hairline) solid var(--line);
-  color: var(--ink-muted); font-family: var(--font-machine); font-size: var(--text-xs); }
-.field__hint { margin: 0; font-size: var(--text-xs); color: var(--ink-muted); }
-.field__error { margin: 0; font-size: var(--text-xs); color: var(--status-danger-ink); font-weight: var(--weight-semibold); }
-.field[data-invalid] .field__control { border-color: var(--status-danger-ink); border-width: 2px; }
+.field { display: grid; gap: var(--space-1); min-width: 0; }
+.field label { font-weight: var(--weight-bold); font-size: var(--text-sm); }
+.field .ctl { display: flex; min-height: var(--tap); background: var(--surface); border: 1px solid var(--rule-2); border-radius: var(--radius-s); }
+.field .ctl:focus-within { outline: 3px solid var(--focus); outline-offset: 1px; border-color: var(--focus); }
+.field input, .field select, .field textarea { flex: 1; min-width: 0; border: 0; background: none; font: inherit;
+  color: var(--ink); padding: 0 var(--space-3); outline: none; }   /* focus shown on .ctl */
+.field .unit { display: grid; place-items: center; padding: 0 var(--space-3); color: var(--ink-3); font-size: var(--text-sm); border-left: 1px solid var(--rule); }
+.field .hint { color: var(--ink-3); font-size: var(--text-sm); }
+.field.bad .ctl { border: 2px solid var(--error-ink); }
+.field .err { color: var(--error-ink); font-size: var(--text-sm); font-weight: var(--weight-bold); display: flex; gap: var(--space-2); }
 ```
 
-(`outline: none` on the inner input is fine because `:focus-within` on the wrapper replaces it.)
+## 4. Legend sprite and EvidenceLabel
 
-## Panel
+Put the sprite once in `design/icons.svg` (or inline it in the shell). Symbols use `currentColor`.
 
-The instrument module: header strip with a title and optional module tag, body, optional footer with provenance summary.
+```html
+<symbol id="s-observed" viewBox="0 0 12 12"><rect x="1" y="1" width="10" height="10" fill="currentColor"/></symbol>
+<symbol id="s-farmer" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="currentColor"/></symbol>
+<symbol id="s-literature" viewBox="0 0 12 12"><path d="M6 1 11.2 10.5H.8z" fill="currentColor"/></symbol>
+<symbol id="s-hypothesis" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.2 1.6"/></symbol>
+<symbol id="s-model" viewBox="0 0 12 12"><rect x="1.2" y="1.2" width="9.6" height="9.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 7.5 7.5 1.5M1.5 11 11 1.5M5 11 11 5" stroke="currentColor" stroke-width="1.2"/></symbol>
+<symbol id="s-illustrative" viewBox="0 0 12 12"><path d="M6 .8 11.2 6 6 11.2.8 6z" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="s-missing" viewBox="0 0 12 12"><rect x="1.2" y="1.2" width="9.6" height="9.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="1.4 1.6"/></symbol>
+```
 
 ```tsx
-<section className="panel" aria-labelledby="p-timeline">
-  <header className="panel__head">
-    <h2 id="p-timeline">Weather timeline</h2>
-    <EpistemicTag kind="OBSERVED" />
-    <button className="btn btn--quiet panel__aside" onClick={openProvenance}>Source details</button>
-  </header>
-  <div className="panel__body">…</div>
-  <footer className="panel__foot">NASA POWER · daily · 0.5° × 0.625° grid · retrieved 14 Nov 2026</footer>
-</section>
-```
+export type EvidenceKind = 'OBSERVED' | 'FARMER_REPORTED' | 'LITERATURE_REVIEWED' | 'HYPOTHESIS' | 'MODEL_SCENARIO' | 'ILLUSTRATIVE' | 'MISSING_DATA';
+const SYM: Record<EvidenceKind, string> = { OBSERVED: 'observed', FARMER_REPORTED: 'farmer', LITERATURE_REVIEWED: 'literature',
+  HYPOTHESIS: 'hypothesis', MODEL_SCENARIO: 'model', ILLUSTRATIVE: 'illustrative', MISSING_DATA: 'missing' };
 
-```css
-.panel { background: var(--surface-raised); border: var(--line-hairline) solid var(--line); border-radius: var(--radius-instrument); min-width: 0; }
-.panel__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3);
-  padding: var(--space-3) var(--space-5); border-bottom: var(--line-structural) solid var(--line-strong); }
-.panel__head h2 { font-size: var(--text-lg); font-stretch: var(--stretch-condensed); font-weight: var(--weight-bold); }
-.panel__aside { margin-left: auto; }
-.panel__body { padding: var(--space-5); }
-.panel__foot { padding: var(--space-3) var(--space-5); border-top: var(--line-hairline) solid var(--line-subtle);
-  font-size: var(--text-xs); color: var(--ink-muted); }
-```
-
-Small corner registration ticks (like on engineering drawings) are allowed on the **one** hero panel of a screen via `.panel--registered::before/::after` with 8px L-shaped borders in `--line-strong`. Not on every panel.
-
-## EpistemicTag
-
-The controlled vocabulary from UX_FLOWS. Code (always visible) + localized human label (visible on wide layouts, `title`/sr-only otherwise) + shape + colour.
-
-| kind | Shape | Human label EN / ES | Use for |
-|---|---|---|---|
-| `OBSERVED` | square, solid border | Observed / Observado | NASA POWER, GPM, HLS values |
-| `FARMER_REPORTED` | leaf (`--radius-leaf`) | Farmer reported / Reportado por agricultor | intake symptoms, local notes |
-| `LITERATURE_REVIEWED` | square with notched corner (bookplate) | Reviewed literature / Literatura revisada | human-verified findings only |
-| `HYPOTHESIS` | dashed border | Hypothesis / Hipótesis | candidate explanations |
-| `MODEL_SCENARIO` | diagonal hatch background | Model scenario / Escenario modelado | rotation comparisons, computed outputs |
-| `ILLUSTRATIVE` | survey-tape striped border | Illustrative / Ilustrativo | demo/synthetic data |
-| `MISSING_DATA` | empty hatched outline | Missing data / Dato ausente | gaps the Uncertainty Hunter lists |
-
-Search results from OpenAlex are `LITERATURE_METADATA` in the scientific policy: render them with a plain "Metadata only" status chip (`--status-info-*`), never with the `LITERATURE_REVIEWED` tag.
-
-```tsx
-export type EpistemicKind = 'OBSERVED' | 'FARMER_REPORTED' | 'LITERATURE_REVIEWED' | 'HYPOTHESIS' | 'MODEL_SCENARIO' | 'ILLUSTRATIVE' | 'MISSING_DATA';
-export function EpistemicTag({ kind, compact }: { kind: EpistemicKind; compact?: boolean }) {
+/** Symbol + label. `symbolOnly` for dense lists: the label stays for screen readers. */
+export function EvidenceLabel({ kind, detail, symbolOnly }: { kind: EvidenceKind; detail?: string; symbolOnly?: boolean }) {
   const t = useT();
-  const label = t(`epistemic.${kind}`);
+  const label = t(`evidence.${kind}`) + (detail ? ` · ${detail}` : '');
   return (
-    <span className={`etag etag--${kind.toLowerCase()}`} title={compact ? label : undefined}>
-      <span className="etag__code" translate="no">{kind}</span>
-      {compact ? <span className="visually-hidden">{label}</span> : <span className="etag__label">{label}</span>}
+    <span className={`ev ev--${SYM[kind]}`} data-kind={kind}>
+      <svg className="sym" aria-hidden="true"><use href={`#s-${SYM[kind]}`} /></svg>
+      {symbolOnly ? <span className="sr-only">{label}</span> : label}
     </span>
   );
 }
 ```
 
 ```css
-.etag { display: inline-flex; align-items: baseline; gap: var(--space-2); padding: 0.15rem var(--space-2);
-  border: var(--line-hairline) solid currentColor; border-radius: var(--radius-instrument);
-  font-size: var(--text-2xs); line-height: 1.4; white-space: nowrap; }
-.etag__code { font-weight: var(--weight-bold); font-stretch: var(--stretch-condensed); letter-spacing: 0.06em; }
-.etag__label { font-size: var(--text-2xs); opacity: 0.9; }
-.etag--observed { background: var(--tag-observed-bg); color: var(--tag-observed-ink); }
-.etag--farmer_reported { background: var(--tag-farmer-bg); color: var(--tag-farmer-ink); border-radius: var(--radius-leaf); }
-.etag--literature_reviewed { background: var(--tag-literature-bg); color: var(--tag-literature-ink);
-  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%); }
-.etag--hypothesis { background: var(--tag-hypothesis-bg); color: var(--tag-hypothesis-ink); border-style: dashed; }
-.etag--model_scenario { color: var(--tag-model-ink);
-  background: repeating-linear-gradient(135deg, var(--tag-model-bg) 0 4px, transparent 4px 7px), var(--surface-raised); }
-.etag--illustrative { color: var(--tag-illustrative-ink); background: var(--tag-illustrative-bg);
-  border: 2px solid transparent;
-  border-image: repeating-linear-gradient(135deg, var(--c-recorder-500) 0 6px, var(--c-graphite-950) 6px 12px) 2; }
-.etag--missing_data { color: var(--tag-missing-ink); border-style: dashed; background: transparent; }
+.ev { display: inline-flex; align-items: center; gap: .4em; font-size: var(--text-sm); font-weight: var(--weight-medium); }
+svg.sym { width: .85em; height: .85em; flex: none; }
+.ev--observed { color: var(--ev-observed); } .ev--farmer { color: var(--ev-farmer); }
+.ev--literature { color: var(--ev-literature); } .ev--hypothesis { color: var(--ev-hypothesis); }
+.ev--model { color: var(--ev-model); } .ev--illustrative { color: var(--ev-illustrative); } .ev--missing { color: var(--ev-missing); }
 ```
 
-## Data plate
+Labels EN/ES: Observed/Observado · Farmer reported/Reportado por el agricultor · Reviewed literature/Literatura revisada · Hypothesis/Hipótesis · Model scenario/Escenario modelado · Illustrative/Ilustrativo · Missing data/Dato ausente. In lists (hypotheses table) the symbol sits before each item's text, no pill backgrounds.
 
-Equipment nameplate for provenance. Every observation panel has one (collapsed summary in the panel footer, full plate in the drawer and in the report).
+## 5. TitleBlock (signature)
+
+A `<dl>` grid: a large name cell spanning two rows, then six fields. 2px ink rule under the block, `--rule-3` hairlines between cells.
 
 ```tsx
-<dl className="plate">
-  <div><dt>Dataset</dt><dd>NASA POWER daily point</dd></div>
-  <div><dt>Parameters</dt><dd className="machine">PRECTOTCORR, T2M_MAX</dd></div>
-  <div><dt>Period</dt><dd className="num">2022 vs 2010–2021</dd></div>
-  <div><dt>Spatial resolution</dt><dd>0.5° × 0.625° grid — regional, not your field</dd></div>
-  <div><dt>Retrieved</dt><dd><time dateTime="2026-11-14T10:12:00Z">14 Nov 2026, 10:12 UTC</time></dd></div>
-  <div><dt>SHA-256</dt><dd className="machine">3f9a…c21e <CopyButton value={sha} /></dd></div>
-  <div className="plate__wide"><dt>Limitations</dt><dd>Short reference period; anomalies are descriptive and don't establish causes.</dd></div>
+<dl className="titleblock">
+  <div className="name"><h1>{c.title}</h1><p>{c.summary}</p></div>
+  <div><dt>{t('case.id')}</dt><dd className="mono">{c.id}</dd></div>
+  <div><dt>{t('case.location')}</dt><dd>{c.regionLabel} · {t('privacy.rounded', { deg: c.rounding })}</dd></div>
+  <div><dt>{t('case.status')}</dt><dd><EvidenceLabel kind="HYPOTHESIS" symbolOnly /> {t(`status.${c.status}`)}</dd></div>
+  <div><dt>{t('case.scale')}</dt><dd>{c.dataScale ?? <EvidenceLabel kind="MISSING_DATA" />}</dd></div>
+  <div><dt>{t('case.period')}</dt><dd className="num">{c.period}</dd></div>
+  <div><dt>{t('case.reviewer')}</dt><dd>{c.reviewer ?? t('case.notAssigned')}</dd></div>
 </dl>
 ```
 
-Only show fields the API actually returns; if the API doesn't return a resolution yet, render the row with a `MISSING_DATA` tag rather than inventing one.
-
 ```css
-.plate { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); margin: 0;
-  border: var(--line-structural) solid var(--line-strong); border-radius: var(--radius-instrument); background: var(--surface-sunken); }
-.plate > div { padding: var(--space-3) var(--space-4); border-right: var(--line-hairline) solid var(--line); border-bottom: var(--line-hairline) solid var(--line); min-width: 0; }
-.plate__wide { grid-column: 1 / -1; }
-.plate dt { font-size: var(--text-2xs); font-stretch: var(--stretch-condensed); font-weight: var(--weight-semibold); color: var(--ink-muted); letter-spacing: 0.04em; }
-.plate dd { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--ink-strong); }
+.titleblock { margin: 0; display: grid; grid-template-columns: minmax(16rem, 2.2fr) repeat(3, minmax(9rem, 1fr)); border-bottom: 2px solid var(--ink); background: var(--surface); }
+.titleblock > div { padding: var(--space-3) var(--space-4); border-right: 1px solid var(--rule-3); min-width: 0; }
+.titleblock > div:nth-child(-n+4) { border-bottom: 1px solid var(--rule-3); }
+.titleblock > div:nth-child(4), .titleblock > div:nth-child(7) { border-right: 0; }
+.titleblock .name { grid-row: span 2; display: grid; align-content: start; gap: var(--space-2); border-bottom: 0; }
+.titleblock h1 { font-size: var(--text-2xl); font-weight: var(--weight-heavy); letter-spacing: -.01em; }
+.titleblock .name p { color: var(--ink-2); font-size: var(--text-sm); }
+.titleblock dt { font-size: var(--text-xs); color: var(--ink-3); }
+.titleblock dd { margin: 2px 0 0; font-size: var(--text-sm); font-weight: var(--weight-medium); }
+@media (max-width: 60rem) { .titleblock { grid-template-columns: repeat(2, minmax(0, 1fr)); } .titleblock .name { grid-column: 1 / -1; grid-row: auto; } }
 ```
 
-## Readout
+Only fields the API returns. Before F-02 (persistent cases) exists, the one-off investigation shows the block with "Unsaved investigation" as the ID.
 
-A dark instrument display for one headline number (e.g. "Rain, Apr–Jun: −142 mm vs reference"). Always: value, unit, comparison basis, tag.
+## 6. StepRail
 
-```css
-.readout { background: var(--surface-readout); color: var(--ink-readout); border-radius: var(--radius-instrument);
-  box-shadow: var(--shadow-inset-readout); padding: var(--space-4) var(--space-5); display: grid; gap: var(--space-1); }
-.readout__value { font-size: var(--text-3xl); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; font-stretch: var(--stretch-condensed); }
-.readout__unit { font-size: var(--text-lg); margin-left: 0.15em; }
-.readout__basis { font-size: var(--text-xs); color: var(--c-steel-300); }
-```
-
-Use at most 2–3 readouts per screen; they are the "gauges", not a KPI wall.
-
-## State views
-
-One component, six states. Each state has an icon, a title that says what's happening, a sentence that says what to do, and optionally an action.
-
-| state | icon (lucide) | tone | example copy (EN) |
-|---|---|---|---|
-| `loading` | `rec-dot` | info | "Fetching NASA POWER data for 41.6°N, 0.9°W…" |
-| `empty` | `Sprout` | neutral | "No literature yet. Search with a question about your crop and symptom." |
-| `error` | `TriangleAlert` | danger | "NASA POWER didn't respond (502). No values are shown. Try again in a minute." + Retry |
-| `partial` | `CircleDashed` | caution | "Temperature arrived; precipitation is missing for 3 months. Gaps are marked." |
-| `stale` | `Clock` | stale | "Retrieved 9 days ago. Refresh to check for updated records." |
-| `pending` | `Construction` | stale, dashed border | "Case sharing isn't built yet (F-09). This panel shows where it will live." |
+Left rail in Cal Poly green: brand, open case, the 7 numbered steps (a real sequence), language switch at the bottom. Standard `<nav>` with links; `aria-current="step"` on the current one (yellow-green number). Done steps: filled light number. Not-built steps: dashed number + "not built". Under 60rem the rail becomes a top bar with the steps scrolling horizontally.
 
 ```css
-.state { display: grid; grid-template-columns: auto 1fr; gap: var(--space-2) var(--space-3); align-items: start;
-  padding: var(--space-4) var(--space-5); border-radius: var(--radius-instrument); border: var(--line-hairline) solid transparent; }
-.state--error { background: var(--status-danger-bg); color: var(--status-danger-ink); border-color: currentColor; }
-.state--partial { background: var(--status-caution-bg); color: var(--status-caution-ink); }
-.state--loading { background: var(--status-info-bg); color: var(--status-info-ink); }
-.state--stale, .state--pending { background: var(--status-stale-bg); color: var(--status-stale-ink); }
-.state--pending { border: var(--line-structural) dashed var(--line); }
-.state--empty { background: var(--surface-sunken); color: var(--ink); }
+.rail { background: var(--surface-shell); color: var(--ink-on-shell); display: flex; flex-direction: column; gap: var(--space-5); padding: var(--space-5) var(--space-3); }
+.rail :focus-visible { outline-color: var(--focus-on-shell); }
+.rail a { display: grid; grid-template-columns: 1.5rem 1fr auto; align-items: center; gap: var(--space-2); min-height: var(--tap);
+  padding: 0 var(--space-2); border-radius: var(--radius-m); color: var(--ink-on-shell); text-decoration: none; }
+.rail a:hover { background: var(--surface-shell-hover); }
+.rail a[aria-current] { background: var(--surface-shell-active); font-weight: var(--weight-bold); }
+.rail .n { width: 1.5rem; height: 1.5rem; border-radius: 50%; display: grid; place-items: center; font-size: var(--text-xs); font-weight: var(--weight-bold); border: 1.5px solid var(--ink-on-shell-2); }
+.rail .done .n { background: var(--ink-on-shell); color: var(--surface-shell); }
+.rail [aria-current] .n { background: var(--action); color: var(--action-ink); border-color: var(--action); }
+.rail .pending a { color: var(--ink-on-shell-2); } .rail .pending .n { border-style: dashed; }
 ```
 
-Loading/partial regions use `aria-live="polite"`; errors use `role="alert"`. Skeletons, if used, mimic the final layout in `--surface-sunken` with no shimmer.
+## 7. SourceLabel
 
-## Sun-arc journey
-
-The signature element. SVG arc + ordered list for semantics (the list is what assistive tech reads).
+The herbarium label for a data source, in the Sources side panel (bottom sheet on mobile).
 
 ```tsx
-type StepState = 'done' | 'current' | 'todo' | 'pending';
-const STEPS = ['intake', 'nasa', 'timeline', 'evidence', 'rotations', 'review', 'report'] as const;
-
-export function SunArcJourney({ states, onSelect }: { states: Record<typeof STEPS[number], StepState>; onSelect: (s: string) => void }) {
-  const t = useT();
-  const n = STEPS.length;
-  const current = Math.max(0, STEPS.findIndex((s) => states[s] === 'current'));
-  // Points on a flattened half-ellipse: x in [4, 96], y peaks at noon.
-  const pt = (i: number) => { const a = Math.PI * (1 - i / (n - 1)); return { x: 50 + 46 * Math.cos(a), y: 34 - 28 * Math.sin(a) }; };
-  const sun = pt(current);
-  return (
-    <nav className="journey" aria-label={t('journey.label')}>
-      <svg className="journey__arc" viewBox="0 0 100 38" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M4 34 A46 28 0 0 1 96 34" className="journey__path" />
-        <circle className="journey__sun" cx={sun.x} cy={sun.y} r="3.2" />
-      </svg>
-      <ol className="journey__steps">
-        {STEPS.map((s, i) => (
-          <li key={s} data-state={states[s]}>
-            <button onClick={() => onSelect(s)} aria-current={states[s] === 'current' ? 'step' : undefined}
-                    disabled={states[s] === 'pending'}>
-              <span className="journey__n num">{i + 1}</span>
-              <span>{t(`journey.${s}`)}</span>
-              {states[s] === 'pending' && <span className="visually-hidden">{t('state.pending')}</span>}
-            </button>
-          </li>
-        ))}
-      </ol>
-    </nav>
-  );
-}
+<article className="label">
+  <header><b>NASA POWER</b><EvidenceLabel kind="OBSERVED" /></header>
+  <dl>
+    <dt>{t('src.product')}</dt><dd>{src.product}</dd>
+    <dt>{t('src.variables')}</dt><dd className="mono">{src.variables.join(', ')}</dd>
+    <dt>{t('src.cell')}</dt><dd className="num">{src.cell}</dd>
+    <dt>{t('src.retrieved')}</dt><dd><time dateTime={src.retrievedAt}>{fmtDateTime(src.retrievedAt)}</time></dd>
+    <dt>{t('src.checksum')}</dt><dd className="mono">{short(src.sha256)} <CopyButton value={src.sha256} /></dd>
+    <dd className="lim">{src.limitations}</dd>
+  </dl>
+</article>
 ```
 
 ```css
-.journey { position: relative; padding-top: var(--space-6); }
-.journey__arc { position: absolute; inset: 0 0 auto; width: 100%; height: 5.5rem; overflow: visible; }
-.journey__path { fill: none; stroke: var(--line); stroke-width: 0.6; stroke-dasharray: 1.2 1.2; vector-effect: non-scaling-stroke; }
-.journey__sun { fill: var(--sun); stroke: var(--surface-base); stroke-width: 1;
-  transition: cx var(--dur-sunrise) var(--ease-mechanical), cy var(--dur-sunrise) var(--ease-mechanical); }
-.journey__steps { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-2); list-style: none; margin: 0; padding: 4.5rem 0 0; }
-.journey__steps button { width: 100%; min-height: var(--tap-min); display: grid; justify-items: center; gap: var(--space-1);
-  background: none; border: 0; color: var(--ink-muted); font: var(--weight-medium) var(--text-xs)/1.25 var(--font-industrial); cursor: pointer; }
-.journey__n { width: 1.75rem; height: 1.75rem; display: grid; place-items: center; border-radius: 50%;
-  border: var(--line-structural) solid var(--line-strong); background: var(--surface-raised); color: var(--ink-strong); font-weight: var(--weight-bold); }
-[data-state="done"] .journey__n { background: var(--growth); border-color: var(--growth); color: var(--surface-raised); }
-[data-state="current"] button { color: var(--ink-strong); font-weight: var(--weight-bold); }
-[data-state="current"] .journey__n { background: var(--sun); border-color: var(--ink-strong); color: var(--c-graphite-950); }
-[data-state="pending"] .journey__n { border-style: dashed; background: transparent; color: var(--ink-muted); }
-@media (max-width: 48rem) {
-  .journey { padding-top: 0; }
-  .journey__arc { display: none; }
-  .journey__steps { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(5.5rem, 1fr);
-    overflow-x: auto; padding: var(--space-2) 0; scroll-snap-type: x mandatory;
-    background: linear-gradient(var(--line), var(--line)) 0 calc(var(--space-2) + 0.875rem) / 100% 2px no-repeat; }
-  .journey__steps li { scroll-snap-align: center; }
-}
+.label { background: var(--surface); border: 1px solid var(--rule-2); border-radius: var(--radius-s); }
+.label header { display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--rule-2); }
+.label dl { margin: 0; padding: var(--space-3) var(--space-4); display: grid; grid-template-columns: auto 1fr; gap: var(--space-1) var(--space-3); font-size: var(--text-sm); }
+.label dt { color: var(--ink-3); } .label dd { margin: 0; min-width: 0; }
+.label .lim { grid-column: 1 / -1; color: var(--ink-2); border-top: 1px solid var(--rule); padding-top: var(--space-2); }
 ```
 
-The numbers are justified because this *is* a sequence. Don't reuse numbered markers elsewhere unless the content is also a sequence.
+## 8. ReviewSlip
 
-## ProvenanceDrawer
-
-Right-side drawer on desktop (`--drawer-width`), bottom sheet on mobile. Contains the full Data plate, request parameters (machine font), limitations, and a "copy citation" action. Opened from any panel's "Source details". Focus moves into the drawer on open and returns to the trigger on close; `Esc` closes; `overscroll-behavior: contain`. Use the native `<dialog>` element where possible.
+A determination slip: a person's words, signed and dated. Never edited in place; a new slip answers an old one.
 
 ```css
-.drawer { position: fixed; inset: 0 0 0 auto; width: min(var(--drawer-width), 100vw); z-index: var(--z-drawer);
-  background: var(--surface-raised); border-left: var(--line-structural) solid var(--line-strong); box-shadow: var(--shadow-lift);
-  overflow-y: auto; overscroll-behavior: contain; padding: var(--space-5);
-  transform: translateX(100%); transition: transform var(--dur-base) var(--ease-mechanical); }
-.drawer[open] { transform: none; }
-@media (max-width: 48rem) {
-  .drawer { inset: auto 0 0 0; width: 100%; max-height: 85dvh; border-left: 0; border-top: var(--line-structural) solid var(--line-strong);
-    border-radius: var(--radius-organic) var(--radius-organic) 0 0; transform: translateY(100%); padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom)); }
-}
+.slip { background: var(--surface); border: 1px solid var(--rule-2); border-radius: var(--radius-l); padding: var(--space-4); display: grid; gap: var(--space-2); }
+.slip blockquote { margin: 0; font: italic var(--text-lg)/var(--leading-serif) var(--font-serif); }
+.slip .who { font-size: var(--text-xs); color: var(--ink-3); }
+.slip .who b { color: var(--ink-2); }
 ```
 
-## RotationCard
+Attribution line: evidence symbol (farmer) or role · name or role · date · status (objection / addressed).
 
-One per scenario in the Rotation lab. The current rotation is always first and labelled "Current rotation"; alternatives are "Alternative A/B". Years run as a horizontal crop-calendar strip (one cell per season, crop name + small icon). Assumptions and limitations are always visible, not behind a toggle. Tag: `MODEL_SCENARIO` if computed from inputs, `ILLUSTRATIVE` for `/api/rotations/demo` output.
+## 9. StatusMessage
+
+| State | Icon (lucide) | Tokens | Example copy |
+|---|---|---|---|
+| loading | spinner | info | "Fetching NASA POWER data…" + what is being fetched |
+| empty | `Info` | neutral | "No studies yet. Search with your crop and the symptom, for example “wheat yellowing drought”." |
+| error | `TriangleAlert` | error | "NASA POWER didn't respond (502). No values are shown. Try again in a minute; your inputs are kept." + Retry |
+| partial | `TriangleAlert` | warn | "Rain has no data for September. The gap is marked on the chart." |
+| stale | `Clock` | neutral | "Retrieved 9 days ago. Refresh to check for newer records." |
+| not built | `Construction` | neutral, dashed border | "Case sharing (F-09) isn't built yet." |
+| success | `Check` | ok | "Report downloaded." |
 
 ```css
-.rotation { display: grid; gap: var(--space-3); padding: var(--space-5); background: var(--surface-raised);
-  border: var(--line-hairline) solid var(--line); border-top: 4px solid var(--rot-color, var(--viz-cat-1)); border-radius: var(--radius-instrument); }
-.rotation[data-current] { border-top-width: 6px; }
-.rotation__years { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(6rem, 1fr); gap: 2px; overflow-x: auto; }
-.rotation__year { background: var(--surface-sunken); padding: var(--space-2) var(--space-3); font-size: var(--text-sm); }
-.rotation__year small { display: block; color: var(--ink-muted); font-size: var(--text-2xs); }
+.msg { display: grid; grid-template-columns: auto 1fr; gap: var(--space-1) var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-m); font-size: var(--text-sm); }
+.msg svg { width: 1.15rem; height: 1.15rem; margin-top: .15rem; grid-row: span 2; }
+.msg b { font-size: var(--text-md); } .msg p { grid-column: 2; }
+.msg--info { background: var(--info-bg); color: var(--info-ink); } .msg--ok { background: var(--ok-bg); color: var(--ok-ink); }
+.msg--warn { background: var(--warn-bg); color: var(--warn-ink); } .msg--error { background: var(--error-bg); color: var(--error-ink); }
+.msg--neutral { background: var(--neutral-bg); color: var(--neutral-ink); }
+.msg--pending { background: var(--neutral-bg); color: var(--neutral-ink); border: 1.5px dashed var(--rule-2); }
 ```
 
-Never put percentages ("+18 % water saved") on a card unless the backend returns a validated value with uncertainty interval (SCIENTIFIC_POLICY).
+`role="status"` for loading/partial, `role="alert"` for errors. Skeletons, if any, match the final layout in `--surface-tint`, without shimmer.
 
-## ReviewNote
+## 10. Hypotheses table
 
-The human voice: farmer notes and community review comments. Organic radius, Fraunces body, attribution and role always visible, timestamp, and status (open / addressed / objection).
+Columns: Explanation · Supports it · Argues against · Would settle it. Each item is a symbol + short text; the explanation cell carries the `HYPOTHESIS` label. A real `<table>` with `scope="col"` headers inside an `overflow-x: auto` wrapper; under 48rem it becomes one stacked block per hypothesis (headers become small labels). Never a confidence percentage or a ranking score.
+
+## 11. Section heading
+
+`h2` + optional evidence label on the right + one sentence of context under it. No eyebrow above the heading, no numbering.
 
 ```css
-.note { border-radius: var(--radius-organic); background: var(--growth-soft); padding: var(--space-4) var(--space-5);
-  border: var(--line-hairline) solid var(--line); }
-.note__body { font-family: var(--font-human); font-variation-settings: "SOFT" 100; font-size: var(--text-md); line-height: var(--leading-human); color: var(--ink-strong); }
-.note__meta { margin-top: var(--space-2); font-size: var(--text-xs); color: var(--ink-muted); }
-.note[data-kind="objection"] { background: var(--status-caution-bg); border-style: dashed; }
+.section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-4); }
+.section-head h2 { font-size: var(--text-xl); font-weight: var(--weight-bold); }
+.section-head p { color: var(--ink-2); font-size: var(--text-sm); flex-basis: 100%; }
 ```

@@ -1,115 +1,87 @@
 #!/usr/bin/env node
-// Validates WCAG 2.2 contrast for every documented fg/bg token pair in both
-// themes. Zero dependencies. Usage (from repo root):
+// WCAG 2.2 contrast check for every documented fg/bg token pair (light mode only).
+// Zero dependencies. Usage (from repo root):
 //   node .claude/skills/agro-design-system/scripts/check-contrast.mjs [path/to/tokens.css]
-// Defaults to frontend/src/design/tokens.css if it exists, else the skill copy.
+// Defaults to frontend/src/design/tokens.css if present, else the skill's copy.
 import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const candidates = [process.argv[2], 'frontend/src/design/tokens.css', join(here, '../assets/tokens.css')];
-const file = candidates.find((p) => p && existsSync(p));
+const file = [process.argv[2], 'frontend/src/design/tokens.css', join(here, '../assets/tokens.css')].find((p) => p && existsSync(p));
 const css = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 
-// [foreground, background, minimum ratio, why]
-// 4.5 = body text (AA), 3 = large/bold text, UI components and focus indicators.
+// [foreground, background, minimum, why] — 4.5 text, 3 large text / UI / focus.
 const PAIRS = [
-  ['--ink-strong', '--surface-base', 4.5, 'headings'],
-  ['--ink', '--surface-base', 4.5, 'body text'],
-  ['--ink', '--surface-raised', 4.5, 'body on panels'],
-  ['--ink-muted', '--surface-base', 4.5, 'metadata'],
-  ['--ink-muted', '--surface-raised', 4.5, 'metadata on panels'],
-  ['--ink-muted', '--surface-sunken', 4.5, 'metadata in wells'],
-  ['--ink-link', '--surface-raised', 4.5, 'links'],
-  ['--ink-readout', '--surface-readout', 4.5, 'instrument readouts'],
-  ['--ink-inverse', '--surface-inverse', 4.5, 'inverse bands'],
-  ['--action-ink', '--action-bg', 4.5, 'primary button label'],
-  ['--action-ink', '--action-bg-hover', 4.5, 'primary button hover'],
-  ['--action-secondary-ink', '--action-secondary-bg', 4.5, 'secondary button'],
-  ['--action-secondary-line', '--surface-base', 3, 'secondary button outline'],
-  ['--line-strong', '--surface-raised', 3, 'input borders'],
-  ['--focus-ring', '--surface-base', 3, 'focus ring'],
-  ['--focus-ring', '--surface-raised', 3, 'focus ring on panels'],
-  ['--status-ok-ink', '--status-ok-bg', 4.5, 'status ok'],
-  ['--status-caution-ink', '--status-caution-bg', 4.5, 'status caution'],
-  ['--status-danger-ink', '--status-danger-bg', 4.5, 'status danger'],
-  ['--status-info-ink', '--status-info-bg', 4.5, 'status info'],
-  ['--status-stale-ink', '--status-stale-bg', 4.5, 'status stale'],
-  ['--tag-observed-ink', '--tag-observed-bg', 4.5, 'tag OBSERVED'],
-  ['--tag-farmer-ink', '--tag-farmer-bg', 4.5, 'tag FARMER_REPORTED'],
-  ['--tag-literature-ink', '--tag-literature-bg', 4.5, 'tag LITERATURE_REVIEWED'],
-  ['--tag-hypothesis-ink', '--tag-hypothesis-bg', 4.5, 'tag HYPOTHESIS'],
-  ['--tag-model-ink', '--tag-model-bg', 4.5, 'tag MODEL_SCENARIO'],
-  ['--tag-illustrative-ink', '--tag-illustrative-bg', 4.5, 'tag ILLUSTRATIVE'],
-  ['--tag-missing-ink', '--surface-raised', 4.5, 'tag MISSING_DATA'],
-  ['--viz-axis', '--surface-raised', 4.5, 'chart axis labels'],
-  ['--viz-baseline', '--surface-raised', 3, 'chart zero line'],
-  ['--viz-cat-1', '--surface-raised', 3, 'series 1'],
-  ['--viz-cat-2', '--surface-raised', 3, 'series 2'],
-  ['--viz-cat-3', '--surface-raised', 3, 'series 3'],
-  ['--viz-cat-4', '--surface-raised', 3, 'series 4'],
-  ['--viz-cat-5', '--surface-raised', 3, 'series 5'],
+  ['--ink', '--surface', 4.5, 'body text'],
+  ['--ink-2', '--surface', 4.5, 'secondary text'],
+  ['--ink-2', '--surface-sunken', 4.5, 'secondary text in wells'],
+  ['--ink-3', '--surface', 4.5, 'metadata'],
+  ['--ink-3', '--surface-sunken', 4.5, 'metadata in wells'],
+  ['--ink-link', '--surface', 4.5, 'links'],
+  ['--ink-on-shell', '--surface-shell', 4.5, 'rail text'],
+  ['--ink-on-shell-2', '--surface-shell', 4.5, 'rail secondary text'],
+  ['--ink-on-shell', '--surface-shell-active', 4.5, 'rail active item'],
+  ['--ink-on-shell', '--surface-shell-hover', 4.5, 'rail hover item'],
+  ['--action-ink', '--action', 4.5, 'primary button'],
+  ['--action-ink', '--action-hover', 4.5, 'primary button hover'],
+  ['--action-edge', '--surface', 3, 'primary button edge'],
+  ['--action-2-ink', '--action-2', 4.5, 'secondary button'],
+  ['--action-2-edge', '--surface', 3, 'secondary button edge'],
+  ['--rule-2', '--surface', 3, 'input border'],
+  ['--focus', '--surface', 3, 'focus ring'],
+  ['--focus-on-shell', '--surface-shell', 3, 'focus ring on rail'],
+  ['--rule-3', '--surface', 3, 'strong separators'],
+  ['--ink', '--highlight', 4.5, 'text on highlight'],
+  ['--ok-ink', '--ok-bg', 4.5, 'status ok'],
+  ['--warn-ink', '--warn-bg', 4.5, 'status warning'],
+  ['--error-ink', '--error-bg', 4.5, 'status error'],
+  ['--info-ink', '--info-bg', 4.5, 'status info'],
+  ['--neutral-ink', '--neutral-bg', 4.5, 'status neutral'],
+  ['--ev-observed', '--surface', 4.5, 'legend OBSERVED'],
+  ['--ev-farmer', '--surface', 4.5, 'legend FARMER_REPORTED'],
+  ['--ev-literature', '--surface', 4.5, 'legend LITERATURE_REVIEWED'],
+  ['--ev-hypothesis', '--surface', 4.5, 'legend HYPOTHESIS'],
+  ['--ev-model', '--surface', 4.5, 'legend MODEL_SCENARIO'],
+  ['--ev-illustrative', '--surface', 4.5, 'legend ILLUSTRATIVE'],
+  ['--ev-missing', '--surface', 4.5, 'legend MISSING_DATA'],
+  ['--viz-axis', '--surface', 4.5, 'chart labels'],
+  ['--viz-cat-1', '--surface', 3, 'series 1'],
+  ['--viz-cat-2', '--surface', 3, 'series 2'],
+  ['--viz-cat-3', '--surface', 3, 'series 3'],
+  ['--viz-cat-4', '--surface', 3, 'series 4'],
 ];
 
-function blocks(selectorTest) {
-  const out = {};
-  const re = /([^{}]+)\{([^{}]*)\}/g;
-  let m;
-  while ((m = re.exec(css))) {
-    const sel = m[1].trim();
-    if (!selectorTest(sel)) continue;
-    for (const d of m[2].split(';')) {
-      const i = d.indexOf(':');
-      if (i < 0) continue;
-      const k = d.slice(0, i).trim();
-      if (k.startsWith('--')) out[k] = d.slice(i + 1).trim();
-    }
+const vars = {};
+for (const m of css.matchAll(/:root\s*\{([^}]*)\}/g)) {
+  for (const d of m[1].split(';')) {
+    const i = d.indexOf(':');
+    if (i > 0 && d.slice(0, i).trim().startsWith('--')) vars[d.slice(0, i).trim()] = d.slice(i + 1).trim();
   }
-  return out;
 }
-const base = blocks((s) => s === ':root');
-const light = { ...base, ...blocks((s) => s.includes('[data-theme="light"]') && !s.includes(':not(')) };
-const dark = { ...light, ...blocks((s) => s === ':root[data-theme="dark"]') };
-
-function resolve(vars, value, depth = 0) {
-  if (depth > 10) throw new Error(`cycle resolving ${value}`);
-  const v = value.match(/^var\((--[\w-]+)\)$/);
-  return v ? resolve(vars, vars[v[1]] ?? '', depth + 1) : value;
-}
-function parse(c) {
-  c = c.trim();
-  if (c === 'transparent') return [0, 0, 0, 0];
-  let m = c.match(/^#([0-9a-f]{6})$/i);
-  if (m) return [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16)).concat(1);
-  m = c.match(/^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)(?:\s*[/,]\s*([\d.]+))?\s*\)$/);
-  if (m) return [+m[1], +m[2], +m[3], m[4] === undefined ? 1 : +m[4]];
-  throw new Error(`unsupported colour "${c}"`);
-}
-const over = (fg, bg) => fg.slice(0, 3).map((ch, i) => ch * fg[3] + bg[i] * (1 - fg[3])).concat(1);
-const lum = ([r, g, b]) => {
-  const f = (x) => ((x /= 255) <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4);
-  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+const resolve = (v, n = 0) => {
+  if (n > 10) throw new Error(`cycle at ${v}`);
+  const m = v?.match(/^var\((--[\w-]+)\)$/);
+  return m ? resolve(vars[m[1]], n + 1) : v;
 };
-const ratio = (a, b) => {
-  const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
-  return (x + 0.05) / (y + 0.05);
+const rgb = (c) => {
+  const m = c?.match(/^#([0-9a-f]{6})$/i);
+  if (!m) throw new Error(`unsupported colour "${c}" (use 6-digit hex for checked tokens)`);
+  return [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16));
+};
+const lum = (c) => {
+  const f = (x) => ((x /= 255) <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4);
+  const [r, g, b] = c.map(f);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 };
 
 let failures = 0;
-for (const [theme, vars] of [['daylight', light], ['night-shift', dark]]) {
-  const page = parse(resolve(vars, vars['--surface-base']));
-  const panel = parse(resolve(vars, vars['--surface-raised']));
-  console.log(`\n${theme}`);
-  for (const [fgK, bgK, min, why] of PAIRS) {
-    // Translucent backgrounds sit on a panel; translucent foregrounds sit on their bg.
-    const bg = over(parse(resolve(vars, vars[bgK])), bgK === '--surface-base' ? page : panel);
-    const fg = over(parse(resolve(vars, vars[fgK])), bg);
-    const r = ratio(fg, bg);
-    const ok = r >= min;
-    if (!ok) failures++;
-    console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${r.toFixed(2).padStart(5)} ≥ ${min}  ${why.padEnd(28)} ${fgK} on ${bgK}`);
-  }
+for (const [fg, bg, min, why] of PAIRS) {
+  const [a, b] = [lum(rgb(resolve(vars[fg]))), lum(rgb(resolve(vars[bg])))].sort((x, y) => y - x);
+  const r = (a + 0.05) / (b + 0.05);
+  const ok = r >= min;
+  if (!ok) failures++;
+  console.log(`${ok ? 'ok  ' : 'FAIL'} ${r.toFixed(2).padStart(5)} ≥ ${String(min).padEnd(3)} ${why.padEnd(28)} ${fg} on ${bg}`);
 }
 console.log(`\n${file}: ${failures ? `${failures} failing pair(s)` : 'all pairs pass'}`);
 process.exit(failures ? 1 : 0);

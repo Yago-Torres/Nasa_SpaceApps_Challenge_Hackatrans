@@ -37,16 +37,18 @@ Check in order; A and B matter most in this product. IDs are cited in findings (
 - **C9** `prefers-reduced-motion` respected (tokens do this; check custom animations).
 - **C10** `lang` attribute matches the active locale; brand names and tag codes use `translate="no"`.
 
-## D. Design-system adherence (Solar Industrial)
+## D. Design-system adherence (Field Survey) and AI-design tells
 
-- **D1** Only semantic tokens (`--surface-*`, `--ink-*`, `--tag-*`, `--viz-*`, `--space-*`, `--radius-*`…) in components; no raw hex/rgb, no primitives (`--c-*`), no magic px for spacing/type.
-- **D2** Shape grammar respected: instruments 2px, controls 6px, leaf for farmer data, organic for people, dashed for hypotheses/pending, hatch for model, tape only for illustrative.
-- **D3** One primary (recorder orange) action per view; orange never used for body text.
-- **D4** Fonts by voice: Archivo for UI, Fraunces only for human voice, Plex Mono only for machine values; tabular numerals for numbers.
-- **D5** Boldness spent once (sun-arc or the one hero element); no gradient washes, identical shadowed cards everywhere, ALL-CAPS eyebrows, `01/02` numbering on non-sequences, `→` glued to buttons. Solarpunk motifs within the per-screen budget in `solarpunk-motifs.md`.
-- **D6** Both themes work (daylight default, night shift); readouts dark in both.
-- **D7** Shared components reused from `frontend/src/design/`; a new shared component or token change is called out in the PR for the other two developers.
-- **D8** Charts follow `dataviz.md`: BrBG precipitation, RdBu temperature, zero baseline, one honest scale (no visual caps), units in axis titles.
+- **D1** Only semantic tokens (`--surface*`, `--ink*`, `--action*`, `--ev-*`, `--viz-*`, `--space-*`, `--radius-*`) in components; no raw hex/rgb, no primitives (`--c-*`), no magic px for spacing or type. Light mode only: no dark theme, no `prefers-color-scheme` branches.
+- **D2** Evidence uses the legend: SVG symbol from the sprite + text label + `--ev-*` colour. No pill/chip backgrounds, no Unicode glyphs or emoji as symbols.
+- **D3** One primary (yellow-green) action per view; brand light hues never used as text colour on white (use the `-ink` tokens).
+- **D4** Fonts by role: Atkinson Hyperlegible Next for UI, Source Serif 4 italic only for people's words and species names, Hyperlegible Mono only for copyable values. Tabular numerals for numbers.
+- **D5** Case screens open with the TitleBlock; sources shown as SourceLabels; human notes as ReviewSlips.
+- **D6** No AI-generated tells: eyebrow labels over headings, section numbers on non-sequences, hero-metric/stat strips, identical icon cards, nested cards, gradient text, glass/blur decoration, coloured side or top borders on cards, hard offset shadows, monospace costume, pulsing dots, bounce easing, entrance animations on every section, instrument/cockpit costumes, overused fonts (Inter, Roboto, Fraunces, Geist, Space Grotesk, Plus Jakarta Sans). `npx -y impeccable@4.8.0 detect` must have no unexplained findings.
+- **D7** Copy tells absent: slop words (seamless, empower, unlock, robust, revolutionary, cutting-edge…), stock lines, "X. Y." two-fragment headings, stat strips, invented specifics, em-dash-heavy prose, arrows glued to every link.
+- **D8** Browser surfaces themed: `::selection`, `caret-color`, `accent-color`, scrollbar colours, focus ring, link underline offset.
+- **D9** Shared components reused from `frontend/src/design/`; a new shared component or token change is called out in the PR.
+- **D10** Charts follow `dataviz.md`: BrBG rain, RdBu temperature, zero line, one honest scale, units, text summary and table alternative; horizontal bars on mobile.
 
 ## E. Interaction, content, performance, i18n (adapted from Vercel Web Interface Guidelines)
 
@@ -59,4 +61,4 @@ Check in order; A and B matter most in this product. IDs are cited in findings (
 - **E7** Lists >50 items virtualised or paginated; no layout reads during render.
 - **E8** Copy: active voice, sentence case, specific button labels ("Download case report"), same action name throughout a flow, second person.
 - **E9** i18n: no hardcoded user-facing strings; EN and ES keys both present; dates/numbers/units via `Intl.*`; layouts tolerate ~30% longer Spanish strings.
-- **E10** `color-scheme` set per theme; `<meta name="theme-color">` matches `--surface-base`; native `<select>` has explicit colours.
+- **E10** `color-scheme: light`; `<meta name="theme-color">` matches `--surface-sunken`; native `<select>` has explicit colours.

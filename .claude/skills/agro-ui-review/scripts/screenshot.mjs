@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Screenshots a page at desktop + mobile in daylight + night-shift themes and
+// Screenshots a page at desktop + mobile (light mode only) and
 // reports console errors and horizontal overflow. For self-critique, not CI.
 //
 // Usage (from repo root, with the dev server running: cd frontend && npm run dev):
@@ -28,7 +28,7 @@ const viewports = [
   { name: 'desktop', width: 1440, height: 900 },
   { name: 'mobile', width: 390, height: 844 },
 ];
-const themes = ['light', 'dark'];
+const themes = ['light'];
 
 const browser = await chromium.launch();
 let problems = 0;
@@ -40,10 +40,9 @@ for (const vp of viewports) {
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto(url, { waitUntil: 'networkidle' }).catch((e) => errors.push(`navigation: ${e.message}`));
-    await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
     await page.waitForTimeout(250);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    const file = `${out}/${vp.name}-${theme}.png`;
+    const file = `${out}/${vp.name}.png`;
     await page.screenshot({ path: file, fullPage: true });
     const flags = [];
     if (overflow > 0) flags.push(`horizontal overflow ${overflow}px`);

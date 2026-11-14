@@ -1,137 +1,83 @@
 # Screens — layouts and wireframes
 
-Derived from `docs/product/UX_FLOWS.md`. Desktop wireframes assume ≥1024px; mobile 390px. Every screen shares the **shell**: top bar (brand mark, case switcher, language EN/ES, theme, account) + sun-arc journey band when a case is open. Content is **left-aligned** on a 12-column grid inside `--container-max`; only the landing hero may centre a single statement.
+From `docs/product/UX_FLOWS.md`. Desktop ≥ 60rem, mobile 390px. Content left-aligned. Light mode only.
 
-Backend reality check (Nov 2026, see CURRENT_STATE): only `/api/climate`, `/api/literature`, `/api/rotations/demo`, `/api/report`, `/api/health` exist. Screens 1, 6, 8 and persistence in 2 need APIs that aren't built — design them, but render their data regions with the `pending` StateView, never with fake records.
+**App shell (Operate screens):** Cal Poly green StepRail on the left (brand, open case, 7 steps, EN/ES), work area on white, Sources panel on the right on the pale aqua ground. Under 75rem the Sources panel drops below the content; under 60rem the rail becomes a top bar with horizontally scrolling steps.
 
-## Contents
+**Backend reality (Nov 2026, CURRENT_STATE):** only `/api/climate`, `/api/literature`, `/api/rotations/demo`, `/api/report`, `/api/health` exist. Screens 1, 6, 8 and case persistence need APIs that aren't built: design them, but show a "not built yet" message in their data regions, never fake records.
 
-0. Landing (hackathon / public)
-1. Cases dashboard
-2. Incident intake
-3. Forensics cockpit
-4. Science desk
-5. Rotation lab
-6. Collaborative review
-7. Case report
-8. Admin / settings
-9. Responsive rules
-
----
-
-## 0. Landing
-
-Purpose: in 10 seconds a judge or farmer understands what the tool does, sees it's honest about data, and can start an investigation. The most characteristic thing in this subject is **the moment of investigation**: a location + a year turning into observed evidence. So the hero is a live instrument, not a stock photo.
+## 0. Landing (Persuade)
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│ ■ AGRO BLACK BOX                          EN|ES   ◐   [Open the lab] │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  Every failed harvest leaves a record.      ┌─ instrument (live) ──┐ │
-│  (Archivo expanded, heavy)                  │ 41.6°N 0.9°W · 2022  │ │
-│                                             │ ▁▂▅▇▅▂▁ rain anomaly │ │
-│  Read it with NASA observations, verified   │ [OBSERVED] POWER     │ │
-│  science and the knowledge of the people    │ [Investigate ▸]      │ │
-│  who farm it. (Fraunces, human voice)       └──────────────────────┘ │
-│                                                                      │
-│  [Start an investigation]  [See how evidence is labelled]            │
-│ ════════════════════════════ structural beam ═══════════════════════ │
-│  The path of a case  (sun-arc, static, 7 stations, short captions)   │
-│     ◯───◯───◯───☀───◯───◯───◯                                        │
-├──────────────────────────────────────────────────────────────────────┤
-│  What a label means: the 7 epistemic tags, each with one sentence    │
-│  [OBSERVED] [FARMER_REPORTED] [LITERATURE_REVIEWED] [HYPOTHESIS]…    │
-├──────────────────────────────────────────────────────────────────────┤
-│  Data sources: data plates for NASA POWER, OpenAlex (+GPM/HLS        │
-│  marked "planned")    ·   Team / Space Apps 2026 / no NASA endorsement│
-└──────────────────────────────────────────────────────────────────────┘
+┌ nav: ■ AGRO BLACK BOX   How it works  Evidence labels  Data sources  Team        EN | ES ┐
+├──────────────────────── celestial band (--surface-sky) ──────────────────────────────────┤
+│ Investigate a failed harvest            ┌ Start an investigation ──────────┐             │
+│ with NASA Earth data   (display 800)    │ Latitude [41.6 °N] Longitude [..]│             │
+│                                         │ Year of the incident [2022]      │             │
+│ Enter where and when it happened…       │ [ Investigate with NASA data ]   │ ← primary   │
+│ ■ NASA POWER since 1981  ▲ OpenAlex     │ Rounded to 0.1° when shared.     │             │
+│                                         └──────────────────────────────────┘             │
+├──────────────────────────────────────────────────────────────────────────────────────────┤
+│ How each piece of evidence is marked │ ■ Observed  ● Farmer reported  ▲ Reviewed lit. … │
+├──────────────────────────────────────────────────────────────────────────────────────────┤
+│ How it works (the 7 steps as a short numbered list)  ·  Data sources (source labels)     │
+│ Team · Space Apps 2026 · no NASA endorsement implied                                     │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- The hero instrument calls the real `/api/climate` when the user presses Investigate. Before that it shows an **empty instrument** with the prompt, not a pre-rendered chart. If the team wants a static preview image, it carries the `ILLUSTRATIVE` tape.
-- "See how evidence is labelled" scrolls to the tag legend — this section is a differentiator for judges (scientific honesty).
-- Mobile: hero text first, instrument below, sun-arc becomes a vertical list of 7 stations with one line each.
+- The h1 says what the tool does and for whom (taste-skill). The first screen is the tool itself: the form calls the real `/api/climate` and opens the workspace.
+- No stat strip, no feature-card grid, no screenshots of fake results. If the team adds a preview of a finished case, it carries the ILLUSTRATIVE banner.
 
 ## 1. Cases dashboard
 
-```
-┌ shell ───────────────────────────────────────────────────────────────┐
-│ My cases            [Filter: Owned|Shared|Public] [Search…] [New case]│
-│ ┌──────────────────────────────────────────────────────────────────┐ │
-│ │ Case                Region (rounded)  Step      Reviewer  Updated │ │
-│ │ Ebro wheat 2022     Aragón, ES        ☀ 4/7     —         2 d ago │ │
-│ │ …                                                                  │ │
-│ └──────────────────────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-A table, not a card grid: people scan and sort cases. Step column shows a mini sun-arc progress (text "4 of 7" for screen readers). Privacy tier icon + text next to region. Filters live in URL params. Until F-01/F-02 exist: `pending` state with explanation and a "Start a one-off investigation" action that goes to intake without persistence.
+Table, not a card grid: Case · Region (rounded) · Step (n of 7) · Reviewer · Updated. Filters (Owned/Shared/Public) and search in the URL. Primary action: "New investigation". Until F-01/F-02: "not built yet" message plus a link to start a one-off investigation.
 
 ## 2. Incident intake
 
-Single column form, max width ~40rem, grouped in fieldsets that mirror the journey: **Where** (privacy tier first, then location — map optional), **What was grown** (crop history per year as a repeatable row), **What happened** (symptoms, dates; free text in Fraunces preview as "your words"), **Constraints** (water, soil, priorities), **Consent**. Each farmer-provided group gets the `FARMER_REPORTED` leaf tag in its legend, so users see from the start how their input will be labelled. Inline validation on blur, errors announced, first error focused on submit. Primary action: "Investigate with NASA".
+Single column, max ~40rem, fieldsets in journey order: **Where** (privacy level first, then location), **What was grown** (repeatable year rows; crop names in serif italic only when they are species names), **What happened** (symptoms, dates, free text), **Constraints**, **Consent**. Farmer-provided fieldsets show the farmer symbol in their legend ("This will be marked ● Farmer reported"). Validate on blur, focus the first error on submit. Primary: "Investigate with NASA data". Mobile: sticky bottom bar with the primary button and safe-area padding.
 
-Mobile: same form, sticky bottom action bar with safe-area padding.
-
-## 3. Forensics cockpit
-
-The densest screen. Industrial layer dominates.
+## 3. Forensics workspace
 
 ```
-┌ shell + sun-arc ─────────────────────────────────────────────────────┐
-│ ┌ rail (case) ─┐ ┌ main ───────────────────────────────┐ ┌ drawer ──┐│
-│ │ Location     │ │ [Readout: rain Apr–Jun −142 mm]     │ │ Data     ││
-│ │ privacy tier │ │ [Readout: Tmax Jul +3.1 °C]         │ │ plate    ││
-│ │ Source ▾     │ │ ┌ Weather timeline [OBSERVED] ────┐ │ │ request  ││
-│ │ POWER ✓      │ │ │ diverging bars, event band,      │ │ │ params   ││
-│ │ GPM (planned)│ │ │ baseline, units, legend          │ │ │ limits   ││
-│ │ HLS (planned)│ │ └──────────────────────────────────┘ │ │ copy cite││
-│ │ Reference    │ │ ┌ Hypotheses [HYPOTHESIS] ─────────┐ │ └──────────┘│
-│ │ 2010–2021    │ │ │ each with for/against/missing    │ │             │
-│ │ (short!)     │ │ └──────────────────────────────────┘ │             │
-│ └──────────────┘ └──────────────────────────────────────┘             │
-└──────────────────────────────────────────────────────────────────────┘
+┌ rail ┐┌ ILLUSTRATIVE banner (only if demo data) ─────────────────────────────────────────┐
+│ ■ ABB ││ Title block: name + summary │ Case │ Location (rounded) │ Status                │
+│ Case  ││                             │ Data scale │ Period │ Reviewer                    │
+│ 1 ✓   │├════════════════════════════════════════════════════════════╤══════════════════┤
+│ 2 ✓   ││ Rain and heat in 2022, against 2010–2021   ■ Observed      │ Sources          │
+│ 3 ●   ││ one-sentence scope note                                    │ ┌ NASA POWER ──┐ │
+│ 4     ││ [rain anomaly bars, incident window, zero line]            │ │ label        │ │
+│ 5     ││ [Tmax difference row]                                      │ └──────────────┘ │
+│ 6 ┄   ││ caption                                                    │ review slips     │
+│ 7     ││ Explanations that fit so far  (hypotheses table)           │                  │
+│ EN|ES ││ [Continue to evidence] [Add a local measurement] Show table│                  │
+└───────┘└────────────────────────────────────────────────────────────┴──────────────────┘
 ```
 
-- Map (once MapLibre/Leaflet is approved) goes at the top of the rail as a small locator with the grid cell footprint drawn — showing that the observation covers ~50 km, not the parcel.
-- Hypotheses list competing explanations side by side; never a single "cause" or a confidence %. Each hypothesis links to supporting/contradicting evidence and the measurements that would change the decision (Uncertainty Hunter, F-08 — pending).
-- Drawer is closed by default on <1280px.
+- Map (once MapLibre/Leaflet is approved): small locator at the top of the Sources panel showing the grid cell footprint, so users see the observation covers ~50 km, not their parcel. Graticule labels in the map frame are allowed there (it is a map).
+- Hypotheses: competing explanations side by side, never one "cause", never a percentage. "Would settle it" links to the Uncertainty Hunter (F-08, not built).
 
 ## 4. Science desk
 
-Search bar with the case question pre-filled → results list. Each result: title (links to DOI), year, venue, `Metadata only` chip until a human reviews it. Review action opens a structured form (claim, method, study context, region, limitations, verified quote within rights) → on save the finding becomes `LITERATURE_REVIEWED` with reviewer attribution. Contradicting findings are shown next to each other with a "conflict" connector, not hidden. Empty state teaches how to phrase a question.
+Search field pre-filled from the case → results list: title (DOI link), year, venue, "Metadata only" status. "Review this study" opens a structured form (claim, method, context, region, limitations, verified quote within rights); saving turns it into ▲ Reviewed literature with reviewer and date. Conflicting findings sit side by side with an explicit "conflicts with" link. Empty state shows an example query.
 
 ## 5. Rotation lab
 
-```
-│ Your priorities: [water ▮▮▮▯] [soil ▮▮▯▯] [income ▮▮▮▮]  (chips, editable) │
-│ ┌ Current rotation ──┐ ┌ Alternative A ────┐ ┌ Alternative B ────┐      │
-│ │ wheat│barley│fallow│ │ wheat│pea│barley  │ │ wheat│vetch│sunfl. │      │
-│ │ assumptions        │ │ assumptions       │ │ assumptions       │      │
-│ │ tradeoffs (text)   │ │ tradeoffs         │ │ tradeoffs         │      │
-│ │ uncertainties      │ │ uncertainties     │ │ uncertainties     │      │
-│ └────────────────────┘ └───────────────────┘ └───────────────────┘      │
-│ Comparison matrix (rows = criteria, cols = rotations, qualitative cells  │
-│ with reasons + source links; no unjustified numbers)                     │
-```
-
-Always ≥3 options including current, same scenario for all. Today's data is `ILLUSTRATIVE` (demo endpoint): survey tape around the whole lab + banner explaining it. Mobile: cards stack, comparison matrix becomes per-criterion accordions.
+Priorities row (editable chips: water, soil, income, workload). Then ≥3 rotation columns, current first ("Current rotation", "Alternative A/B"): a crop-calendar strip per year, then Assumptions, Trade-offs, Uncertainties as visible text (no toggles). Below, a comparison table: rows = criteria, columns = rotations, cells = short qualitative reasons with source links; no invented numbers. Today's data is illustrative: ILLUSTRATIVE banner over the lab. Mobile: columns stack; comparison table becomes one block per criterion.
 
 ## 6. Collaborative review
 
-Thread per hypothesis/finding. ReviewNote components (organic, Fraunces) with role badge (Farmer / Agronomist / Community reviewer), status (open, addressed, objection), and an audit trail in machine font. Shared views show rounded location only. Moderation actions for admins are secondary buttons with confirmation. Pending until F-09.
+One thread per hypothesis or finding, made of ReviewSlips (role, date, status: open / addressed / objection). New slips answer old ones; nothing is edited in place; the audit trail (machine font) under the thread. Shared views show rounded locations only. Not built until F-09.
 
-## 7. Case report
+## 7. Case report (Read)
 
-A print-first document view: case snapshot header (data plate of the case: ID, snapshot time, version), sections in journey order, every figure with its source plate, a "Limitations" section that can't be removed, references with DOIs. Actions: "Download Markdown" (exists today via `/api/report`), later PDF. `@media print` stylesheet: no shell, no journey, black on white, tags rendered as bracketed codes `[OBSERVED]`.
+Print-first page: title block at the top (with snapshot time and version), sections in step order, every figure followed by its source label, a Limitations section that cannot be removed, references with DOIs, the evidence legend at the end. "Download Markdown" exists today (`/api/report`). `@media print`: no rail, black text on white, evidence symbols kept (they print in grey).
 
-## 8. Admin / settings
+## 8. Settings
 
-Plain settings form: language, units (metric default; °C/mm), theme (Daylight / Night shift / System), data permissions, sharing defaults, audit log table. Industrial and quiet — no motifs.
+Plain form: language, units (metric default), data permissions, sharing defaults, audit log table. No ornament.
 
-## 9. Responsive rules
+## Responsive rules
 
-- Breakpoints: 48rem (tablet), 64rem (desktop), 80rem (wide cockpit with drawer pinned).
-- Cockpit: 3 columns ≥80rem → 2 columns + overlay drawer ≥64rem → single column with rail as collapsible summary and drawer as bottom sheet <64rem.
-- Tap targets ≥44px; no hover-only affordances; tables become stacked definition lists under 48rem.
-- Test at 390×844 and 1440×900 in both themes, plus 200% zoom.
+- Breakpoints: 30rem, 60rem (rail → top bar), 75rem (Sources panel moves below).
+- Tap targets ≥ 44px; no hover-only affordances; tables either scroll in their own wrapper or stack under 48rem.
+- Test at 390×844 and 1440×900, plus 200% zoom and Spanish strings.

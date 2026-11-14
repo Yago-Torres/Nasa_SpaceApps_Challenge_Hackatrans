@@ -1,6 +1,6 @@
 ---
 name: agro-ui-review
-description: Audits AGRO BLACK BOX frontend changes for UX, accessibility, scientific honesty in the UI (epistemic tags, provenance, no fake NASA data), i18n EN/ES, privacy of farm locations and adherence to the Solar Industrial design system, then screenshots the app at desktop/mobile in both themes for visual critique. Use it before opening or approving any PR that touches frontend/, after building or restyling a screen, and whenever someone asks to "review the UI", "check accessibility", "audit UX", "is this screen OK", "revisar la interfaz", or wants a design QA pass — even if they only mention one component.
+description: Audits AGRO BLACK BOX frontend changes for UX, accessibility, scientific honesty in the UI (epistemic tags, provenance, no fake NASA data), i18n EN/ES, privacy of farm locations adherence to the Field Survey design system and AI-generated-design tells (impeccable detector), then screenshots the app at desktop and mobile for visual critique. Use it before opening or approving any PR that touches frontend/, after building or restyling a screen, and whenever someone asks to "review the UI", "check accessibility", "audit UX", "is this screen OK", "revisar la interfaz", or wants a design QA pass — even if they only mention one component.
 ---
 
 # AGRO BLACK BOX — UI review
@@ -20,13 +20,15 @@ A UI change in this product can be wrong in three ways: it can be hard to use, i
    ```bash
    node .claude/skills/agro-ui-review/scripts/screenshot.mjs http://localhost:5173 .ui-shots
    ```
-   It captures 1440×900 and 390×844 in daylight and night-shift themes and flags console errors and horizontal overflow. Open the PNGs and actually look: hierarchy, alignment, clipped text, contrast, whether the epistemic tags are visible, whether the boldness is spent in one place. `.ui-shots/` is scratch output; don't commit it.
+   It captures 1440×900 and 390×844 (light mode only) and flags console errors and horizontal overflow. Open the PNGs and actually look: squint test (can you still find the primary element and the groups?), alignment, clipped text, whether evidence labels are visible, whether anything would look the same on any other product. `.ui-shots/` is scratch output; don't commit it.
    Also exercise at least one failure path (stop the backend or use an invalid input) and screenshot the error state.
 4. **Run the mechanical checks** that apply:
    ```bash
    cd frontend && npm run build                                       # typecheck + build
    node .claude/skills/agro-design-system/scripts/check-contrast.mjs  # if tokens changed
+   npx -y impeccable@4.8.0 detect --json frontend/src                  # AI-design tells, contrast, spacing
    ```
+   The impeccable detector (Apache-2.0, by Paul Bakaus) flags generated-UI patterns such as overused fonts, pulsing dots, gradient text, eyebrow labels, cramped padding and low contrast. Report each finding as a D item unless the design system explicitly allows it (e.g. the 7 numbered case steps). It downloads from npm on first run; if the network blocks it, say so and continue.
    Grep for raw colours and other easy violations, e.g. `rg -n "#[0-9a-fA-F]{3,8}\b" frontend/src --glob '!**/tokens.css'` and `rg -n "transition:\s*all|outline:\s*none|user-scalable" frontend/src`.
 5. **Report** in the format below. Report only problems you can point to; don't pad with praise or generic advice.
 
@@ -46,8 +48,8 @@ frontend/src/features/forensics/WeatherChart.tsx:17  [MINOR D1] raw #e39d5d — 
 ✓ pass
 
 ## Visual pass (.ui-shots)
-mobile-dark.png: data plate SHA wraps mid-hash outside its cell — add overflow-wrap:anywhere (D)
-desktop-light.png: two orange primary buttons in one view (D3)
+mobile.png: checksum overflows the source label — add overflow-wrap:anywhere (E5)
+desktop.png: two yellow-green primary buttons in one view (D3)
 
 ## Verdict
 2 blockers, 1 major, 2 minor. Not ready: fix A2 and the error state (B1) first.
@@ -66,4 +68,4 @@ Severity:
 
 ## Attribution
 
-Sections C and E of the checklist adapt the Vercel Web Interface Guidelines (MIT, © 2025 Vercel Labs; license in `references/LICENSE-vercel-web-interface-guidelines.txt`). Sections A, B and D are specific to AGRO BLACK BOX.
+Sections C and E of the checklist adapt the Vercel Web Interface Guidelines (MIT, © 2025 Vercel Labs; license in `references/LICENSE-vercel-web-interface-guidelines.txt`). Section D includes bans paraphrased from impeccable (Apache-2.0, Paul Bakaus) and taste-skill (MIT, Leonxlnx). Sections A and B are specific to AGRO BLACK BOX.
