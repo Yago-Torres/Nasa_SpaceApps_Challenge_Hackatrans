@@ -235,7 +235,9 @@ describe('CaseTimeline (ABB-22)', () => {
     await user.click(screen.getByRole('button', { name: 'Add a hypothesis' }));
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('Starting templates could not be loaded');
-    expect(alert.textContent).toContain('HTTP 503: Template catalogue unavailable.');
+    // Shared case error copy deliberately turns 503 into the actionable storage message
+    // instead of exposing the backend detail verbatim.
+    expect(alert.textContent).toContain('Case storage is not available on this server');
     expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
     expect(screen.queryByText('Every starting template has been added.')).toBeNull();
   });
