@@ -28,3 +28,5 @@ private_data/
 backend/cache/
 *.sqlite3
 *.db
+# UI review screenshots (agro-ui-review skill)
+.ui-shots/

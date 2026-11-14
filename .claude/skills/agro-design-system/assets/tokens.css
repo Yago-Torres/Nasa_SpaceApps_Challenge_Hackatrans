@@ -1,0 +1,383 @@
+/*
+ * AGRO BLACK BOX — "Solar Industrial" design tokens
+ * Status: PROPOSED (pending team approval via a frontend design-system Issue).
+ *
+ * Copy to frontend/src/design/tokens.css. Components consume ONLY the semantic
+ * layer (--surface-*, --ink-*, --tag-*, --viz-* ...), never the primitives (--c-*)
+ * and never raw hex values. Changing a primitive here re-themes the whole app.
+ *
+ * Contrast of every documented fg/bg pair is validated by
+ *   node .claude/skills/agro-design-system/scripts/check-contrast.mjs
+ */
+
+:root {
+  /* ───────────── 1. Primitive palette (do not use in components) ───────────── */
+
+  /* Graphite & galvanized steel: the industrial chassis. Slightly green-shifted
+     so the neutrals belong to the same world as the chlorophyll accents. */
+  --c-graphite-950: #121a16;
+  --c-graphite-900: #1b2621;
+  --c-graphite-800: #26332c;
+  --c-graphite-700: #34443b;
+  --c-steel-600: #56665d;
+  --c-steel-500: #75857b;
+  --c-steel-400: #98a69d;
+  --c-steel-300: #b8c3bb;
+  --c-steel-200: #d3dbd5;
+  --c-steel-100: #e5ebe6;
+  --c-steel-50: #f1f4f0;
+  --c-white: #fbfcfa;
+
+  /* Chlorophyll: living systems, growth, healthy state. */
+  --c-chlorophyll-800: #174a2e;
+  --c-chlorophyll-700: #1e5e3a;
+  --c-chlorophyll-500: #2f8a57;
+  --c-chlorophyll-300: #7cc49a;
+  --c-chlorophyll-100: #dcefe2;
+
+  /* Solar gold: light, energy, the sun-arc motif. Never used for body text. */
+  --c-solar-700: #8a5a06;
+  --c-solar-500: #e8a317;
+  --c-solar-300: #f5c96a;
+  --c-solar-100: #fdf0d2;
+
+  /* Recorder orange: real flight recorders ("black boxes") are painted
+     international orange. Brand mark + the single primary action per view. */
+  --c-recorder-700: #b23a0c;
+  --c-recorder-500: #ff5a1f;
+  --c-recorder-300: #ff9a70;
+  --c-recorder-100: #ffe3d6;
+
+  /* Sky: information, links, focus, water. */
+  --c-sky-700: #1d4f85;
+  --c-sky-500: #2e6fb0;
+  --c-sky-300: #8bbbe8;
+  --c-sky-100: #dce9f6;
+
+  /* Alert red: failures and destructive actions only. */
+  --c-alert-700: #a3261b;
+  --c-alert-300: #f08a7e;
+  --c-alert-100: #fbe1dd;
+
+  /* ───────────── 2. Typography ───────────── */
+  /* Archivo: industrial grotesque with a width axis (62–125%). Condensed for
+     instrument labels, normal for body, expanded for display.
+     Fraunces (SOFT axis): the human voice — farmer reports, community notes.
+     IBM Plex Mono: machine values only (hashes, coordinates, request params).
+     Self-host via @fontsource once the dependency is approved; fallbacks keep
+     the layout usable offline. */
+  --font-industrial: "Archivo", "Archivo Variable", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --font-human: "Fraunces", "Fraunces Variable", Georgia, "Times New Roman", serif;
+  --font-machine: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --stretch-condensed: 75%;
+  --stretch-normal: 100%;
+  --stretch-expanded: 112%;
+
+  /* Major-third scale (×1.25) on a 16px base. */
+  --text-2xs: 0.75rem;   /* 12px — tag codes, axis ticks */
+  --text-xs: 0.8125rem;  /* 13px — metadata, data-plate keys */
+  --text-sm: 0.875rem;   /* 14px — dense UI, table cells */
+  --text-md: 1rem;       /* 16px — body */
+  --text-lg: 1.25rem;    /* 20px — panel titles */
+  --text-xl: 1.5625rem;  /* 25px — screen titles */
+  --text-2xl: 1.953rem;  /* 31px */
+  --text-3xl: 2.441rem;  /* 39px — landing section heads */
+  --text-4xl: 3.052rem;  /* 49px — landing hero */
+
+  --leading-tight: 1.1;
+  --leading-snug: 1.3;
+  --leading-body: 1.55;
+  --leading-human: 1.65;  /* serif needs a little more air */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 750;
+
+  --measure: 68ch;  /* max line length for prose */
+
+  /* ───────────── 3. Space, shape, structure ───────────── */
+  --space-0: 0;
+  --space-1: 0.25rem;  /* 4 */
+  --space-2: 0.5rem;   /* 8 */
+  --space-3: 0.75rem;  /* 12 */
+  --space-4: 1rem;     /* 16 */
+  --space-5: 1.5rem;   /* 24 */
+  --space-6: 2rem;     /* 32 */
+  --space-7: 2.5rem;   /* 40 */
+  --space-8: 3rem;     /* 48 */
+  --space-9: 4rem;     /* 64 */
+  --space-10: 5rem;    /* 80 */
+  --space-11: 6rem;    /* 96 */
+
+  /* Shape encodes the nature of the thing (see SKILL.md "Shape grammar"). */
+  --radius-instrument: 2px;   /* machines, measurements, panels */
+  --radius-control: 6px;      /* buttons, inputs */
+  --radius-organic: 20px;     /* people, communities, living notes */
+  --radius-leaf: 14px 2px;    /* farmer-reported chips: two opposite rounded corners */
+  --radius-round: 999px;
+
+  --line-hairline: 1px;
+  --line-structural: 2px;
+
+  --shadow-inset-readout: inset 0 1px 3px rgb(18 26 22 / 0.14);
+  --shadow-lift: 0 1px 0 rgb(18 26 22 / 0.06), 0 8px 24px -12px rgb(18 26 22 / 0.28);
+
+  /* ───────────── 4. Motion ───────────── */
+  --ease-mechanical: cubic-bezier(0.2, 0.8, 0.2, 1);  /* default: precise, no bounce */
+  --ease-growth: cubic-bezier(0.34, 1.32, 0.64, 1);    /* rare: something living grew */
+  --dur-instant: 90ms;
+  --dur-quick: 160ms;
+  --dur-base: 240ms;
+  --dur-slow: 480ms;
+  --dur-sunrise: 900ms;  /* sun-arc advance, once per completed step */
+
+  /* ───────────── 5. Layout ───────────── */
+  --container-max: 82.5rem;  /* 1320px */
+  --rail-width: 17.5rem;     /* journey rail */
+  --drawer-width: 24rem;     /* provenance drawer */
+  --gutter: var(--space-4);
+  --header-height: 3.5rem;
+  --tap-min: 44px;
+
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-drawer: 30;
+  --z-overlay: 40;
+  --z-toast: 50;
+}
+
+@media (min-width: 64rem) {
+  :root { --gutter: var(--space-5); }
+}
+
+/* ───────────── 6. Semantic layer — DAYLIGHT (default) ─────────────
+   Daylight-first: farmers check cases outdoors on phones in strong sun. */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --surface-base: var(--c-steel-50);
+  --surface-raised: var(--c-white);
+  --surface-sunken: var(--c-steel-100);
+  --surface-inverse: var(--c-graphite-900);
+  --surface-readout: var(--c-graphite-950);  /* instrument displays stay dark in both themes */
+
+  --ink-strong: var(--c-graphite-950);
+  --ink: var(--c-graphite-800);
+  --ink-muted: var(--c-steel-600);
+  --ink-inverse: var(--c-steel-50);
+  --ink-readout: var(--c-chlorophyll-300);
+  --ink-link: var(--c-sky-700);
+
+  --line-strong: var(--c-graphite-700);
+  --line: var(--c-steel-300);
+  --line-subtle: var(--c-steel-200);
+
+  --action-bg: var(--c-recorder-500);
+  --action-bg-hover: var(--c-recorder-300);
+  --action-ink: var(--c-graphite-950);
+  --action-secondary-bg: var(--c-white);
+  --action-secondary-ink: var(--c-graphite-900);
+  --action-secondary-line: var(--c-graphite-700);
+
+  --focus-ring: var(--c-sky-500);
+  --brand: var(--c-recorder-500);
+  --sun: var(--c-solar-500);
+  --sun-soft: var(--c-solar-100);
+  --growth: var(--c-chlorophyll-500);
+  --growth-soft: var(--c-chlorophyll-100);
+
+  /* Status: always paired with an icon and a text label. */
+  --status-ok-bg: var(--c-chlorophyll-100);
+  --status-ok-ink: var(--c-chlorophyll-800);
+  --status-caution-bg: var(--c-solar-100);
+  --status-caution-ink: var(--c-solar-700);
+  --status-danger-bg: var(--c-alert-100);
+  --status-danger-ink: var(--c-alert-700);
+  --status-info-bg: var(--c-sky-100);
+  --status-info-ink: var(--c-sky-700);
+  --status-stale-bg: var(--c-steel-100);
+  --status-stale-ink: var(--c-steel-600);
+
+  /* Epistemic tags (UX_FLOWS vocabulary). Colour is the third cue after
+     the text code and the shape — see references/components.md. */
+  --tag-observed-bg: var(--c-sky-100);
+  --tag-observed-ink: var(--c-sky-700);
+  --tag-farmer-bg: var(--c-chlorophyll-100);
+  --tag-farmer-ink: var(--c-chlorophyll-800);
+  --tag-literature-bg: var(--c-white);
+  --tag-literature-ink: var(--c-graphite-900);
+  --tag-hypothesis-bg: var(--c-solar-100);
+  --tag-hypothesis-ink: var(--c-solar-700);
+  --tag-model-bg: var(--c-steel-100);
+  --tag-model-ink: var(--c-graphite-800);
+  --tag-illustrative-bg: var(--c-recorder-100);
+  --tag-illustrative-ink: var(--c-recorder-700);
+  --tag-missing-bg: transparent;
+  --tag-missing-ink: var(--c-steel-600);
+
+  /* Data viz. Diverging ramps from ColorBrewer (CVD-safe): BrBG for
+     precipitation anomaly, RdBu for temperature anomaly. */
+  --viz-dry-3: #8c510a;
+  --viz-dry-2: #d8b365;
+  --viz-dry-1: #f6e8c3;
+  --viz-wet-1: #c7eae5;
+  --viz-wet-2: #5ab4ac;
+  --viz-wet-3: #01665e;
+  --viz-cold-3: #2166ac;
+  --viz-cold-2: #67a9cf;
+  --viz-cold-1: #d1e5f0;
+  --viz-hot-1: #fddbc7;
+  --viz-hot-2: #ef8a62;
+  --viz-hot-3: #b2182b;
+  --viz-neutral: #ece9e2;
+  --viz-baseline: var(--c-graphite-800);
+  --viz-grid: var(--c-steel-200);
+  --viz-axis: var(--c-steel-600);
+  --viz-event-band: rgb(232 163 23 / 0.16);  /* highlighted incident window */
+  /* Categorical (rotations: current + alternatives). */
+  --viz-cat-1: #1e5e3a;
+  --viz-cat-2: #2e6fb0;
+  --viz-cat-3: #b23a0c;
+  --viz-cat-4: #8a5a06;
+  --viz-cat-5: #6b4c9a;
+}
+
+/* ───────────── 7. Semantic layer — NIGHT SHIFT (dark) ───────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface-base: var(--c-graphite-950);
+    --surface-raised: var(--c-graphite-900);
+    --surface-sunken: #0d1310;
+    --surface-inverse: var(--c-steel-100);
+    --surface-readout: #0a0f0c;
+    --ink-strong: var(--c-white);
+    --ink: var(--c-steel-100);
+    --ink-muted: var(--c-steel-400);
+    --ink-inverse: var(--c-graphite-950);
+    --ink-readout: var(--c-chlorophyll-300);
+    --ink-link: var(--c-sky-300);
+    --line-strong: var(--c-steel-400);
+    --line: var(--c-graphite-700);
+    --line-subtle: var(--c-graphite-800);
+    --action-bg: var(--c-recorder-500);
+    --action-bg-hover: var(--c-recorder-300);
+    --action-ink: var(--c-graphite-950);
+    --action-secondary-bg: var(--c-graphite-900);
+    --action-secondary-ink: var(--c-steel-50);
+    --action-secondary-line: var(--c-steel-400);
+    --focus-ring: var(--c-sky-300);
+    --sun: var(--c-solar-300);
+    --sun-soft: rgb(232 163 23 / 0.14);
+    --growth: var(--c-chlorophyll-300);
+    --growth-soft: rgb(124 196 154 / 0.14);
+    --status-ok-bg: rgb(124 196 154 / 0.14);
+    --status-ok-ink: var(--c-chlorophyll-300);
+    --status-caution-bg: rgb(232 163 23 / 0.14);
+    --status-caution-ink: var(--c-solar-300);
+    --status-danger-bg: rgb(240 138 126 / 0.14);
+    --status-danger-ink: var(--c-alert-300);
+    --status-info-bg: rgb(139 187 232 / 0.14);
+    --status-info-ink: var(--c-sky-300);
+    --status-stale-bg: var(--c-graphite-800);
+    --status-stale-ink: var(--c-steel-400);
+    --tag-observed-bg: rgb(139 187 232 / 0.14);
+    --tag-observed-ink: var(--c-sky-300);
+    --tag-farmer-bg: rgb(124 196 154 / 0.14);
+    --tag-farmer-ink: var(--c-chlorophyll-300);
+    --tag-literature-bg: var(--c-graphite-900);
+    --tag-literature-ink: var(--c-steel-50);
+    --tag-hypothesis-bg: rgb(232 163 23 / 0.14);
+    --tag-hypothesis-ink: var(--c-solar-300);
+    --tag-model-bg: var(--c-graphite-800);
+    --tag-model-ink: var(--c-steel-100);
+    --tag-illustrative-bg: rgb(255 90 31 / 0.14);
+    --tag-illustrative-ink: var(--c-recorder-300);
+    --tag-missing-bg: transparent;
+    --tag-missing-ink: var(--c-steel-400);
+    --viz-neutral: var(--c-graphite-800);
+    --viz-baseline: var(--c-steel-100);
+    --viz-grid: var(--c-graphite-800);
+    --viz-axis: var(--c-steel-400);
+    --viz-cat-1: #7cc49a;
+    --viz-cat-2: #8bbbe8;
+    --viz-cat-3: #ff9a70;
+    --viz-cat-4: #f5c96a;
+    --viz-cat-5: #b9a2e0;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-base: var(--c-graphite-950);
+  --surface-raised: var(--c-graphite-900);
+  --surface-sunken: #0d1310;
+  --surface-inverse: var(--c-steel-100);
+  --surface-readout: #0a0f0c;
+  --ink-strong: var(--c-white);
+  --ink: var(--c-steel-100);
+  --ink-muted: var(--c-steel-400);
+  --ink-inverse: var(--c-graphite-950);
+  --ink-readout: var(--c-chlorophyll-300);
+  --ink-link: var(--c-sky-300);
+  --line-strong: var(--c-steel-400);
+  --line: var(--c-graphite-700);
+  --line-subtle: var(--c-graphite-800);
+  --action-bg: var(--c-recorder-500);
+  --action-bg-hover: var(--c-recorder-300);
+  --action-ink: var(--c-graphite-950);
+  --action-secondary-bg: var(--c-graphite-900);
+  --action-secondary-ink: var(--c-steel-50);
+  --action-secondary-line: var(--c-steel-400);
+  --focus-ring: var(--c-sky-300);
+  --sun: var(--c-solar-300);
+  --sun-soft: rgb(232 163 23 / 0.14);
+  --growth: var(--c-chlorophyll-300);
+  --growth-soft: rgb(124 196 154 / 0.14);
+  --status-ok-bg: rgb(124 196 154 / 0.14);
+  --status-ok-ink: var(--c-chlorophyll-300);
+  --status-caution-bg: rgb(232 163 23 / 0.14);
+  --status-caution-ink: var(--c-solar-300);
+  --status-danger-bg: rgb(240 138 126 / 0.14);
+  --status-danger-ink: var(--c-alert-300);
+  --status-info-bg: rgb(139 187 232 / 0.14);
+  --status-info-ink: var(--c-sky-300);
+  --status-stale-bg: var(--c-graphite-800);
+  --status-stale-ink: var(--c-steel-400);
+  --tag-observed-bg: rgb(139 187 232 / 0.14);
+  --tag-observed-ink: var(--c-sky-300);
+  --tag-farmer-bg: rgb(124 196 154 / 0.14);
+  --tag-farmer-ink: var(--c-chlorophyll-300);
+  --tag-literature-bg: var(--c-graphite-900);
+  --tag-literature-ink: var(--c-steel-50);
+  --tag-hypothesis-bg: rgb(232 163 23 / 0.14);
+  --tag-hypothesis-ink: var(--c-solar-300);
+  --tag-model-bg: var(--c-graphite-800);
+  --tag-model-ink: var(--c-steel-100);
+  --tag-illustrative-bg: rgb(255 90 31 / 0.14);
+  --tag-illustrative-ink: var(--c-recorder-300);
+  --tag-missing-bg: transparent;
+  --tag-missing-ink: var(--c-steel-400);
+  --viz-neutral: var(--c-graphite-800);
+  --viz-baseline: var(--c-steel-100);
+  --viz-grid: var(--c-graphite-800);
+  --viz-axis: var(--c-steel-400);
+  --viz-cat-1: #7cc49a;
+  --viz-cat-2: #8bbbe8;
+  --viz-cat-3: #ff9a70;
+  --viz-cat-4: #f5c96a;
+  --viz-cat-5: #b9a2e0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 0ms;
+    --dur-quick: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+    --dur-sunrise: 0ms;
+  }
+}
