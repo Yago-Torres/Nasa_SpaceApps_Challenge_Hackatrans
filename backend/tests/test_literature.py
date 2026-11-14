@@ -8,7 +8,6 @@ import json
 
 import httpx
 import pytest
-from fastapi.testclient import TestClient
 
 from agroblackbox import app as app_module
 from agroblackbox.services import literature as lit
@@ -234,19 +233,27 @@ def _patch_client(monkeypatch, upstream):
     monkeypatch.setattr(lit, '_make_client', lambda: httpx.AsyncClient(transport=httpx.MockTransport(upstream)))
 
 
-def test_endpoint_502_hides_secret(monkeypatch):
+@pytest.mark.asyncio
+async def test_endpoint_502_hides_secret(monkeypatch):
     monkeypatch.setenv('OPENALEX_API_KEY', 'SECRET-TEST-KEY')
     _patch_client(monkeypatch, Upstream(lambda request: httpx.Response(429)))
-    response = TestClient(app_module.app).get('/api/literature', params={'query': 'legume rotation'})
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app_module.app), base_url='http://test'
+    ) as client:
+        response = await client.get('/api/literature', params={'query': 'legume rotation'})
     assert response.status_code == 502
     assert 'SECRET-TEST-KEY' not in response.text
     assert 'rate limit' in response.json()['detail']
 
 
-def test_endpoint_keeps_baseline_fields_and_adds_provenance(monkeypatch):
+@pytest.mark.asyncio
+async def test_endpoint_keeps_baseline_fields_and_adds_provenance(monkeypatch):
     _patch_client(monkeypatch, Upstream(openalex_payload(oa_work('W1')),
                                         {REAL_DOI: httpx.Response(200, json=crossref_message())}))
-    response = TestClient(app_module.app).get('/api/literature', params={'query': 'legume rotation'})
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app_module.app), base_url='http://test'
+    ) as client:
+        response = await client.get('/api/literature', params={'query': 'legume rotation'})
     assert response.status_code == 200
     body = response.json()
     paper = body['results'][0]
@@ -258,7 +265,10 @@ def test_endpoint_keeps_baseline_fields_and_adds_provenance(monkeypatch):
     json.dumps(body)  # serializable for report payloads
 
 
-def test_endpoint_validates_query_length():
-    client = TestClient(app_module.app)
-    assert client.get('/api/literature', params={'query': 'ab'}).status_code == 422
-    assert client.get('/api/literature', params={'query': 'x' * 181}).status_code == 422
+@pytest.mark.asyncio
+async def test_endpoint_validates_query_length():
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app_module.app), base_url='http://test'
+    ) as client:
+        assert (await client.get('/api/literature', params={'query': 'ab'})).status_code == 422
+        assert (await client.get('/api/literature', params={'query': 'x' * 181})).status_code == 422

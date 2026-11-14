@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel, Field
+from .schemas import contract_openapi_schemas
 from .services.power import fetch_power
 from .services.metrics import summarize_power
 from .services.literature import LiteratureSearchResult, LiteratureSourceError, search_literature
@@ -7,6 +9,23 @@ from .services.rotations import rotation_examples
 from .services.report import build_report
 
 app=FastAPI(title='AGRO BLACK BOX API',version='0.1.0')
+
+
+def versioned_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    schema = get_openapi(title=app.title, version=app.version, routes=app.routes)
+    schema.setdefault('components', {}).setdefault('schemas', {}).update(contract_openapi_schemas())
+    schema['info']['x-agro-contract-version'] = '1.0'
+    schema['info']['description'] = (
+        'Existing /api routes are the development baseline. Components marked schema_version '
+        '1.0 define the shared target contract; route migration is tracked separately.'
+    )
+    app.openapi_schema = schema
+    return schema
+
+
+app.openapi = versioned_openapi
 
 @app.get('/api/health')
 def health():return {'status':'ok','version':'0.1.0'}

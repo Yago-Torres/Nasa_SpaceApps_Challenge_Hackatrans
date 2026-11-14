@@ -12,9 +12,26 @@
 
 Frontend consumers, screens and the interface fields the UI requests from A and B: `docs/architecture/FRONTEND_INTEGRATION.md`.
 
-## Proposed release 1.0 API (NOT IMPLEMENTED)
+## Shared 1.0 schemas (IMPLEMENTED CONTRACT; ROUTE INTEGRATION PENDING)
 
-Formalize versioned `/api/v1` resources and schema generation through approved contracts:
+ABB-02 publishes the following Pydantic models in OpenAPI `components.schemas`: `Case`, `Field`, `SourceManifest`, `Observation`, `Anomaly`, `Hypothesis`, `Paper`, `EvidenceClaim`, `Rotation`, `Review`, `Report` and `ApiError`. The OpenAPI info object carries `x-agro-contract-version: 1.0`.
+
+- Unknown fields are rejected by the shared models.
+- Nullable values are explicit; a missing observation is `null` with quality flags and limitations.
+- `SourceManifest` retains provider, dataset, query parameters, retrieval time, checksum, processing version, license, resolution and limitations.
+- Exact/withheld coordinate rules are validated by `Field`.
+- Literature metadata cannot silently become a reviewed finding.
+- The shared `Paper` preserves ABB-13 bibliographic semantics (`year`, DOI status, structured authors, licences and retrieval provenance); persistence may later attach a `SourceManifest` without discarding those fields.
+- Hypotheses never include an unsupported causal score.
+- Rotation impact remains null until a separately validated model supplies it.
+
+The current React baseline still declares local `Climate`, `Paper` and `Rotation` types matching the existing `/api/*` responses. C should replace those types with a generated client only when the corresponding routes adopt the shared models.
+
+See `docs/architecture/ADRs/0002-versioned-shared-contracts.md`.
+
+## Proposed release 1.0 routes (NOT IMPLEMENTED)
+
+Formalize versioned `/api/v1` resources through their owning roadmap Issues:
 
 - `/api/v1/cases` — typed case CRUD and permission tiers.
 - `/api/v1/cases/{case_id}/observations` — evidence source manifest, jobs, quality flags.
@@ -25,7 +42,7 @@ Formalize versioned `/api/v1` resources and schema generation through approved c
 - `/api/v1/cases/{case_id}/reviews` — reviewer comments and decisions with access control.
 - `/api/v1/cases/{case_id}/reports` — versioned human-readable case reports.
 
-Do not implement paths/types or migrate existing consumers without a documented feature spec and coordination with affected consumers. Breaking changes require a compatibility plan, contract tests and updated docs.
+Do not migrate existing consumers without coordination with affected domains. Breaking changes require a compatibility plan, contract tests, updated docs and a new contract version when compatibility cannot be preserved.
 
 ## Shared response requirements
 
