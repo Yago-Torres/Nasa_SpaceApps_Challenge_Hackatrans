@@ -12,7 +12,7 @@ import { VegetationPanel } from './vegetation/VegetationPanel';
 import { PrecipitationPanel } from './precipitation/PrecipitationPanel';
 
 export function Investigation() {
-  const { t, num } = useI18n();
+  const { t, num, lang } = useI18n();
   const { input, setInput, climate, setClimate } = useInvestigation();
   const [errors, setErrors] = useState<FieldErrors>({});
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
@@ -148,8 +148,16 @@ export function Investigation() {
               { label: t('src.parameters'), value: String(climate.request_params.parameters ?? ''), mono: true },
               { label: t('src.point'), value: `${climate.request_params.latitude}, ${climate.request_params.longitude}`, mono: true },
               { label: t('src.period'), value: `${climate.event_year} · ${climate.reference_start}–${climate.reference_end}` },
-              { label: t('src.resolution'), value: <EvidenceLabel kind="MISSING_DATA" detail={t('src.notReturned')} /> },
-              { label: t('src.retrieved'), value: <EvidenceLabel kind="MISSING_DATA" detail={t('src.notReturned')} /> },
+              {
+                label: t('src.resolution'),
+                value: climate.spatial_resolution?.description ?? <EvidenceLabel kind="MISSING_DATA" detail={t('src.notReturned')} />,
+              },
+              {
+                label: t('src.retrieved'),
+                value: climate.retrieved_at
+                  ? new Intl.DateTimeFormat(lang === 'es' ? 'es-ES' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(climate.retrieved_at))
+                  : <EvidenceLabel kind="MISSING_DATA" detail={t('src.notReturned')} />,
+              },
               { label: t('src.checksum'), value: `${climate.data_sha256.slice(0, 16)}…`, mono: true },
               { label: t('src.docs'), value: <a href={climate.source_url} target="_blank" rel="noreferrer">power.larc.nasa.gov <span className="sr-only">{t('ev.newTab')}</span></a> },
             ]}
