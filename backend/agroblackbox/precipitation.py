@@ -195,7 +195,8 @@ async def build_precipitation_response(series: gpm.GpmSeries, compare_power: boo
                  'total_observed_mm': round(sum(m.precipitation_mm for m in observed), 1) if observed else None},
         method=METHOD,
         cache={'search_from_cache': series.search_from_cache, 'months_from_cache': series.months_from_cache,
-               'upstream_requests': series.requests, 'units_checked': series.units_checked},
+               'upstream_requests': series.requests, 'units_checked': series.units_checked,
+               'units_from_cache': series.units_from_cache},
         limitations=limitations,
         disclaimer=('Observed satellite-gauge precipitation estimate (NASA GPM IMERG Final) for a 0.1° cell, shown '
                     'next to the NASA POWER regional value. Neither is a rain-gauge reading at the field.'))
