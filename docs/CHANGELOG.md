@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- ABB-21/ABB-27 decisions: the wizard now treats its existing SVG privacy diagram as the
+  1.0 geospatial map. It is local, to scale and makes no third-party tile requests, so a
+  field cannot leak through a basemap URL or tile provider. NASA POWER's disk cache now
+  strips the response geometry before persistence while retaining the original source
+  checksum and retrieval time; old cache format entries are invalidated. Current upstream
+  calls remain synchronous with bounded retries and a 24-hour TTL until measured workload
+  justifies Redis/worker deployment. See ADR-0010.
+
 - ABB-12 vegetation from space: the Investigation page has a new panel that reads NASA HLS v2.0 (Landsat 8/9 and Sentinel-2) for the chosen point and a date range of up to 92 days. Every satellite overpass is listed with its cloud and quality result; when the view is clear it shows the greenness index NDVI of the 90 m around the point (median, range and how many pixels were clear). Overpasses hidden by clouds, shadow, snow or water and the days with no valid observation are shown as missing data, never filled in, and the chart does not join points. A table, the source label (granules, checksum, resolution, limitations) and EN/ES text are included. NDVI is described as canopy greenness, not soil health or yield. New endpoint `GET /api/vegetation/hls`; the server needs `EARTHDATA_TOKEN` and answers 503 without it. GPM precipitation is not built yet: the team's Earthdata account must first accept the GES DISC data terms.
 
 - ABB-33 release-gate web integration: case members can now review evidence claims with the consulted-source record, decide candidate disagreements, write and independently review conclusions and manual graph links, and complete the case Uncertainty tab without manual API calls (answer/correct, review/reject, dismiss/reopen, with FARMER_REPORTED labels and no value-of-information score). The Cases screen can download the signed-in account's server export and close the account after password plus explicit irreversible-action confirmation. Wrong confirmation passwords keep the valid session. These routes are checked against the exported OpenAPI contract; live browser E2E with PostgreSQL remains a release check.

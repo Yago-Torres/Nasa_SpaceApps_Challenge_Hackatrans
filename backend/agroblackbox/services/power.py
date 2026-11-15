@@ -7,7 +7,8 @@ Responsibilities:
 - Strict response-shape validation (dates, numeric values, units, time standard) before
   anything is cached.
 - On-disk TTL cache keyed by the request, with a metadata sidecar that keeps the original
-  retrieval time and checksum, so cached answers report their true age.
+  retrieval time and source checksum, so cached answers report their true age without
+  persisting the exact point geometry returned by POWER.
 - Provenance: SHA-256 of the raw bytes, retrieval time (UTC), POWER header metadata
   (API version, sources, fill value, time standard) and per-parameter units.
 
@@ -50,7 +51,7 @@ PROCESSING_VERSION = f'agroblackbox-{__version__}+abb07-power-1'
 
 CACHE = Path(__file__).resolve().parents[2] / '.cache' / 'power'
 CACHE_TTL_SECONDS = 86_400
-CACHE_FORMAT = 1
+CACHE_FORMAT = 2
 
 MAX_ATTEMPTS = 3
 BACKOFF_SECONDS = (1.0, 2.0)  # wait before attempt 2 and attempt 3
@@ -222,7 +223,21 @@ def _cache_paths(key: str) -> tuple[Path, Path]:
     return CACHE / f'{key}.json', CACHE / f'{key}.meta.json'
 
 
-def _read_cache(key: str, now: datetime) -> tuple[bytes, datetime, float] | None:
+def _without_geometry(raw: bytes) -> bytes:
+    """Remove source geometry before a response is written to the disk cache.
+
+    POWER returns the queried point as GeoJSON metadata. The point is already part of
+    the request key and is not needed to parse or analyse the daily series, so retaining
+    it on disk would bypass the case-level location privacy model.
+    """
+    document = json.loads(raw)
+    if isinstance(document, dict):
+        document.pop('geometry', None)
+        document.pop('coordinates', None)
+    return json.dumps(document, separators=(',', ':'), sort_keys=True).encode('utf-8')
+
+
+def _read_cache(key: str, now: datetime) -> tuple[bytes, datetime, float, str] | None:
     data_path, meta_path = _cache_paths(key)
     try:
         if not (data_path.exists() and meta_path.exists()):
@@ -237,19 +252,25 @@ def _read_cache(key: str, now: datetime) -> tuple[bytes, datetime, float] | None
         if age < 0 or age >= CACHE_TTL_SECONDS:
             return None
         raw = data_path.read_bytes()
-        if hashlib.sha256(raw).hexdigest() != meta.get('sha256'):
+        if hashlib.sha256(raw).hexdigest() != meta.get('cache_sha256'):
             return None
-        return raw, retrieved_at.astimezone(UTC), age
+        source_sha = meta.get('source_sha256')
+        if not isinstance(source_sha, str) or len(source_sha) != 64:
+            return None
+        return raw, retrieved_at.astimezone(UTC), age, source_sha
     except (OSError, ValueError, KeyError, TypeError, AttributeError):
         return None
 
 
 def _write_cache(key: str, raw: bytes, sha: str, retrieved_at: datetime) -> None:
     data_path, meta_path = _cache_paths(key)
-    sidecar = json.dumps({'format': CACHE_FORMAT, 'sha256': sha, 'retrieved_at': retrieved_at.isoformat()})
     try:
+        cached = _without_geometry(raw)
+        cache_sha = hashlib.sha256(cached).hexdigest()
+        sidecar = json.dumps({'format': CACHE_FORMAT, 'source_sha256': sha, 'cache_sha256': cache_sha,
+                              'retrieved_at': retrieved_at.isoformat()})
         CACHE.mkdir(parents=True, exist_ok=True)
-        for path, content in ((data_path, raw), (meta_path, sidecar.encode())):
+        for path, content in ((data_path, cached), (meta_path, sidecar.encode())):
             tmp = path.with_name(path.name + '.tmp')
             tmp.write_bytes(content)
             os.replace(tmp, path)
@@ -310,13 +331,13 @@ async def fetch_power(latitude: float, longitude: float, event_year: int, ref_st
 
     cached = _read_cache(key, _now())
     if cached is not None:
-        raw, retrieved_at, age = cached
+        raw, retrieved_at, age, source_sha = cached
         try:
             parsed = parse_payload(raw)
         except PowerSourceError:
             pass  # corrupt or outdated cache entry: refetch instead of failing
         else:
-            return PowerRecord(parsed.parameter, sha256=hashlib.sha256(raw).hexdigest(), request_params=params,
+            return PowerRecord(parsed.parameter, sha256=source_sha, request_params=params,
                                retrieved_at=retrieved_at, served_from_cache=True,
                                cache_age_seconds=round(age, 3), upstream_attempts=0, header=parsed.header,
                                variables=parsed.variables, messages=parsed.messages)

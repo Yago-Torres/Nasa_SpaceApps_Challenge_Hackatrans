@@ -117,6 +117,18 @@ def test_cache_hit_reports_original_retrieval_time_and_age(env):
     assert second.sha256 == first.sha256
 
 
+def test_disk_cache_removes_exact_source_geometry_but_keeps_source_checksum(env):
+    env['use'](Upstream(payload()))
+    first = fetch()
+    data_path, meta_path = power._cache_paths(power.cache_key(power.build_params(41.6, -0.9, 2022, 2019, 2021)))
+    cached = data_path.read_text(encoding='utf-8')
+    metadata = json.loads(meta_path.read_text(encoding='utf-8'))
+    assert 'coordinates' not in cached and 'geometry' not in cached
+    assert metadata['source_sha256'] == first.sha256
+    assert metadata['cache_sha256'] == power.hashlib.sha256(data_path.read_bytes()).hexdigest()
+    assert fetch().sha256 == first.sha256
+
+
 def test_expired_corrupt_and_legacy_cache_entries_are_refetched(env):
     up = env['use'](Upstream(payload()))
     fetch()
