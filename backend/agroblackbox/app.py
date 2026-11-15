@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel, Field
 from .schemas import contract_openapi_schemas
@@ -10,8 +11,12 @@ from .services.rotations import rotation_examples
 from .services.report import build_report
 from .rotation_api import router as rotation_router
 from .api import include_api_v1
+from . import observability
+
+observability.configure_logging()
 
 app=FastAPI(title='CropStory API',version='0.1.0')
+app.middleware('http')(observability.request_middleware)  # ABB-30: request id, JSON logs, counters
 app.include_router(rotation_router)
 include_api_v1(app)  # ABB-05/ABB-06: auth + cases; 503 when DATABASE_URL is not configured
 
@@ -33,7 +38,29 @@ def versioned_openapi():
 app.openapi = versioned_openapi
 
 @app.get('/api/health')
-def health():return {'status':'ok','version':'0.1.0'}
+def health():
+    """Liveness: the process answers. Does not touch the database (see /api/ready)."""
+    return {'status':'ok','version':observability.app_version()}
+
+
+@app.get('/api/ready', tags=['operations (ABB-30)'])
+def ready():
+    """Readiness: PostgreSQL reachable and migrated to this build's head. 503 otherwise; never returns
+    connection details."""
+    ok, checks = observability.readiness()
+    body = {'status': 'ready' if ok else 'not_ready', 'version': observability.app_version(), 'checks': checks}
+    return JSONResponse(status_code=200 if ok else 503, content=body)
+
+
+@app.get('/api/metrics', tags=['operations (ABB-30)'], include_in_schema=False)
+def metrics(request: Request):
+    """Prometheus metrics, only with METRICS_TOKEN set (16+ characters) and `Authorization: Bearer <token>`."""
+    allowed = observability.metrics_allowed(request)
+    if allowed is None:
+        raise HTTPException(status_code=404, detail='Not Found')
+    if not allowed:
+        raise HTTPException(status_code=401, detail='Metrics token required.')
+    return PlainTextResponse(observability.metrics_text(), media_type='text/plain; version=0.0.4')
 
 # GET /api/climate (NASA POWER provenance + anomaly QC, ABB-07/ABB-08)
 app.include_router(climate_router)

@@ -1,0 +1,107 @@
+# CropStory deployment stack (ABB-30). Run through deploy/bin/*.sh, which pass deploy/.env.
+# Images come from GHCR (published by .github/workflows/release.yml for every v* tag) or are built
+# locally from the checked-out tag (`deploy/bin/deploy.sh --build`).
+# Only the web container publishes a port, on 127.0.0.1: the Cloudflare tunnel connects to it, so
+# nothing listens on the LAN or the internet directly.
+name: cropstory
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cropstory}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+      POSTGRES_DB: ${POSTGRES_DB:-cropstory}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging: *logging
+
+  # One-shot: brings the schema to this release's head before the API starts. PostgreSQL DDL is
+  # transactional, so a migration that fails half way leaves the previous schema intact.
+  migrate:
+    image: ${CROPSTORY_IMAGE_PREFIX:-ghcr.io/yago-torres/cropstory}-api:${CROPSTORY_VERSION:?set CROPSTORY_VERSION}
+    build:
+      context: ../backend
+      args:
+        APP_VERSION: ${CROPSTORY_VERSION}
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-cropstory}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cropstory}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    read_only: true
+    tmpfs: [/tmp]
+    logging: *logging
+
+  api:
+    image: ${CROPSTORY_IMAGE_PREFIX:-ghcr.io/yago-torres/cropstory}-api:${CROPSTORY_VERSION}
+    restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV:-demo}
+      APP_VERSION: ${CROPSTORY_VERSION}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-cropstory}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cropstory}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      OPENALEX_API_KEY: ${OPENALEX_API_KEY:-}
+      CROSSREF_MAILTO: ${CROSSREF_MAILTO:-}
+      LOG_FORMAT: json
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    # Read-only root filesystem; the NASA POWER response cache (which holds queried coordinates,
+    # see LEGAL_AND_DATA_POLICY.md) lives in memory only and disappears with the container.
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.cache:uid=10001,gid=10001,mode=0700
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    mem_limit: ${API_MEM_LIMIT:-512m}
+    logging: *logging
+
+  web:
+    image: ${CROPSTORY_IMAGE_PREFIX:-ghcr.io/yago-torres/cropstory}-web:${CROPSTORY_VERSION}
+    build:
+      context: ../frontend
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8080}:8080"
+    read_only: true
+    tmpfs: [/tmp, /config, /data]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: ${WEB_MEM_LIMIT:-128m}
+    logging: *logging
+
+  # Optional: a temporary public URL (https://<random>.trycloudflare.com) without a Cloudflare account.
+  # `deploy/bin/quick-tunnel.sh` starts it; the URL appears in its logs and changes on every start.
+  # A named tunnel with a fixed hostname is configured outside this stack (docs/operations/DEPLOYMENT.md).
+  quicktunnel:
+    image: cloudflare/cloudflared:2025.11.1
+    profiles: ["quicktunnel"]
+    command: ["tunnel", "--no-autoupdate", "--url", "http://web:8080"]
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  pgdata:

@@ -10,7 +10,8 @@ from agroblackbox.db.models import Base
 
 config = context.config
 if config.config_file_name:
-    fileConfig(config.config_file_name)
+    # Keep application loggers (e.g. ABB-30 "cropstory") enabled when migrations run in-process.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 database_url = os.getenv("DATABASE_URL")
 if database_url:
