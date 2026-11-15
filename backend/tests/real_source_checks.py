@@ -126,3 +126,37 @@ def check_vegetation_payload(body: dict, *, start: str, end: str) -> dict:
             "products": sorted({o["product"] for o in obs}), "tiles": sorted({o["mgrs_tile"] for o in obs}),
             "ndvi_valid": [(o["date"], o["product"], o["ndvi"]) for o in obs if o["status"] == "VALID"][:40],
             "upstream_requests": body["cache"]["upstream_requests"]}
+
+
+def check_precipitation_payload(body: dict, *, year: int) -> dict:
+    """ABB-09: assert the /api/precipitation/gpm contract on a real answer and summarise it."""
+    assert body["kind"] == "observation" and body["source_kind"] == "OBSERVED" and body["year"] == year
+    prov = body["provenance"]
+    assert prov["provider"] == "NASA GES DISC" and HEX64.match(prov["checksum_sha256"])
+    assert body["cache"]["units_checked"] is True, "units were not checked against the dataset attributes"
+    months = body["monthly"]
+    assert [m["month"] for m in months] == list(range(1, 13))
+    observed = 0
+    for m in months:
+        assert m["status"] in {"OBSERVED", "MISSING", "NOT_AVAILABLE", "NOT_READ"}
+        if m["status"] == "OBSERVED":
+            observed += 1
+            assert m["rate_mm_per_hour"] >= 0 and HEX64.match(m["data_sha256"])
+            assert abs(m["rate_mm_per_hour"] * m["hours"] - m["precipitation_mm"]) <= 0.051
+            assert 0 <= m["precipitation_mm"] < 3000
+            if m["power_precipitation_mm"] is not None:
+                assert abs((m["precipitation_mm"] - m["power_precipitation_mm"]) - m["difference_mm"]) <= 0.11
+        else:
+            assert m["precipitation_mm"] is None and m["reason"]
+    assert observed == 12, "a complete past year must have 12 observed months"
+    cell = body["cell"]
+    assert abs(cell["latitude"] - body["request_params"]["latitude"]) <= 0.05
+    assert abs(cell["longitude"] - body["request_params"]["longitude"]) <= 0.05
+    comp = body["comparison"]
+    return {"cell": [cell["latitude"], cell["longitude"]], "observed": observed,
+            "total_mm": body["summary"]["total_observed_mm"], "comparison": comp["status"],
+            "months_compared": comp["months_compared"], "gpm_total_mm": comp["gpm_total_mm"],
+            "power_total_mm": comp["power_total_mm"],
+            "monthly": [(m["month"], m["precipitation_mm"], m["random_error_mm"], m["power_precipitation_mm"],
+                         m["gauge_weight_percent"]) for m in months],
+            "upstream_requests": body["cache"]["upstream_requests"]}

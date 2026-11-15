@@ -23,7 +23,7 @@ from agroblackbox.app import app
 from agroblackbox.evidence_seed import PILOT_SEED
 from agroblackbox.services import literature, power
 from real_source_checks import (check_climate_payload, check_doi_verification, check_paper_record, check_search_result,
-                                check_vegetation_payload)
+                                check_precipitation_payload, check_vegetation_payload)
 
 pytestmark = [pytest.mark.real_network,
               pytest.mark.skipif(os.getenv("RUN_REAL_SOURCES") != "1",
@@ -74,4 +74,19 @@ async def test_real_hls_through_the_public_vegetation_endpoint(monkeypatch, tmp_
     print("NASA HLS:", json.dumps(check_vegetation_payload(response.json(), start=HLS_START, end=HLS_END)))
     if os.getenv("HLS_SMOKE_OUT"):   # optional evidence file (CI artifact), public coordinate only
         with open(os.environ["HLS_SMOKE_OUT"], "w", encoding="utf-8") as fh:
+            json.dump(response.json(), fh, indent=1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(not os.getenv("EARTHDATA_TOKEN"), reason="ABB-09 GPM smoke needs EARTHDATA_TOKEN")
+async def test_real_gpm_through_the_public_precipitation_endpoint(monkeypatch, tmp_path):
+    from agroblackbox.services import gpm
+    monkeypatch.setattr(gpm, "CACHE", tmp_path / "gpm")
+    monkeypatch.setattr(power, "CACHE", tmp_path / "power")
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test", timeout=300) as c:
+        response = await c.get("/api/precipitation/gpm", params={"latitude": LAT, "longitude": LON, "year": YEAR})
+    assert response.status_code == 200, response.text
+    print("NASA GPM:", json.dumps(check_precipitation_payload(response.json(), year=YEAR)))
+    if os.getenv("GPM_SMOKE_OUT"):
+        with open(os.environ["GPM_SMOKE_OUT"], "w", encoding="utf-8") as fh:
             json.dump(response.json(), fh, indent=1)

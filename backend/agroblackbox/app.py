@@ -7,6 +7,7 @@ from .crop_catalog import CropCatalog, catalog
 from .farm_profile import FarmProfile, FarmProfileAssessment, assess_profile
 from .climate import router as climate_router
 from .vegetation import router as vegetation_router
+from .precipitation import router as precipitation_router
 from .services import literature as literature_service
 from .services.literature import LiteratureSearchResult, LiteratureSourceError
 from .services.rotations import rotation_examples
@@ -69,6 +70,9 @@ app.include_router(climate_router)
 
 # GET /api/vegetation/hls (NASA HLS NDVI + Fmask QA, ABB-12)
 app.include_router(vegetation_router)
+
+# GET /api/precipitation/gpm (NASA GPM IMERG monthly + POWER comparison, ABB-09)
+app.include_router(precipitation_router)
 
 @app.get('/api/literature', response_model=LiteratureSearchResult)
 async def literature(query:str=Query(min_length=3,max_length=180)):

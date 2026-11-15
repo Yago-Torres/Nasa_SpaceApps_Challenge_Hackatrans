@@ -1,8 +1,10 @@
 name: earthdata-smoke
-# Manual real-source smoke test for the NASA Earthdata sources (ABB-12 HLS). Needs the EARTHDATA_TOKEN
+# Manual real-source smoke test for the NASA Earthdata sources (ABB-12 HLS, ABB-09 GPM IMERG). Needs the EARTHDATA_TOKEN
 # repository secret; reads public NASA data for a public, region-level coordinate (no farm, no user data).
 on:
   workflow_dispatch:
+  push:
+    branches: [feat/9-gpm-imerg]   # TEMPORARY while ABB-09 is verified; removed before merge
 permissions: {contents: read}
 jobs:
   hls:
@@ -31,3 +33,54 @@ jobs:
           name: hls-smoke-response
           path: hls-smoke.json
           retention-days: 14
+  gpm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+      - name: Install Python 3.12
+        run: uv python install 3.12
+      - name: Real GPM IMERG smoke through /api/precipitation/gpm
+        working-directory: backend
+        env:
+          RUN_REAL_SOURCES: "1"
+          GPM_SMOKE_OUT: ${{ github.workspace }}/gpm-smoke.json
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: |
+          test -n "$EARTHDATA_TOKEN" || { echo "EARTHDATA_TOKEN secret is not set"; exit 1; }
+          uv sync --locked --extra dev
+          uv run --locked --extra dev pytest -q -m real_network -s -rs -k gpm tests/test_real_sources_smoke.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gpm-smoke-response
+          path: gpm-smoke.json
+          retention-days: 14
+      - name: TEMPORARY cross-check against the full HDF5 granule (h5py)
+        working-directory: backend
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: |
+          F=3B-MO.MS.MRG.3IMERG.20220601-S000000-E235959.06.V07B.HDF5
+          curl -s -L -o /tmp/$F -H "Authorization: Bearer $EARTHDATA_TOKEN" https://data.gesdisc.earthdata.nasa.gov/data/GPM_L3/GPM_3IMERGM.07/2022/$F
+          ls -la /tmp/$F
+          uv run --locked --with h5py --with numpy python - <<'PYX'
+          import json, h5py
+          from agroblackbox.services import gpm
+          body = json.load(open('../gpm-smoke.json'))
+          i, j = gpm.cell_indices(41.65, -0.88)
+          with h5py.File('/tmp/3B-MO.MS.MRG.3IMERG.20220601-S000000-E235959.06.V07B.HDF5') as f:
+              g = f['Grid']
+              rate = float(g['precipitation'][0, i, j]); err = float(g['randomError'][0, i, j])
+              lat = float(g['lat'][j]); lon = float(g['lon'][i]); units = g['precipitation'].attrs.get('units')
+          june = body['monthly'][5]
+          print('h5py   :', rate, err, lat, lon, units)
+          print('ours   :', june['rate_mm_per_hour'], june['random_error_mm'], body['cell'])
+          assert abs(rate - june['rate_mm_per_hour']) < 1e-4, 'rate differs'
+          assert abs(round(rate * 720, 1) - june['precipitation_mm']) < 0.051
+          assert abs(lat - body['cell']['latitude']) < 1e-3 and abs(lon - body['cell']['longitude']) < 1e-3
+          print('CROSSCHECK OK')
+          PYX
