@@ -2,6 +2,8 @@
 
 **Find out what happened to a crop, with satellite data and real science.**
 
+**Try it: [cropstory.yagotg.dev](https://cropstory.yagotg.dev)**
+
 CropStory helps farmers and agronomists investigate a crop incident, such as a failed harvest, yellowing or a dry spell, as a case. It puts NASA Earth observation data for the field next to verifiable scientific literature, keeps rival explanations open, and compares crop rotation strategies for what comes next. Built for the **NASA Space Apps Challenge 2026**.
 
 ## What it does
