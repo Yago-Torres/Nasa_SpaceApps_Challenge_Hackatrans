@@ -36,8 +36,9 @@ if ! CROPSTORY_VERSION="$version" compose run --rm migrate; then
   exit 1
 fi
 
-CROPSTORY_VERSION="$version" compose up -d --wait --wait-timeout 180 api web || true
-if ! wait_ready 40; then
+started=yes
+CROPSTORY_VERSION="$version" compose up -d --wait --wait-timeout 180 api web || started=no
+if [ "$started" = no ] || ! wait_ready 40; then
   log "$version is not ready"
   if [ -n "$prev" ]; then
     log "rolling back to $prev"

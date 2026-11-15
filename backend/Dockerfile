@@ -25,6 +25,8 @@ ENV PATH=/opt/venv/bin:$PATH \
 RUN useradd --uid 10001 --user-group --no-create-home --shell /usr/sbin/nologin app
 COPY --from=build /opt/venv /opt/venv
 COPY --from=build /app /app
+# Writable only for the app user; deploy/compose.yaml mounts it as tmpfs (in-memory, coordinates never on disk).
+RUN mkdir -p /app/.cache && chown 10001:10001 /app/.cache && chmod 700 /app/.cache
 WORKDIR /app
 USER 10001:10001
 EXPOSE 8000
