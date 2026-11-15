@@ -1,6 +1,6 @@
 # Context map — mandatory reading order for every AI coding session
 
-The repository, not a chat transcript or a model's local memory, is the canonical product context. Use `uv` for all backend Python work; on Omarchy follow the agent setup guide in the root `README.md`.
+The repository, not a chat transcript or a model's local memory, is the canonical product context. Use `uv` for all backend Python work; on Omarchy follow the agent setup guide in `docs/ai/OMARCHY_AGENT_GUIDE.md`.
 
 ## Read in this order
 
