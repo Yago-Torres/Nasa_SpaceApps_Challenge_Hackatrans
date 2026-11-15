@@ -208,8 +208,12 @@ export function displayedLocation(loc: CaseLocation, viewer: Viewer): DisplayedL
   return valid ? { kind: 'rounded', latitude: roundToCell(lat, loc.rounding), longitude: roundToCell(lon, loc.rounding), rounding: loc.rounding } : { kind: 'hidden' };
 }
 
-/** The payload a guest view would receive: precise coordinates removed unless consented. */
-export function guestCopy(c: IncidentCase): Omit<IncidentCase, 'location'> & { location: DisplayedLocation } {
-  const { location, ...rest } = c;
-  return { ...rest, location: displayedLocation(location, 'guest') };
+/** The payload a guest view would receive: precise coordinates removed unless consented, for every parcel. */
+export function guestCopy(c: IncidentCase): Omit<IncidentCase, 'location' | 'locations'> & { location: DisplayedLocation; locations: DisplayedLocation[] } {
+  const { location, locations: _locations, ...rest } = c;
+  return {
+    ...rest,
+    location: displayedLocation(location, 'guest'),
+    locations: caseLocations(c).map((loc) => displayedLocation(loc, 'guest')),
+  };
 }
