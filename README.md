@@ -91,5 +91,3 @@ The method behind each feature is documented in [`docs/science/`](docs/science/)
 ## Contributing
 
 Read [`AGENTS.md`](AGENTS.md) first. It holds the rules for people and AI coding agents (Claude Code, Codex): uv only for Python, provenance on every scientific value, and the design system for any UI change.
-
-*CropStory was formerly called AGRO BLACK BOX. The Python package `agroblackbox` and some internal identifiers keep that name.*
