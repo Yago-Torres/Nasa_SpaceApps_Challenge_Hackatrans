@@ -5,6 +5,7 @@ import { EvidenceLabel, PageHeader, StatusMessage, type EvidenceKind } from '../
 import { useI18n } from '../i18n/I18n';
 import type { MessageKey } from '../i18n/messages';
 import { useDates } from './cases/collaboration/format';
+import { useEnum } from './cases/evidence/labels';
 
 type Load = { status: 'loading' } | { status: 'gone' } | { status: 'error'; message: string } | { status: 'ready'; view: SharedCaseView };
 
@@ -19,6 +20,7 @@ const EVIDENCE_KINDS = new Set<string>(['OBSERVED', 'FARMER_REPORTED', 'LITERATU
 export function SharedCase({ token }: { token: string }) {
   const { t, num } = useI18n();
   const dates = useDates();
+  const toEnum = useEnum();
   const [load, setLoad] = useState<Load>({ status: 'loading' });
 
   useEffect(() => {
@@ -43,6 +45,15 @@ export function SharedCase({ token }: { token: string }) {
   const c = view.case;
   const s = view.sections;
   const notShared = <p className="muted">{t('shared.notShared')}</p>;
+  // When the owner withheld names, the server sends English pseudonyms ("Field 2", "Member 1"); show them in the UI language.
+  const fieldLabel = (label: string) => {
+    const m = !s.field_labels && /^Field (\d+)$/.exec(label);
+    return m ? t('shared.fieldN', { n: m[1] }) : label;
+  };
+  const authorLabel = (author: string) => {
+    const m = !s.member_names && /^Member (\d+)$/.exec(author);
+    return m ? t('shared.memberN', { n: m[1] }) : author;
+  };
 
   return (
     <>
@@ -68,7 +79,7 @@ export function SharedCase({ token }: { token: string }) {
           <ul className="list-plain">
             {view.fields.map((f, i) => (
               <li key={i}>
-                <b>{f.label}</b>{': '}
+                <b>{fieldLabel(f.label)}</b>{': '}
                 {f.location_precision === 'APPROXIMATE' && f.latitude !== null && f.longitude !== null
                   ? t('shared.approx', { lat: num(f.latitude, { digits: 2 }), lon: num(f.longitude, { digits: 2 }), half: num((f.rounding_deg ?? 0) / 2, { digits: 2 }) })
                   : f.location_precision === 'REGION_ONLY' ? (f.region_label ?? t('shared.noLocation')) : t('shared.noLocation')}
@@ -84,7 +95,7 @@ export function SharedCase({ token }: { token: string }) {
           <ul className="list-plain">
             {view.hypotheses.map((h, i) => (
               <li key={i} className="stack-tight">
-                <p><EvidenceLabel kind="HYPOTHESIS" /> <b>{h.title ?? h.statement}</b> <span className="chip-meta">{h.status}</span></p>
+                <p><EvidenceLabel kind="HYPOTHESIS" /> <b>{h.title ?? h.statement}</b> <span className="chip-meta">{toEnum('review', h.status)}</span></p>
                 {h.title && <p>{h.statement}</p>}
                 <p className="muted">{t('shared.hypCounts', { s: h.supporting_evidence_count, c: h.contradicting_evidence_count })}</p>
                 {h.evaluation_note && <p className="voice">{h.evaluation_note}</p>}
@@ -101,11 +112,11 @@ export function SharedCase({ token }: { token: string }) {
           <ul className="list-plain">
             {view.evidence_claims.map((cl, i) => (
               <li key={i} className="stack-tight">
-                <p>{EVIDENCE_KINDS.has(cl.source_kind) ? <EvidenceLabel kind={cl.source_kind as EvidenceKind} /> : <span className="chip-meta">{cl.source_kind}</span>} {cl.claim_text}</p>
+                <p>{EVIDENCE_KINDS.has(cl.source_kind) ? <EvidenceLabel kind={cl.source_kind as EvidenceKind} /> : <span className="chip-meta">{cl.source_kind === 'LITERATURE_METADATA' ? t('evidence.metadataOnly') : cl.source_kind}</span>} {cl.claim_text}</p>
                 <p className="muted">
                   {cl.paper.title}{cl.paper.year ? ` (${cl.paper.year})` : ''}
                   {cl.paper.doi && <> · <a href={`https://doi.org/${cl.paper.doi}`} target="_blank" rel="noreferrer noopener">{cl.paper.doi}</a></>}
-                  {' · '}{cl.review_status}
+                  {' · '}{toEnum('review', cl.review_status)}
                 </p>
                 {cl.limitations.length > 0 && <p className="muted">{cl.limitations.join(' ')}</p>}
               </li>
@@ -120,7 +131,7 @@ export function SharedCase({ token }: { token: string }) {
           <ul className="list-plain">
             {view.conclusions.map((co, i) => (
               <li key={i} className="stack-tight">
-                <p><b>{co.title ?? co.statement}</b> <span className="chip-meta">{co.review_status}</span></p>
+                <p><b>{co.title ?? co.statement}</b> <span className="chip-meta">{toEnum('review', co.review_status)}</span></p>
                 {co.title && <p>{co.statement}</p>}
                 {co.limitations.length > 0 && <p className="muted">{co.limitations.join(' ')}</p>}
               </li>
@@ -136,7 +147,7 @@ export function SharedCase({ token }: { token: string }) {
             {view.comments.map((cm) => (
               <li key={cm.ref} className={cm.reply_to ? 'slip reply' : 'slip'}>
                 <p className="who">
-                  <b>{cm.author}</b> · {dates.dateTime(cm.created_at)} · {cm.ref}
+                  <b>{authorLabel(cm.author)}</b> · {dates.dateTime(cm.created_at)} · {cm.ref}
                   {cm.reply_to && <> · {t('shared.replyTo', { ref: cm.reply_to })}</>}
                   {cm.edited && <> · {t('shared.edited')}</>}
                 </p>

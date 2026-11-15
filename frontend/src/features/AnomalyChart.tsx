@@ -74,7 +74,7 @@ export function AnomalyChart({ monthly, eventYear }: { monthly: ClimateMonth[]; 
               {v === null ? (
                 <>
                   <rect className="gap" x={bx} y={y0 - 20} width={bw} height={40} />
-                  <text className="na" x={bx + bw / 2} y={y0 + 4} textAnchor="middle">n/a</text>
+                  <text className="na" x={bx + bw / 2} y={y0 + 4} textAnchor="middle">{t('state.na')}</text>
                 </>
               ) : (
                 <rect className={`b ${v < 0 ? 'neg' : 'pos'}`} style={{ ['--i' as string]: i }} x={bx} y={v < 0 ? y0 : y0 - v * k} width={bw} height={Math.abs(v) * k} fill={FILL[rainStep(v, max)]} />
@@ -107,7 +107,7 @@ export function AnomalyChart({ monthly, eventYear }: { monthly: ClimateMonth[]; 
               {v === null ? (
                 <>
                   <rect className="gap" x={xz - 20} y={y + 7} width={40} height={slot - 14} />
-                  <text className="na" x={xz + 28} y={y + slot / 2 + 4}>n/a</text>
+                  <text className="na" x={xz + 28} y={y + slot / 2 + 4}>{t('state.na')}</text>
                 </>
               ) : (
                 <>
@@ -133,7 +133,7 @@ export function AnomalyChart({ monthly, eventYear }: { monthly: ClimateMonth[]; 
         <li className="lbl" aria-hidden="true">{t('inv.tmaxRow')}</li>
         {monthly.map((m) => {
           const v = m.max_temperature_anomaly_c;
-          const text = v === null ? 'n/a' : num(v, { digits: 1, signed: true });
+          const text = v === null ? t('state.na') : num(v, { digits: 1, signed: true });
           return (
             <li key={m.month} className={tempClass(v)} aria-label={`${monthName(m.month)}: ${v === null ? t('inv.noData') : `${text} °C`}`}>{text}</li>
           );

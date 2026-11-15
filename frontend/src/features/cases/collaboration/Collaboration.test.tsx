@@ -316,6 +316,22 @@ describe('Shared view (ABB-25)', () => {
     expect(calls[0].auth).toBeNull();
   });
 
+  it('shows server pseudonyms and statuses in Spanish when the page is in Spanish', async () => {
+    const withHypothesis: SharedCaseView = {
+      ...view,
+      sections: { ...view.sections, hypotheses: true },
+      hypotheses: [{ title: 'Synthetic dry spring', statement: 'May have contributed.', status: 'OPEN', evaluation_note: null,
+        supporting_evidence_count: 0, contradicting_evidence_count: 0, missing_evidence: [], limitations: [] }],
+    };
+    mockFetch({ 'GET /api/v1/shared/tok-es': () => json(200, withHypothesis) });
+    render(<I18nProvider lang="es"><SharedCase token="tok-es" /></I18nProvider>);
+    expect(await screen.findByText('Parcela 1')).toBeTruthy();
+    expect(screen.getByText('Miembro 1')).toBeTruthy();
+    expect(screen.getByText('abierta')).toBeTruthy();
+    expect(screen.queryByText('Field 1')).toBeNull();
+    expect(screen.queryByText('OPEN')).toBeNull();
+  });
+
   it('says the link does not work for an unknown, expired or revoked token', async () => {
     mockFetch({ 'GET /api/v1/shared/gone': () => json(404, { detail: 'Not found.' }) });
     renderEn(<SharedCase token="gone" />);

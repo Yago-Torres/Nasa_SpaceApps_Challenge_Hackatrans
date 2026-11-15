@@ -6,7 +6,7 @@
 |---|---|---|---|
 | F-01 | Accounts & permissions | sign in; cases private by default; role-aware review and consent | NOT BUILT |
 | F-02 | Case management | create/edit/version case with location precision, crop history and incident notes | NOT BUILT |
-| F-03 | NASA connector layer | POWER working; chosen additional GPM/HLS source integrated with provenance, caching, rate/error handling | PARTIAL — HLS integrated (ABB-12, `/api/vegetation/hls`, real run 2026-11-15) but not yet case-bound; GPM blocked by GES DISC EULA approval |
+| F-03 | NASA connector layer | POWER working; chosen additional GPM/HLS source integrated with provenance, caching, rate/error handling | PARTIAL — HLS (ABB-12, `/api/vegetation/hls`) and GPM IMERG monthly with a POWER comparison (ABB-09, `/api/precipitation/gpm`) integrated with provenance, caching and error handling, real runs 2026-11-15; not yet bound to stored cases |
 | F-04 | Forensic timeline | meaningful baseline, observation quality flags and hypotheses with competing explanations | PARTIAL |
 | F-05 | Scientific evidence | OpenAlex/Crossref search, DOI verification, study-context records, manual review and contradictions | PARTIAL |
 | F-06 | Evidence graph | case evidence -> hypotheses -> citations -> conclusions, interactive traceability | NOT BUILT |

@@ -33,6 +33,10 @@ HLS files are Cloud-Optimized GeoTIFFs. CropStory only needs a 3 × 3 pixel wind
 - Earthdata tokens expire after 60 days: rotate the secret and `deploy/.env` before 2027-01-13 (RUNBOOK).
 - The cache stores derived values keyed by a hash of the coordinates, like the POWER cache (privacy note in ABB-28).
 
+## Addendum 2026-11-15: GPM IMERG (ABB-09)
+
+After the account holder accepted the GES DISC data terms, the same token reads GPM. `services/gpm.py` uses GES DISC OPeNDAP (`gpm1.gesdisc.eosdis.nasa.gov`) with a DAP2 ASCII subset of one 0.1° cell per monthly granule (12 requests per year plus one `.das` units check), so no HDF5/netCDF dependency is needed either. The token is sent only to the two GES DISC hosts; a redirect to the Earthdata login page is treated as refused credentials. Reading was cross-checked against the full HDF5 granule with h5py. New endpoint `GET /api/precipitation/gpm`; cache under `backend/.cache/gpm`.
+
 ## Rollout / rollback
 
 Additive: a new router and service. Without `EARTHDATA_TOKEN` the rest of the app is unchanged and the panel says HLS is not available. Rollback removes the router include in `app.py`.

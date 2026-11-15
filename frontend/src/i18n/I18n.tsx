@@ -34,6 +34,7 @@ export function I18nProvider({ children, lang: forced }: { children: ReactNode; 
 
   useEffect(() => {
     document.documentElement.lang = lang;
+    document.title = messages[lang]['app.docTitle'];
   }, [lang]);
 
   const setLang = useCallback((next: Lang) => {
