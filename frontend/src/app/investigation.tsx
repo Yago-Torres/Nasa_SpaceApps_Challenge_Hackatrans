@@ -23,7 +23,12 @@ type Store = {
 
 const Ctx = createContext<Store | null>(null);
 
-export const REFERENCE = { start: 2010, end: 2021 } as const;
+/** Same rule as the backend default (climate.py): the 10 years before the event year, from POWER's 1981. */
+export const REFERENCE_YEARS = 10;
+export const FIRST_EVENT_YEAR = 1984; // 1981–1983 is the shortest reference window the backend accepts
+export function referenceWindow(year: number): { start: number; end: number } {
+  return { start: Math.max(1981, year - REFERENCE_YEARS), end: year - 1 };
+}
 
 export function InvestigationProvider({ children }: { children: ReactNode }) {
   const [input, setInput] = useState<InvestigationInput>({ latitude: '', longitude: '', year: '' });
@@ -47,7 +52,7 @@ export function useInvestigation() {
 export type FieldErrors = Partial<Record<keyof InvestigationInput, true>>;
 
 /** Mirrors the backend's own validation (app.py) so users get the message before a request. */
-export function validateInput(input: InvestigationInput): { errors: FieldErrors; value?: { latitude: number; longitude: number; year: number } } {
+export function validateInput(input: InvestigationInput, currentYear = new Date().getFullYear()): { errors: FieldErrors; value?: { latitude: number; longitude: number; year: number } } {
   const parse = (s: string) => (s.trim() === '' ? NaN : Number(s.trim().replace('−', '-').replace(',', '.')));
   const latitude = parse(input.latitude);
   const longitude = parse(input.longitude);
@@ -55,6 +60,6 @@ export function validateInput(input: InvestigationInput): { errors: FieldErrors;
   const errors: FieldErrors = {};
   if (!(latitude >= -90 && latitude <= 90)) errors.latitude = true;
   if (!(longitude >= -180 && longitude <= 180)) errors.longitude = true;
-  if (!(Number.isInteger(year) && year >= 1981 && year <= 2025) || (year >= REFERENCE.start && year <= REFERENCE.end)) errors.year = true;
+  if (!(Number.isInteger(year) && year >= FIRST_EVENT_YEAR && year <= currentYear)) errors.year = true;
   return Object.keys(errors).length ? { errors } : { errors, value: { latitude, longitude, year } };
 }

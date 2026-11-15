@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import { useI18n } from '../i18n/I18n';
 import type { MessageKey } from '../i18n/messages';
 import { Button, ButtonLink, EvidenceLabel, Field, PageHeader, SourceLabel, StatusMessage } from '../design/components';
-import { REFERENCE, useInvestigation, validateInput, type FieldErrors } from '../app/investigation';
+import { referenceWindow, useInvestigation, validateInput, type FieldErrors } from '../app/investigation';
 import { hrefFor } from '../app/routes';
 import { AnomalyChart } from './AnomalyChart';
 import { errorText } from './errors';
@@ -36,9 +36,10 @@ export function Investigation() {
     const controller = new AbortController();
     abort.current = controller;
     setStatus('loading');
+    const reference = referenceWindow(value.year);
     try {
       const data = await api.climate(
-        { latitude: value.latitude, longitude: value.longitude, eventYear: value.year, referenceStart: REFERENCE.start, referenceEnd: REFERENCE.end },
+        { latitude: value.latitude, longitude: value.longitude, eventYear: value.year, referenceStart: reference.start, referenceEnd: reference.end },
         controller.signal,
       );
       setClimate(data);

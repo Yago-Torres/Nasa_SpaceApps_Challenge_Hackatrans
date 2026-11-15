@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Investigation: any year from 1984 to the current year can now be investigated. The incident year is compared with the 10 years before it (for example 2015 with 2005–2014), instead of a fixed 2010–2021 window that blocked those twelve years. The year limit is now the current year instead of 2025 (also in the case wizard); in a year still in progress, months not yet complete show no value.
+
 - ABB-09 follow-up: the GPM rain panel now answers within 90 s, so it is not cut off by the demo's Cloudflare tunnel (which ends requests after 100 s). The NASA POWER comparison is fetched at the same time as GPM instead of after it. Months GES DISC could not deliver in time are marked as not read; asking again completes them. The loading text now says "up to 90 s".
 
 - Web visual refresh: every application route now shares the CropStory Field Survey
