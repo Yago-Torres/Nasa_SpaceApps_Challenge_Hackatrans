@@ -53,13 +53,6 @@ The same place and year, read from two NASA products (a public grid point in the
   <sub><b>NASA GPM IMERG.</b> Satellite and rain-gauge rainfall for the 11 km cell, with its own error estimate, next to the NASA POWER total for the same months.</sub>
 </p>
 
-## 🧭 Principles
-
-- **No invented data.** If NASA or another source fails, CropStory says so. It never fills the gap with sample values.
-- **Every number carries its source:** dataset, resolution, retrieval time, checksum and limitations. A ½° NASA POWER cell is not a field measurement, and the app says so.
-- **Explanations, not verdicts.** Satellite data alone do not prove why a crop failed. Hypotheses carry no probabilities, and rotation comparisons are descriptive, not yield forecasts.
-- **Private by default.** Exact field locations are only shown to people the owner allows. The privacy map is drawn locally, with no third-party map tiles.
-
 ## 🌍 Data sources
 
 | Source | Used for | Access |
@@ -126,16 +119,3 @@ scripts/    Context check, OpenAPI export, demo seeding
 
 The method behind each feature is documented in [`docs/science/`](docs/science/), for example [climate anomalies](docs/science/CLIMATE_ANOMALIES.md), [GPM rainfall](docs/science/GPM_PRECIPITATION.md), [HLS vegetation](docs/science/HLS_VEGETATION.md) and [rotations](docs/science/ROTATIONS.md).
 
-## 🤝 Contributing
-
-Read [`AGENTS.md`](AGENTS.md) first. It holds the rules for people and AI coding agents (Claude Code, Codex): uv only for Python, provenance on every scientific value, and the design system for any UI change.
-
----
-
-<p align="center">
-  <img src="docs/images/cropstory-logo.jpg" alt="CropStory logo" width="96">
-  <br>
-  <b>CropStory</b> · Built for the NASA Space Apps Challenge 2026 · <a href="https://cropstory.yagotg.dev">Try the live demo</a>
-  <br>
-  <sub>Data from NASA POWER, GPM IMERG and HLS (Landsat and Copernicus Sentinel-2). No NASA endorsement implied.</sub>
-</p>
