@@ -11,7 +11,11 @@ Pipeline for one location and calendar year:
    missing data, never numbers.
 
 The returned cell centre is checked against the requested point (it must be the containing
-0.1° cell), and the units are checked against the dataset attributes once per request.
+0.1° cell). The units are checked against the dataset attributes (DAS) in parallel with the
+month reads, and no value is accepted or cached until that check passes; a passed check is
+cached per product version. GES DISC can take tens of seconds per answer, so reads have a long
+timeout that is not retried, and the year has a time budget after which unread months are
+reported as NOT_READ (they are cached when read, so a retry completes them).
 ``GpmSourceError.public_message`` never contains URLs, coordinates or upstream bodies.
 """
 from __future__ import annotations
@@ -57,13 +61,19 @@ FIRST_YEAR = 1998
 CACHE = Path(__file__).resolve().parents[2] / '.cache' / 'gpm'
 SEARCH_TTL_SECONDS = 86_400
 MONTH_TTL_SECONDS = 30 * 86_400
+UNITS_TTL_SECONDS = 30 * 86_400
 CACHE_FORMAT = 1
 
 MAX_ATTEMPTS = 3
 BACKOFF_SECONDS = (1.0, 2.0)
 RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
-REQUEST_TIMEOUT = httpx.Timeout(30.0, connect=10.0)
-CONCURRENCY = 4
+# GES DISC OPeNDAP opens the cloud-hosted granule before it answers: on 2026-11-15 the first byte of a
+# DAS took 23-50 s, so a 30 s read limit failed every request. A timed-out read is not retried (that
+# only repeats the wait); the whole year must finish within TIME_BUDGET_SECONDS.
+REQUEST_TIMEOUT = httpx.Timeout(120.0, connect=10.0)
+CONCURRENCY = 6
+TIME_BUDGET_SECONDS = 180.0
+BUDGET_REASON = 'Not read within the time limit of this request (NASA GES DISC was slow); retry to complete it.'
 
 _GRANULE = re.compile(r'^(?:GPM_3IMERGM\.07:)?(3B-MO\.MS\.MRG\.3IMERG\.(\d{4})(\d{2})01-S000000-E235959\.(\d{2})\.V07[A-Z]\.HDF5)$')
 _ASCII_LINE = re.compile(r'^([A-Za-z]+)(?:\[\d+\])*,\s*(-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)\s*$')
@@ -119,7 +129,8 @@ class GpmSeries:
     search_from_cache: bool
     months_from_cache: int
     requests: int
-    units_checked: bool
+    units_checked: bool              # the values read live in this request passed the units check
+    units_from_cache: bool = False   # ... through a check cached for this product version
 
 
 # --------------------------------------------------------------------------- seams for tests
@@ -214,9 +225,8 @@ class _Http:
                 self.requests += 1
                 try:
                     response = await self.client.get(url, params=params, headers=headers)
-                except httpx.TimeoutException as e:
-                    failure, cause = GpmSourceError(f'{source} did not respond in time; retry later.',
-                                                    reason='timeout'), e
+                except httpx.TimeoutException as e:   # not retried: a retry only repeats a long wait
+                    raise GpmSourceError(f'{source} did not respond in time; retry later.', reason='timeout') from e
                 except httpx.RequestError as e:
                     failure, cause = GpmSourceError(f'{source} could not be reached (network error).',
                                                     reason='network'), e
@@ -374,7 +384,8 @@ async def fetch_gpm_year(latitude: float, longitude: float, year: int, *,
     http = _Http(client, token)
     errors: list[GpmSourceError] = []
     from_cache = [0]
-    units_checked = False
+    tasks: list[asyncio.Task] = []
+    units_task: asyncio.Task | None = None
     try:
         search_key = _key({'year': year, 'product': f'{SHORT_NAME}.{VERSION}'})
         cached = _read_cache('search', search_key, SEARCH_TTL_SECONDS)
@@ -386,16 +397,26 @@ async def fetch_gpm_year(latitude: float, longitude: float, year: int, *,
             granules = [Granule(**g) for g in cached]
         by_month = {g.month: g for g in granules}
 
+        def month_key(granule: Granule) -> str:
+            return _key({'granule': granule.granule_id, 'cell': [i, j], 'processing': PROCESSING_VERSION})
+
+        live = [g for g in granules if _read_cache('months', month_key(g), MONTH_TTL_SECONDS) is None]
+        units_key = _key({'units': f'{SHORT_NAME}.{VERSION}', 'processing': PROCESSING_VERSION})
+        units_from_cache = bool(live) and _read_cache('units', units_key, UNITS_TTL_SECONDS) is True
+        if live and not units_from_cache:
+            async def verify_units() -> None:
+                check_units(await http.get(f'{live[0].opendap_url}.das', source='NASA GES DISC'))
+                _write_cache('units', units_key, True)
+            units_task = asyncio.create_task(verify_units())   # runs alongside the month reads
+
         async def one(month: int) -> MonthResult:
-            nonlocal units_checked
             hours = month_hours(year, month)
             granule = by_month.get(month)
             if granule is None:
                 return MonthResult(month=month, status='NOT_AVAILABLE', granule_id=None, hours=hours,
                                    reason='No IMERG Final granule is published for this month (not yet released '
                                           'or outside the record).')
-            key = _key({'granule': granule.granule_id, 'cell': [i, j], 'processing': PROCESSING_VERSION})
-            hit = _read_cache('months', key, MONTH_TTL_SECONDS)
+            hit = _read_cache('months', month_key(granule), MONTH_TTL_SECONDS)
             if hit is not None:
                 from_cache[0] += 1
                 return MonthResult(**hit)
@@ -407,23 +428,42 @@ async def fetch_gpm_year(latitude: float, longitude: float, year: int, *,
                 errors.append(e)
                 return MonthResult(month=month, status='NOT_READ', granule_id=granule.granule_id, hours=hours,
                                    reason=f'Retrieval failed: {e.public_message}')
-            _write_cache('months', key, asdict(result))
+            if units_task is not None:
+                await units_task   # no value is accepted (or cached) before the units are confirmed
+            _write_cache('months', month_key(granule), asdict(result))
             return result
 
-        live = [g for g in granules if _read_cache('months', _key({'granule': g.granule_id, 'cell': [i, j],
-                                                                    'processing': PROCESSING_VERSION}),
-                                                   MONTH_TTL_SECONDS) is None]
-        if live:  # units are checked once before any new value is accepted
-            check_units(await http.get(f'{live[0].opendap_url}.das', source='NASA GES DISC'))
-            units_checked = True
-        months = list(await asyncio.gather(*(one(m) for m in range(1, 13))))
+        tasks = [asyncio.create_task(one(m)) for m in range(1, 13)]
+        waiting = [*tasks, *([units_task] if units_task else [])]
+        done, pending = await asyncio.wait(waiting, timeout=TIME_BUDGET_SECONDS,
+                                           return_when=asyncio.FIRST_EXCEPTION)
+        failures = [t.exception() for t in done if not t.cancelled() and t.exception() is not None]
+        if failures:
+            units_failure = units_task.exception() if units_task in done and not units_task.cancelled() else None
+            raise units_failure or failures[0]
+        if units_task in pending:
+            logger.warning('GPM units check did not finish within the time budget')
+            raise GpmSourceError('NASA GES DISC did not respond in time; retry later.', reason='timeout')
+        months = []
+        for month, task in enumerate(tasks, start=1):
+            if task in done:
+                months.append(task.result())
+            else:
+                errors.append(GpmSourceError(BUDGET_REASON, reason='timeout'))
+                months.append(MonthResult(month=month, status='NOT_READ', granule_id=by_month[month].granule_id,
+                                          hours=month_hours(year, month), reason=BUDGET_REASON))
     finally:
+        outstanding = [t for t in (*tasks, units_task) if t is not None and not t.done()]
+        for t in outstanding:
+            t.cancel()
+        await asyncio.gather(*outstanding, return_exceptions=True)
         if own_client:
             await client.aclose()
     read_attempts = sum(1 for m in months if m.status in ('OBSERVED', 'MISSING', 'NOT_READ')) - from_cache[0]
     if errors and len(errors) == read_attempts:
         raise errors[0]  # nothing could be read live: an honest failure
+    accepted_live = read_attempts > len(errors)
     return GpmSeries(latitude=latitude, longitude=longitude, year=year, cell_latitude=lat_c, cell_longitude=lon_c,
                      months=months, granules_found=len(granules), retrieved_at=_now(),
                      search_from_cache=search_from_cache, months_from_cache=from_cache[0], requests=http.requests,
-                     units_checked=units_checked)
+                     units_checked=accepted_live, units_from_cache=accepted_live and units_from_cache)

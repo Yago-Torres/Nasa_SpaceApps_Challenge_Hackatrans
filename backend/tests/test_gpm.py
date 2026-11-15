@@ -243,6 +243,84 @@ async def test_wrong_units_stop_before_any_value_is_accepted():
     fake = FakeNasa(das=DAS.replace(b'"mm/hr"', b'"mm/day"'))
     with pytest.raises(gpm.GpmSourceError, match='units'):
         await run(fake)
+    assert not (gpm.CACHE / 'months').exists() and not (gpm.CACHE / 'units').exists()   # nothing accepted
+
+
+class SlowNasa(FakeNasa):
+    """GES DISC answering slowly (2026-11-15: 23-50 s per DAS) or timing out, in scaled-down time."""
+
+    def __init__(self, *, das_delay=0.0, month_delay=None, timeout_months=(), **kw):
+        super().__init__(**kw)
+        self.das_delay, self.month_delay, self.timeout_months = das_delay, month_delay or {}, set(timeout_months)
+
+    async def handler(self, request):
+        import asyncio
+        path = request.url.path
+        if path.endswith('.das'):
+            await asyncio.sleep(self.das_delay)
+        elif request.url.host != 'cmr.earthdata.nasa.gov':
+            month = int(path.rsplit('/', 1)[-1].split('.')[4][4:6])
+            if month in self.timeout_months:
+                self.requests.append(request)
+                raise httpx.ReadTimeout('slow', request=request)
+            await asyncio.sleep(self.month_delay.get(month, 0.0))
+        return super().handler(request)
+
+
+@pytest.mark.asyncio
+async def test_a_timed_out_read_is_not_retried_and_only_that_month_is_lost():
+    fake = SlowNasa(timeout_months={4})
+    series = await run(fake)
+    assert series.months[3].status == 'NOT_READ' and 'did not respond in time' in series.months[3].reason
+    assert sum(1 for r in fake.requests if f'{YEAR}0401' in r.url.path) == 1
+    assert sum(m.status == 'OBSERVED' for m in series.months) == 11
+
+
+@pytest.mark.asyncio
+async def test_a_slow_units_check_runs_alongside_the_month_reads(monkeypatch):
+    monkeypatch.setattr(gpm, 'TIME_BUDGET_SECONDS', 5.0)
+    import time
+    start = time.monotonic()
+    series = await run(SlowNasa(das_delay=0.4, month_delay={m: 0.4 for m in range(1, 6)}))
+    # DAS + 5 slow months fit in the 6 concurrent slots: ~0.4 s, versus >= 0.8 s for DAS-then-months
+    assert time.monotonic() - start < 0.7
+    assert series.units_checked and not series.units_from_cache
+    assert all(m.status == 'OBSERVED' for m in series.months)
+
+
+@pytest.mark.asyncio
+async def test_months_beyond_the_time_budget_are_not_read_and_a_retry_completes_them(monkeypatch):
+    monkeypatch.setattr(gpm, 'TIME_BUDGET_SECONDS', 0.3)
+    first = await run(SlowNasa(month_delay={11: 5.0, 12: 5.0}))
+    assert [m.status for m in first.months[10:]] == ['NOT_READ', 'NOT_READ']
+    assert all('time limit' in m.reason and m.precipitation_mm is None for m in first.months[10:])
+    assert all(m.status == 'OBSERVED' for m in first.months[:10]) and first.units_checked
+    fake = SlowNasa()
+    second = await run(fake)
+    assert second.months_from_cache == 10 and all(m.status == 'OBSERVED' for m in second.months)
+    assert not any(r.url.path.endswith('.das') for r in fake.requests)   # units check cached
+    assert second.units_checked and second.units_from_cache
+
+
+@pytest.mark.asyncio
+async def test_units_check_beyond_the_time_budget_is_an_error_and_accepts_nothing(monkeypatch):
+    monkeypatch.setattr(gpm, 'TIME_BUDGET_SECONDS', 0.3)
+    with pytest.raises(gpm.GpmSourceError) as info:
+        await run(SlowNasa(das_delay=5.0))
+    assert info.value.reason == 'timeout'
+    assert not (gpm.CACHE / 'months').exists()
+
+
+@pytest.mark.asyncio
+async def test_nothing_read_within_the_budget_is_an_honest_timeout(monkeypatch):
+    monkeypatch.setattr(gpm, 'TIME_BUDGET_SECONDS', 0.3)
+    with pytest.raises(gpm.GpmSourceError) as info:
+        await run(SlowNasa(month_delay={m: 5.0 for m in range(1, 13)}))
+    assert info.value.reason == 'timeout' and 'time limit' in info.value.public_message
+
+
+def test_read_timeout_allows_the_slow_answers_seen_on_ges_disc():
+    assert gpm.REQUEST_TIMEOUT.read >= 90 and gpm.TIME_BUDGET_SECONDS > gpm.REQUEST_TIMEOUT.read
 
 
 @pytest.mark.asyncio
