@@ -17,6 +17,7 @@ docker compose -p cropstory logs --since 1h api | grep -E '"event": "(upstream_e
 | `upstream_error source=nasa_power outcome=error:timeout` (or `rate_limited`, `upstream_error`) | NASA POWER is slow or failing | Nothing to fix locally. Users see an honest 502 and no substitute data. Retry later. |
 | `upstream_error source=openalex_search` | OpenAlex is unavailable or rate limited | Set `OPENALEX_API_KEY` in `deploy/.env` if it keeps happening, then redeploy the same tag. |
 | `upstream_error source=nasa_hls outcome=error:unauthorized` | The Earthdata token expired (60 days) or the account lost LP DAAC access | Generate a new token at urs.earthdata.nasa.gov, put it in `deploy/.env` (`EARTHDATA_TOKEN`) and the `EARTHDATA_TOKEN` Actions secret, then `deploy.sh <current tag>`. |
+| `upstream_error source=nasa_gpm outcome=error:unauthorized` | Earthdata token expired, or the account no longer accepts the GES DISC data terms | Renew the token as for HLS; if it persists, approve "NASA GESDISC DATA ARCHIVE" again in the Earthdata profile (Applications → Authorized Apps). |
 | `unhandled_error` | A bug | Use the `request_id` from the user's response header to find the log line, then open an issue with the type and location. |
 
 ## Back up

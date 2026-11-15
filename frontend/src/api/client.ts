@@ -1,5 +1,5 @@
 import type {
-  CaseCreate, CaseList, VegetationResponse, CaseUpdate, CaseView, ClimateResponse, CropCatalog, FieldPatch, HypothesisCreate, HypothesisList,
+  CaseCreate, CaseList, PrecipitationResponse, VegetationResponse, CaseUpdate, CaseView, ClimateResponse, CropCatalog, FieldPatch, HypothesisCreate, HypothesisList,
   HypothesisStatusChange, HypothesisTemplateCatalog, HypothesisTemplateRequest, HypothesisView, LoginRequest, Paper,
   RegisterRequest, ReportRequest, ReportResponse, Rotation, RotationCompareRequest, RotationComparison,
   ScenarioAnalysis, ScenarioAnalysisRequest, SensitivityAnalysis, SensitivityRequest, SessionOut, Timeline, UserOut,
@@ -85,6 +85,11 @@ export const api = {
       reference_end: String(q.referenceEnd),
     });
     return request<ClimateResponse>(`/api/climate?${params}`, { signal });
+  },
+  /** GET /api/precipitation/gpm (ABB-09). 503 without an Earthdata token; never sample data. */
+  precipitation(q: { latitude: number; longitude: number; year: number }, signal?: AbortSignal) {
+    const params = new URLSearchParams({ latitude: String(q.latitude), longitude: String(q.longitude), year: String(q.year) });
+    return request<PrecipitationResponse>(`/api/precipitation/gpm?${params}`, { signal });
   },
   /** GET /api/vegetation/hls (ABB-12). 503 when the server has no Earthdata token; never sample data. */
   vegetation(q: { latitude: number; longitude: number; start: string; end: string }, signal?: AbortSignal) {

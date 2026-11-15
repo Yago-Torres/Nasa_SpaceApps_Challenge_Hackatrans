@@ -9,6 +9,7 @@ import { hrefFor } from '../app/routes';
 import { AnomalyChart } from './AnomalyChart';
 import { errorText } from './errors';
 import { VegetationPanel } from './vegetation/VegetationPanel';
+import { PrecipitationPanel } from './precipitation/PrecipitationPanel';
 
 export function Investigation() {
   const { t, num } = useI18n();
@@ -155,6 +156,8 @@ export function Investigation() {
           />
         </div>
       )}
+
+      <PrecipitationPanel point={validateInput(input).value ?? null} year={input.year} />
 
       <VegetationPanel point={validateInput(input).value ?? null} year={input.year} />
     </>
