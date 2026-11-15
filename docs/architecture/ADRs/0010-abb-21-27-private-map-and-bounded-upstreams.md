@@ -40,7 +40,8 @@ Redis y un worker aún no están desplegados en el entorno objetivo del proyecto
 
 ## Decision
 
-1. ABB-21 usa el mapa local SVG de privacidad como mapa geoespacial de 1.0. No se añade
+1. ABB-21 usa el mapa local SVG de privacidad como mapa geoespacial de 1.0 y permite hasta
+   ocho campos con configuración de privacidad independiente. No se añade
    MapLibre ni un proveedor de teselas en esta entrega. El mapa debe permanecer útil sin
    red y mostrar siempre el nivel de precisión que realmente verá cada rol.
 2. ABB-27 mantiene el camino directo para las operaciones actuales. Los límites vigentes

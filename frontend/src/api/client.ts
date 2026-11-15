@@ -1,5 +1,5 @@
 import type {
-  CaseCreate, CaseList, VegetationResponse, CaseUpdate, CaseView, ClimateResponse, CropCatalog, FieldPatch, HypothesisCreate, HypothesisList,
+  CaseCreate, CaseList, VegetationResponse, CaseUpdate, CaseView, ClimateResponse, CropCatalog, FieldCreate, FieldPatch, HypothesisCreate, HypothesisList,
   HypothesisStatusChange, HypothesisTemplateCatalog, HypothesisTemplateRequest, HypothesisView, LoginRequest, Paper,
   RegisterRequest, ReportRequest, ReportResponse, Rotation, RotationCompareRequest, RotationComparison,
   ScenarioAnalysis, ScenarioAnalysisRequest, SensitivityAnalysis, SensitivityRequest, SessionOut, Timeline, UserOut,
@@ -153,6 +153,12 @@ export const casesApi = {
   },
   updateField(id: string, fieldId: string, body: FieldPatch) {
     return request<CaseView>(`${casePath(id)}/fields/${encodeURIComponent(fieldId)}`, { method: 'PATCH', auth: true, json: body });
+  },
+  addField(id: string, body: FieldCreate) {
+    return request<CaseView>(`${casePath(id)}/fields`, { method: 'POST', auth: true, json: body });
+  },
+  removeField(id: string, fieldId: string, version: number) {
+    return request<CaseView>(`${casePath(id)}/fields/${encodeURIComponent(fieldId)}?${new URLSearchParams({ version: String(version) })}`, { method: 'DELETE', auth: true });
   },
   remove(id: string, version: number) {
     return request<void>(`${casePath(id)}?${new URLSearchParams({ version: String(version) })}`, { method: 'DELETE', auth: true });

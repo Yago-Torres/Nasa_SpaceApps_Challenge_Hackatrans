@@ -14,6 +14,7 @@ export type ServerMeta = {
   archived: boolean;
   /** The parcel the wizard edits (the first field of the case). */
   fieldId: string;
+  fieldIds: string[];
   fieldCount: number;
   /** Stored tier of that field, and what the caller received after redaction. */
   privacyTier: FieldPrivacyTier;
@@ -41,6 +42,8 @@ export type IncidentCase = {
   id: string;
   title: string;
   location: CaseLocation;
+  /** All parcels in the case. `location` is kept as the active/first parcel for compatibility. */
+  locations: CaseLocation[];
   crops: CropYear[];
   incidentYear: string;
   symptomsStart: string; // YYYY-MM
@@ -77,6 +80,7 @@ export function emptyCase(now = new Date()): IncidentCase {
     id: newId('local'),
     title: '',
     location: { latitude: '', longitude: '', regionLabel: '', tier: 'rounded', rounding: 0.1, consentPrecise: false },
+    locations: [{ latitude: '', longitude: '', regionLabel: '', tier: 'rounded', rounding: 0.1, consentPrecise: false }],
     crops: [{ id: newId('y'), year: '', crop: '', notes: '' }],
     incidentYear: '',
     symptomsStart: '',
@@ -88,6 +92,13 @@ export function emptyCase(now = new Date()): IncidentCase {
     updatedAt: iso,
     version: 0,
   };
+}
+
+/** Returns all fields while preserving compatibility with callers that edit `location` directly. */
+export function caseLocations(c: IncidentCase): CaseLocation[] {
+  const locations = c.locations.length ? [...c.locations] : [c.location];
+  if (JSON.stringify(locations[0]) !== JSON.stringify(c.location)) locations[0] = c.location;
+  return locations;
 }
 
 /* ── Parsing and validation ─────────────────────────────────────── */
@@ -117,11 +128,13 @@ export function validateStep(c: IncidentCase, step: Step, now = new Date()): Fie
   const e: FieldError[] = [];
   if (step === 'location') {
     if (!c.title.trim() || c.title.length > 120) e.push('title');
-    const lat = parseNumber(c.location.latitude);
-    const lon = parseNumber(c.location.longitude);
-    if (!(lat >= -90 && lat <= 90)) e.push('latitude');
-    if (!(lon >= -180 && lon <= 180)) e.push('longitude');
-    if (c.location.tier === 'region' && !c.location.regionLabel.trim()) e.push('regionLabel');
+    for (const location of caseLocations(c)) {
+      const lat = parseNumber(location.latitude);
+      const lon = parseNumber(location.longitude);
+      if (!(lat >= -90 && lat <= 90)) e.push('latitude');
+      if (!(lon >= -180 && lon <= 180)) e.push('longitude');
+      if (location.tier === 'region' && !location.regionLabel.trim()) e.push('regionLabel');
+    }
   }
   if (step === 'crops') {
     c.crops.forEach((row, i) => {

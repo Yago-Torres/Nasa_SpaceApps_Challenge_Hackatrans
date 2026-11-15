@@ -4,7 +4,8 @@
 
 - ABB-21/ABB-27 decisions: the wizard now treats its existing SVG privacy diagram as the
   1.0 geospatial map. It is local, to scale and makes no third-party tile requests, so a
-  field cannot leak through a basemap URL or tile provider. NASA POWER's disk cache now
+  field cannot leak through a basemap URL or tile provider. The wizard now adds, edits and
+  removes up to eight fields with independent privacy tiers. NASA POWER's disk cache now
   strips the response geometry before persistence while retaining the original source
   checksum and retrieval time; old cache format entries are invalidated. Current upstream
   calls remain synchronous with bounded retries and a 24-hour TTL until measured workload

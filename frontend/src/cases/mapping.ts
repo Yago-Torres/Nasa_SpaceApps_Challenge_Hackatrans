@@ -16,7 +16,7 @@
  * after NOTES_MARKER; the farmer's symptom text stays readable before it.
  */
 import type { CaseCreate, CaseView, FieldInput, FieldPrivacyTier, RoundingDeg } from '../api/types';
-import { MAX_CROP_ROWS, newId, parseNumber, validateStep, type CropYear, type IncidentCase, type PrivacyTier, type Rounding } from './model';
+import { caseLocations, MAX_CROP_ROWS, newId, parseNumber, validateStep, type CropYear, type IncidentCase, type PrivacyTier, type Rounding } from './model';
 
 export const REGION_NOT_SHARED = 'Not shared by the owner';
 // Stored data-format marker inside `incident_notes`. It keeps the project's former name on purpose:
@@ -41,18 +41,26 @@ export function serverTier(tier: PrivacyTier): FieldPrivacyTier {
 }
 
 export function toFieldInput(c: IncidentCase): FieldInput {
-  const lat = parseNumber(c.location.latitude);
-  const lon = parseNumber(c.location.longitude);
+  return fieldInput(c.location, c.title);
+}
+
+function fieldInput(location: IncidentCase['location'], label: string): FieldInput {
+  const lat = parseNumber(location.latitude);
+  const lon = parseNumber(location.longitude);
   const hasPoint = Number.isFinite(lat) && Number.isFinite(lon);
   return {
-    label: c.title.trim().slice(0, 160),
-    privacy_tier: serverTier(c.location.tier),
+    label: label.trim().slice(0, 160),
+    privacy_tier: serverTier(location.tier),
     latitude: hasPoint ? lat : null,
     longitude: hasPoint ? lon : null,
-    region_label: c.location.tier === 'region' ? c.location.regionLabel.trim().slice(0, 160) : REGION_NOT_SHARED,
-    precise_location_consent: c.location.consentPrecise,
-    rounding_deg: c.location.rounding as RoundingDeg,
+    region_label: location.tier === 'region' ? location.regionLabel.trim().slice(0, 160) : REGION_NOT_SHARED,
+    precise_location_consent: location.consentPrecise,
+    rounding_deg: location.rounding as RoundingDeg,
   };
+}
+
+export function toFieldInputs(c: IncidentCase): FieldInput[] {
+  return caseLocations(c).map((location, index) => fieldInput(location, index === 0 ? c.title : `${c.title} · ${index + 1}`));
 }
 
 /* ── Dates ──────────────────────────────────────────────────────── */
@@ -143,7 +151,7 @@ export function caseAttributes(c: IncidentCase, now = new Date()): CaseAttribute
 }
 
 export function toCaseCreate(c: IncidentCase, now = new Date()): CaseCreate {
-  return { ...caseAttributes(c, now), fields: [toFieldInput(c)] };
+  return { ...caseAttributes(c, now), fields: toFieldInputs(c) };
 }
 
 /** Keys whose value differs between two payloads (deep, via JSON). */
@@ -162,25 +170,30 @@ function wizardTier(tier: FieldPrivacyTier, label: string): PrivacyTier {
 }
 
 export function fromCaseView(v: CaseView): IncidentCase {
-  const field = v.fields[0];
+  const fields = v.fields.length ? v.fields : [{ id: '', label: v.title, privacy_tier: 'REGION_ONLY' as const, latitude: null, longitude: null, region_label: REGION_NOT_SHARED, area_hectares: null, limitations: [], location_precision: 'NONE' as const, rounding_deg: null, precise_location_consent: false }];
+  const field = fields[0];
   const { text, block } = decodeNotes(v.incident_notes);
   const history = cropHistory((block?.crops ?? []).map((r) => ({ id: '', ...r })));
   // Use the block's rows only while they still match the server's crop_history.
   const crops: CropYear[] = block && JSON.stringify(history) === JSON.stringify(v.crop_history)
     ? block.crops.map((r) => ({ id: newId('y'), year: String(r.year ?? ''), crop: String(r.crop ?? ''), notes: String(r.notes ?? '') }))
     : parseCropHistory(v.crop_history);
-  const rounding = ROUNDINGS.find((r) => r === field.rounding_deg) ?? 0.1;
+  const locations = fields.map((item) => {
+    const rounding = ROUNDINGS.find((r) => r === item.rounding_deg) ?? 0.1;
+    return {
+      latitude: item.latitude === null ? '' : String(item.latitude),
+      longitude: item.longitude === null ? '' : String(item.longitude),
+      regionLabel: item.region_label === REGION_NOT_SHARED ? '' : item.region_label,
+      tier: wizardTier(item.privacy_tier, item.region_label),
+      rounding,
+      consentPrecise: item.precise_location_consent,
+    };
+  });
   return {
     id: v.id,
     title: v.title,
-    location: {
-      latitude: field.latitude === null ? '' : String(field.latitude),
-      longitude: field.longitude === null ? '' : String(field.longitude),
-      regionLabel: field.region_label === REGION_NOT_SHARED ? '' : field.region_label,
-      tier: wizardTier(field.privacy_tier, field.region_label),
-      rounding,
-      consentPrecise: field.precise_location_consent,
-    },
+    location: locations[0],
+    locations,
     crops: crops.length ? crops : [{ id: newId('y'), year: '', crop: '', notes: '' }],
     incidentYear: block?.incidentYear ?? v.incident_start.slice(0, 4),
     symptomsStart: block ? block.symptomsStart : v.incident_start.slice(0, 7),
@@ -202,6 +215,7 @@ export function fromCaseView(v: CaseView): IncidentCase {
       ownerName: v.owner.display_name,
       archived: v.archived_at !== null,
       fieldId: field.id,
+      fieldIds: fields.map((item) => item.id),
       fieldCount: v.fields.length,
       privacyTier: field.privacy_tier,
       locationPrecision: field.location_precision,

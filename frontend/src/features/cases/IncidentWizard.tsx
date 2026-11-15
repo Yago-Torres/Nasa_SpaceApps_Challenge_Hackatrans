@@ -20,6 +20,7 @@ import { caseErrorText, isStorageUnavailable, isUnauthorized } from './caseError
 type SaveState = { status: 'idle' | 'saving' | 'saved' | 'error'; at?: string; error?: string };
 type LoadState = { status: 'loading' | 'missing' | 'unavailable' | 'error'; error?: string };
 type Meta = Pick<IncidentCase, 'id' | 'version' | 'updatedAt' | 'server'>;
+const MAX_FIELDS = 8;
 
 const metaOf = ({ id, version, updatedAt, server }: IncidentCase): Meta => ({ id, version, updatedAt, server });
 
@@ -48,6 +49,7 @@ export function IncidentWizard({ caseId }: { caseId: string }) {
   const [save, setSave] = useState<SaveState>({ status: 'idle' });
   const [conflict, setConflict] = useState<IncidentCase | null>(null);
   const [finished, setFinished] = useState(false);
+  const [activeField, setActiveField] = useState(0);
   const [locating, setLocating] = useState<'idle' | 'busy' | 'denied' | 'unavailable'>('idle');
   const dirty = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -179,7 +181,10 @@ export function IncidentWizard({ caseId }: { caseId: string }) {
     setFinished(false);
     setC((prev) => (prev ? { ...prev, ...patch } : prev));
   };
-  const updateLoc = (patch: Partial<IncidentCase['location']>) => update({ location: { ...c.location, ...patch } });
+  const updateLoc = (index: number, patch: Partial<IncidentCase['location']>) => {
+    const locations = (c.locations.length ? c.locations : [c.location]).map((location, i) => i === index ? { ...location, ...patch } : location);
+    update({ location: locations[0], locations });
+  };
   const err = (key: FieldError) => (errors.includes(key) ? t(ERROR_TEXT[key] ?? (key.endsWith('.year') ? 'f.cropYearError' : 'f.cropError')) : undefined);
   const rangeErr = (month: string) => (errors.includes('symptomsRange') && monthOutOfRange(month) ? t('f.rangeError') : undefined);
   const clearErr = (...keys: FieldError[]) => keys.some((k) => errors.includes(k)) && setErrors(errors.filter((e) => !keys.includes(e)));
@@ -225,7 +230,7 @@ export function IncidentWizard({ caseId }: { caseId: string }) {
     setLocating('busy');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        updateLoc({ latitude: pos.coords.latitude.toFixed(4), longitude: pos.coords.longitude.toFixed(4) });
+        updateLoc(activeField, { latitude: pos.coords.latitude.toFixed(4), longitude: pos.coords.longitude.toFixed(4) });
         setErrors(errors.filter((e) => e !== 'latitude' && e !== 'longitude'));
         setLocating('idle');
       },
@@ -290,35 +295,34 @@ export function IncidentWizard({ caseId }: { caseId: string }) {
             <>
               <Field label={t('f.title')} name="title" data-field="title" value={c.title} maxLength={120} hint={t('f.titleHint')} error={err('title')}
                 onChange={(e) => { update({ title: e.target.value }); clearErr('title'); }} />
-              <RadioGroup legend={t('f.tier')} name="tier" value={c.location.tier} onChange={(tier) => updateLoc({ tier })}
-                options={[
-                  { value: 'private', label: t('f.tier.private'), hint: t('f.tier.privateHint') },
-                  { value: 'rounded', label: t('f.tier.rounded'), hint: t('f.tier.roundedHint') },
-                  { value: 'region', label: t('f.tier.region'), hint: t('f.tier.regionHint') },
-                ]} />
-              {c.location.tier === 'rounded' && (
-                <RadioGroup legend={t('f.rounding')} name="rounding" value={String(c.location.rounding) as `${Rounding}`} onChange={(v) => updateLoc({ rounding: Number(v) as Rounding })}
-                  options={(['0.1', '0.5', '1'] as const).map((v) => ({ value: v, label: t(`f.round.${v}` as MessageKey) }))} />
-              )}
-              {c.location.tier === 'region' && (
-                <Field label={t('f.region')} name="regionLabel" data-field="regionLabel" value={c.location.regionLabel} maxLength={120} hint={t('f.regionHint')} error={err('regionLabel')}
-                  onChange={(e) => { updateLoc({ regionLabel: e.target.value }); clearErr('regionLabel'); }} />
-              )}
-              <div className="form-row form-row--2">
-                <Field label={t('f.lat')} name="latitude" data-field="latitude" inputMode="decimal" unit="°" value={c.location.latitude} hint={t('f.coordsHint')} error={err('latitude')}
-                  onChange={(e) => { updateLoc({ latitude: e.target.value }); clearErr('latitude'); }} />
-                <Field label={t('f.lon')} name="longitude" data-field="longitude" inputMode="decimal" unit="°" value={c.location.longitude} error={err('longitude')}
-                  onChange={(e) => { updateLoc({ longitude: e.target.value }); clearErr('longitude'); }} />
+              <div className="actions field-tabs" role="tablist" aria-label={t('f.fieldsTitle')}>
+                {(c.locations.length ? c.locations : [c.location]).map((_, i) => (
+                  <Button key={i} type="button" variant={i === activeField ? 'secondary' : 'text'} onClick={() => setActiveField(i)} role="tab" aria-selected={i === activeField}>
+                    {t('f.fieldTab', { n: i + 1 })}
+                  </Button>
+                ))}
+                {(c.locations.length ? c.locations : [c.location]).length < MAX_FIELDS && (
+                  <Button type="button" variant="text" onClick={() => { const locations = [...(c.locations.length ? c.locations : [c.location]), { latitude: '', longitude: '', regionLabel: '', tier: 'rounded' as const, rounding: 0.1 as Rounding, consentPrecise: false }]; update({ location: locations[0], locations }); setActiveField(locations.length - 1); }}>{t('f.addField')}</Button>
+                )}
               </div>
-              <div className="actions">
-                <Button variant="text" onClick={useMyLocation} busy={locating === 'busy'} icon={<LocateFixed aria-hidden="true" />}>
-                  {locating === 'busy' ? t('f.locating') : t('f.useLocation')}
-                </Button>
-              </div>
-              {locating === 'denied' && <StatusMessage tone="partial" title={t('f.locationDenied')} />}
-              {locating === 'unavailable' && <StatusMessage tone="partial" title={t('f.locationUnavailable')} />}
-              <Checkbox name="consentPrecise" label={t('f.consent')} hint={t('f.consentHint')} checked={c.location.consentPrecise} onChange={(v) => updateLoc({ consentPrecise: v })} />
-              <PrivacyPreview location={c.location} />
+              <p className="muted">{t('f.fieldsHint')}</p>
+              {(() => {
+                const locations = c.locations.length ? c.locations : [c.location];
+                const location = locations[activeField] ?? locations[0];
+                return <section className="field-editor" aria-labelledby="active-field-title">
+                  <div className="panel-head"><h3 id="active-field-title">{t('f.fieldTab', { n: activeField + 1 })}</h3>
+                    {locations.length > 1 && <Button type="button" variant="text" onClick={() => { const next = locations.filter((_, i) => i !== activeField); update({ location: next[0], locations: next }); setActiveField(Math.max(0, activeField - 1)); }}>{t('f.removeField')}</Button>}
+                  </div>
+                  <RadioGroup legend={t('f.tier')} name={`tier-${activeField}`} value={location.tier} onChange={(tier) => updateLoc(activeField, { tier })}
+                    options={[{ value: 'private', label: t('f.tier.private'), hint: t('f.tier.privateHint') }, { value: 'rounded', label: t('f.tier.rounded'), hint: t('f.tier.roundedHint') }, { value: 'region', label: t('f.tier.region'), hint: t('f.tier.regionHint') }]} />
+                  {location.tier === 'rounded' && <RadioGroup legend={t('f.rounding')} name={`rounding-${activeField}`} value={String(location.rounding) as `${Rounding}`} onChange={(v) => updateLoc(activeField, { rounding: Number(v) as Rounding })} options={(['0.1', '0.5', '1'] as const).map((v) => ({ value: v, label: t(`f.round.${v}` as MessageKey) }))} />}
+                  {location.tier === 'region' && <Field label={t('f.region')} name={`regionLabel-${activeField}`} data-field="regionLabel" value={location.regionLabel} maxLength={120} hint={t('f.regionHint')} error={err('regionLabel')} onChange={(e) => { updateLoc(activeField, { regionLabel: e.target.value }); clearErr('regionLabel'); }} />}
+                  <div className="form-row form-row--2"><Field label={t('f.lat')} name={`latitude-${activeField}`} data-field="latitude" inputMode="decimal" unit="°" value={location.latitude} hint={t('f.coordsHint')} error={err('latitude')} onChange={(e) => { updateLoc(activeField, { latitude: e.target.value }); clearErr('latitude'); }} /><Field label={t('f.lon')} name={`longitude-${activeField}`} data-field="longitude" inputMode="decimal" unit="°" value={location.longitude} error={err('longitude')} onChange={(e) => { updateLoc(activeField, { longitude: e.target.value }); clearErr('longitude'); }} /></div>
+                  <div className="actions"><Button type="button" variant="text" onClick={useMyLocation} busy={locating === 'busy'} icon={<LocateFixed aria-hidden="true" />}>{locating === 'busy' ? t('f.locating') : t('f.useLocation')}</Button></div>
+                  {locating === 'denied' && <StatusMessage tone="partial" title={t('f.locationDenied')} />}{locating === 'unavailable' && <StatusMessage tone="partial" title={t('f.locationUnavailable')} />}
+                  <Checkbox name={`consentPrecise-${activeField}`} label={t('f.consent')} hint={t('f.consentHint')} checked={location.consentPrecise} onChange={(v) => updateLoc(activeField, { consentPrecise: v })} /><PrivacyPreview location={location} />
+                </section>;
+              })()}
             </>
           )}
 
