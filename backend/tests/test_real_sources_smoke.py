@@ -83,9 +83,21 @@ async def test_real_gpm_through_the_public_precipitation_endpoint(monkeypatch, t
     from agroblackbox.services import gpm
     monkeypatch.setattr(gpm, "CACHE", tmp_path / "gpm")
     monkeypatch.setattr(power, "CACHE", tmp_path / "power")
+    import time
+    # A slow GES DISC can leave months NOT_READ at the time budget (kept under the demo proxy's 100 s
+    # limit); like a user, retry: months already read come from the cache and the rest are read.
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test", timeout=300) as c:
-        response = await c.get("/api/precipitation/gpm", params={"latitude": LAT, "longitude": LON, "year": YEAR})
-    assert response.status_code == 200, response.text
+        for attempt in range(1, 4):
+            start = time.monotonic()
+            response = await c.get("/api/precipitation/gpm", params={"latitude": LAT, "longitude": LON, "year": YEAR})
+            elapsed = time.monotonic() - start
+            assert response.status_code == 200, response.text
+            assert elapsed < gpm.PROXY_LIMIT_SECONDS - 5, f"answer took {elapsed:.0f} s, past the proxy limit"
+            summary = response.json()["summary"]
+            print(f"GPM attempt {attempt}: {elapsed:.0f} s, observed {summary['observed']}, "
+                  f"not_read {summary['not_read']}")
+            if summary["not_read"] == 0:
+                break
     print("NASA GPM:", json.dumps(check_precipitation_payload(response.json(), year=YEAR)))
     if os.getenv("GPM_SMOKE_OUT"):
         with open(os.environ["GPM_SMOKE_OUT"], "w", encoding="utf-8") as fh:

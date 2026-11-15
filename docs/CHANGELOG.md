@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- ABB-09 follow-up: the GPM rain panel now answers within 90 s, so it is not cut off by the demo's Cloudflare tunnel (which ends requests after 100 s). The NASA POWER comparison is fetched at the same time as GPM instead of after it. Months GES DISC could not deliver in time are marked as not read; asking again completes them. The loading text now says "up to 90 s".
+
 - Web visual refresh: every application route now shares the CropStory Field Survey
   industrial/solarpunk treatment: ruled paper-like work surfaces, a surveyed green
   navigation rail, technical title blocks, high-contrast controls, evidence-safe
@@ -38,7 +40,7 @@
   calls remain synchronous with bounded retries and a 24-hour TTL until measured workload
   justifies Redis/worker deployment. See ADR-0010.
 
-- ABB-09 fix: the GPM rain panel no longer fails after about 90 s when NASA GES DISC is slow (it was answering in 23–50 s, past the server's 30 s limit). The server now waits longer, checks the units while it reads the months and remembers that check, and stops after 3 minutes: months it could not read in time are marked as not read, and asking again completes them. The loading text says it can take up to 3 minutes.
+- ABB-09 fix: the GPM rain panel no longer fails after about 90 s when NASA GES DISC is slow (it was answering in 23–50 s, past the server's 30 s limit). The server now waits longer, checks the units while it reads the months and remembers that check, and stops after a time limit (see the follow-up above): months it could not read in time are marked as not read, and asking again completes them.
 
 - EN/ES copy review (web): about 50 Spanish strings corrected for consistent es-ES terms ("malla", "suma de verificación", "Declarado por el agricultor", "Puesto n.º"), and English or developer words removed from both languages ("backend" now reads "server"; missing values show "n/d" in Spanish charts). The overview banner no longer says cases cannot be saved and no longer shows internal roadmap ids; the map note no longer cites ABB-21. The browser tab title follows the language. The shared-case page translates the server's "Field N"/"Member N" pseudonyms and hypothesis/review statuses instead of showing raw codes, and the activity feed has wording for archive, report and study-claim events. Text written by the backend itself (comparator explanations, limitations, timeline titles, error details, generated reports) is still English only.
 
