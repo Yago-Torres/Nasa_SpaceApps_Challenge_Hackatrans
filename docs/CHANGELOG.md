@@ -8,6 +8,12 @@
   `docs/operations/SYNTHETIC_DEMO_CASES.md`. It is explicitly not evidence of a real
   pilot or external collaboration.
 
+- Demo collection and web guide: `scripts/reset_seed_demo_collection.py` can explicitly
+  remove the known old demo accounts and create two fictional, plausible-looking profiles
+  plus three Spanish case narratives ending in `— Synthetic`. `DEMO_WEB_GUIDE.md` explains
+  the owner, reviewer and anonymous visitor journeys without presenting fixtures as real
+  people or evidence.
+
 - ABB-21/ABB-27 decisions: the wizard now treats its existing SVG privacy diagram as the
   1.0 geospatial map. It is local, to scale and makes no third-party tile requests, so a
   field cannot leak through a basemap URL or tile provider. The wizard now adds, edits and
