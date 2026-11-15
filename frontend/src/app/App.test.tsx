@@ -122,5 +122,26 @@ describe('Investigation states', () => {
     expect(screen.getByRole('img', { name: 'September: no data' })).toBeTruthy();
     expect(screen.getByText(FIXTURE.disclaimer)).toBeTruthy();
     expect(String((vi.mocked(fetch).mock.calls[0] ?? [])[0])).toContain('reference_start=2012&reference_end=2021'); // the 10 years before 2022
+    // without the ABB-07 provenance fields, the two rows say so instead of inventing values
+    expect(screen.getAllByText(/not returned by the API yet/).length).toBe(2);
+  });
+
+  it('shows the spatial resolution and retrieval time that /api/climate returns', async () => {
+    const withProvenance: ClimateResponse = {
+      ...FIXTURE,
+      retrieved_at: '2026-11-14T13:39:00Z',
+      spatial_resolution: { value: null, unit: 'degree', description: '0.5° latitude × 0.625° longitude grid (MERRA-2).' },
+    };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(withProvenance), { status: 200 }));
+    const user = userEvent.setup();
+    window.location.hash = '#/investigation';
+    renderApp();
+    await user.type(screen.getByLabelText('Latitude'), '41.6');
+    await user.type(screen.getByLabelText('Longitude'), '-0.9');
+    await user.type(screen.getByLabelText('Year of the incident'), '2022');
+    await user.click(screen.getByRole('button', { name: 'Fetch NASA weather' }));
+    expect(await screen.findByText('0.5° latitude × 0.625° longitude grid (MERRA-2).')).toBeTruthy();
+    expect(screen.getByText(/14 Nov 2026/)).toBeTruthy();
+    expect(screen.queryByText(/not returned by the API yet/)).toBeNull();
   });
 });
