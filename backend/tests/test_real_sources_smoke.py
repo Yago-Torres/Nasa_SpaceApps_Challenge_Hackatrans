@@ -6,7 +6,7 @@ power.larc.nasa.gov, api.crossref.org and api.openalex.org. Run it before a rele
 
     cd backend && RUN_REAL_SOURCES=1 uv run --extra dev pytest -q -m real_network -s tests/test_real_sources_smoke.py
 
-The HLS test (ABB-12) also needs ``EARTHDATA_TOKEN``; the ``earthdata-smoke`` workflow runs it with the repository secret.
+The HLS (ABB-12) and GPM (ABB-09) tests also need ``EARTHDATA_TOKEN``; the ``earthdata-smoke`` workflow runs it with the repository secret.
 
 It sends only a public, region-level coordinate (Ebro valley, no farm) and a pilot-paper DOI: no private data.
 Assertions live in ``real_source_checks`` (also exercised offline by ``test_real_source_checks_offline.py``).

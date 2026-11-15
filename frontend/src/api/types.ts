@@ -1572,3 +1572,52 @@ export type VegetationResponse = {
   limitations: string[];
   disclaimer: string;
 };
+
+/* ── GET /api/precipitation/gpm (ABB-09): GPM IMERG Final monthly precipitation + POWER comparison ── */
+export type GpmMonthStatus = 'OBSERVED' | 'MISSING' | 'NOT_AVAILABLE' | 'NOT_READ';
+export type GpmMonth = {
+  month: number;
+  status: GpmMonthStatus;
+  reason: string | null;
+  granule_id: string | null;
+  hours: number;
+  rate_mm_per_hour: number | null;
+  precipitation_mm: number | null;
+  random_error_mm: number | null;
+  quality_index: number | null;
+  gauge_weight_percent: number | null;
+  data_sha256: string | null;
+  power_precipitation_mm: number | null;
+  difference_mm: number | null;
+};
+export type PrecipitationResponse = {
+  kind: 'observation';
+  source_kind: 'OBSERVED';
+  dataset: string;
+  source_url: string;
+  request_params: Record<string, string | number>;
+  year: number;
+  cell: { latitude: number; longitude: number; size_degrees: number };
+  retrieved_at: string;
+  spatial_resolution: Resolution;
+  temporal_resolution: Resolution;
+  provenance: SourceManifest;
+  monthly: GpmMonth[];
+  comparison: {
+    status: 'COMPARED' | 'UNAVAILABLE';
+    reason: string | null;
+    dataset: string;
+    parameter: 'PRECTOTCORR';
+    spatial_resolution: string;
+    data_sha256: string | null;
+    retrieved_at: string | null;
+    months_compared: number;
+    gpm_total_mm: number | null;
+    power_total_mm: number | null;
+  };
+  summary: Record<string, number | null>;
+  method: Record<string, string>;
+  cache: Record<string, number | boolean>;
+  limitations: string[];
+  disclaimer: string;
+};
