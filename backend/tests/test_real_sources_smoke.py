@@ -20,13 +20,14 @@ import pytest
 from agroblackbox.app import app
 from agroblackbox.evidence_seed import PILOT_SEED
 from agroblackbox.services import literature, power
-from real_source_checks import check_climate_payload, check_doi_verification, check_paper_record
+from real_source_checks import check_climate_payload, check_doi_verification, check_paper_record, check_search_result
 
 pytestmark = [pytest.mark.real_network,
               pytest.mark.skipif(os.getenv("RUN_REAL_SOURCES") != "1",
                                  reason="manual smoke test: set RUN_REAL_SOURCES=1 (real network)")]
 DOI = PILOT_SEED[0]["doi"]
 LAT, LON, YEAR = 41.65, -0.88, 2022      # public Ebro-valley grid cell, not a farm
+QUERY = "legume rotation wheat yield"     # broad agronomic query, no private data
 
 
 @pytest.mark.asyncio
@@ -45,3 +46,11 @@ async def test_real_crossref_and_openalex_for_a_pilot_paper():
     print("Crossref:", json.dumps(check_doi_verification(check, doi=DOI)))
     record = await literature.lookup_paper(doi=DOI)
     print("OpenAlex+Crossref:", json.dumps(check_paper_record(record, doi=DOI)))
+
+
+@pytest.mark.asyncio
+async def test_real_openalex_search_through_the_public_literature_endpoint():
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test", timeout=120) as c:
+        response = await c.get("/api/literature", params={"query": QUERY})
+    assert response.status_code == 200, response.text   # 502 = OpenAlex refused (e.g. 429 without OPENALEX_API_KEY)
+    print("OpenAlex search:", json.dumps(check_search_result(response.json(), query=QUERY)))
