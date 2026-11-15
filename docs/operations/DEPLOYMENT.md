@@ -2,6 +2,24 @@
 
 How CropStory is released and run on the demo host. Decision record: `docs/architecture/ADRs/0008-demo-hosting-raspberry-pi-cloudflare-tunnel.md`. Recovery procedures: `RUNBOOK.md`.
 
+## Status (2026-11-15): demo host pending
+
+Everything in this document is implemented and was rehearsed locally on Docker (amd64), and CI runs the `deploy-smoke` job on every PR. **No release has been deployed to the demo host yet, and there is no public demo URL.** The Raspberry Pi owner will do the first deploy, which closes ABB-30.
+
+Steps for that first deploy:
+1. Install Docker Engine and the Compose plugin on the Pi (64-bit OS), and add the deploy user to the `docker` group.
+2. Clone the repository, create `deploy/.env` from `deploy/env.example` (mode 600) and fill in the secrets.
+3. Get the images, in one of two ways:
+   - Tag a release from `main` (`git tag -a v0.30.0 -m "first demo" && git push origin v0.30.0`). The `release` workflow publishes arm64 images to GHCR. If the packages are private, run `docker login ghcr.io` with a token that has only `read:packages`.
+   - Or build on the Pi: `git checkout v0.30.0 && deploy/bin/deploy.sh v0.30.0 --build`.
+4. Deploy: `deploy/bin/deploy.sh v0.30.0`, then `deploy/bin/status.sh`.
+5. Expose it, in one of two ways:
+   - Map a hostname of the existing Cloudflare tunnel to `http://127.0.0.1:8080`.
+   - Or run `deploy/bin/quick-tunnel.sh` for a temporary `trycloudflare.com` URL.
+6. Run the restore drill once on the host (`deploy/bin/backup.sh first && deploy/bin/restore.sh <dump>`) and install the nightly backup cron entry.
+7. Optional: automatic deploys from tags. Set the repository variables and secrets listed under "Deploy a release" and add a dedicated deploy key to the host.
+8. Record the URL, the tag and the outputs in `CURRENT_STATE.md` (ABB-30 row and verification paragraph), then close ABB-30.
+
 ## Pieces
 
 | Piece | Where | What it does |
