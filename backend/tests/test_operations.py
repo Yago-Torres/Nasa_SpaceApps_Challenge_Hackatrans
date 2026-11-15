@@ -225,3 +225,15 @@ def test_a_failed_migration_rolls_back_completely_and_the_previous_head_stays_us
         command.check(alembic_config())  # the shipped schema still matches the models
     finally:
         engine.dispose()
+
+
+def test_external_source_functions_are_monitored_once():
+    """The wrappers are installed at app start without decorating the services (ABB-27 owns them)."""
+    from agroblackbox import upstream_monitoring
+    from agroblackbox.services import literature
+
+    before = (power.fetch_power, literature.search_literature, literature.lookup_paper, literature.verify_doi)
+    upstream_monitoring.install()  # idempotent
+    after = (power.fetch_power, literature.search_literature, literature.lookup_paper, literature.verify_doi)
+    assert before == after
+    assert all(getattr(fn, "_cropstory_monitored", False) for fn in after)

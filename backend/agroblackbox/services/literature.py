@@ -27,8 +27,6 @@ from urllib.parse import quote
 import httpx
 from pydantic import BaseModel, Field
 
-from ..observability import track_upstream
-
 OPENALEX_WORKS_URL = 'https://api.openalex.org/works'
 CROSSREF_WORKS_URL = 'https://api.crossref.org/works/'
 DOI_RESOLVER = 'https://doi.org/'
@@ -230,7 +228,6 @@ def _crossref_authors(message: dict) -> list[Author]:
     return authors
 
 
-@track_upstream("crossref", lambda check: {"VERIFIED_CROSSREF": "ok", "NOT_FOUND_IN_CROSSREF": "not_found"}.get(check.status, "error:unavailable"))
 async def verify_doi(doi: str, client: httpx.AsyncClient | None = None) -> DoiVerification:
     """Look up one DOI in Crossref. Never raises for upstream failures; reports a status instead."""
     doi_id = normalize_doi(doi)
@@ -378,7 +375,6 @@ def _merge_crossref(record: dict, check: DoiVerification) -> dict:
 
 # ---------------------------------------------------------------- public API
 
-@track_upstream("openalex_search")
 async def search_literature(query: str, client: httpx.AsyncClient | None = None) -> LiteratureSearchResult:
     """Search OpenAlex, deduplicate, verify each DOI in Crossref. Raises LiteratureSourceError on OpenAlex failure."""
     own_client = client is None
@@ -476,7 +472,6 @@ def _crossref_only_record(check: DoiVerification, openalex_retrieval: SourceRetr
     }
 
 
-@track_upstream("openalex_lookup")
 async def lookup_paper(
     *, doi: str | None = None, openalex_id: str | None = None, client: httpx.AsyncClient | None = None,
 ) -> PaperRecord:

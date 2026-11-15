@@ -6,12 +6,13 @@ from .schemas import contract_openapi_schemas
 from .crop_catalog import CropCatalog, catalog
 from .farm_profile import FarmProfile, FarmProfileAssessment, assess_profile
 from .climate import router as climate_router
-from .services.literature import LiteratureSearchResult, LiteratureSourceError, search_literature
+from .services import literature as literature_service
+from .services.literature import LiteratureSearchResult, LiteratureSourceError
 from .services.rotations import rotation_examples
 from .services.report import build_report
 from .rotation_api import router as rotation_router
 from .api import include_api_v1
-from . import observability
+from . import observability, upstream_monitoring  # noqa: F401  (installs external-source monitoring)
 
 observability.configure_logging()
 
@@ -68,7 +69,7 @@ app.include_router(climate_router)
 @app.get('/api/literature', response_model=LiteratureSearchResult)
 async def literature(query:str=Query(min_length=3,max_length=180)):
     try:
-        return await search_literature(query)
+        return await literature_service.search_literature(query)  # module lookup: monitored (ABB-30)
     except LiteratureSourceError as e:
         # public_message never contains request URLs, API keys or contact data.
         raise HTTPException(status_code=502, detail=e.public_message) from e

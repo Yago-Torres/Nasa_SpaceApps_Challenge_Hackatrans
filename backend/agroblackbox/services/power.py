@@ -32,7 +32,6 @@ from typing import Any
 import httpx
 
 from .. import __version__
-from ..observability import track_upstream
 
 logger = logging.getLogger(__name__)
 
@@ -303,7 +302,6 @@ async def _download(client: httpx.AsyncClient, params: dict[str, Any]) -> tuple[
     raise AssertionError('unreachable')  # pragma: no cover
 
 
-@track_upstream("nasa_power", lambda record: "cache" if record.served_from_cache else "ok")
 async def fetch_power(latitude: float, longitude: float, event_year: int, ref_start: int, ref_end: int,
                       *, client: httpx.AsyncClient | None = None) -> PowerRecord:
     """Return validated POWER daily data plus provenance. Raises PowerSourceError."""
