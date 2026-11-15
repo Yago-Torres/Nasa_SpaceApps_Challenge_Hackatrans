@@ -63,7 +63,7 @@ export function RainCompareChart({ monthly, year }: { monthly: GpmMonth[]; year:
                onMouseEnter={(e) => show(m, e.currentTarget)} onFocus={(e) => show(m, e.currentTarget)} onMouseLeave={() => setTip(null)} onBlur={() => setTip(null)}>
               <rect className="hit" x={X0 + slot * i + 1} y={Y_TOP - 4} width={slot - 2} height={Y_BOT - Y_TOP + 8} rx={3} />
               {g === null ? (
-                <text className="na" x={cx - bw / 2 - 1} y={Y_BOT - 6} textAnchor="middle">n/a</text>
+                <text className="na" x={cx - bw / 2 - 1} y={Y_BOT - 6} textAnchor="middle">{t('state.na')}</text>
               ) : (
                 <>
                   <rect className="gpm" x={cx - bw - 1} y={y(g)} width={bw} height={Y_BOT - y(g)} />
@@ -73,7 +73,7 @@ export function RainCompareChart({ monthly, year }: { monthly: GpmMonth[]; year:
                 </>
               )}
               {p === null ? (
-                <text className="na" x={cx + bw / 2 + 1} y={Y_BOT - 6} textAnchor="middle">n/a</text>
+                <text className="na" x={cx + bw / 2 + 1} y={Y_BOT - 6} textAnchor="middle">{t('state.na')}</text>
               ) : (
                 <rect className="pwr" x={cx + 1} y={y(p)} width={bw} height={Y_BOT - y(p)} />
               )}
