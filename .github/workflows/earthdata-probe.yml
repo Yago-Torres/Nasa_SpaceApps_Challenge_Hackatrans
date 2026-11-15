@@ -10,24 +10,27 @@ jobs:
     env:
       TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
     steps:
-      - name: probe OPeNDAP access with the Earthdata bearer token
+      - name: diagnose the Earthdata token (never prints it)
         run: |
           set -u
-          [ -n "$TOKEN" ] && echo "token present (${#TOKEN} chars)" || { echo "NO TOKEN"; exit 1; }
-          G="https://gpm1.gesdisc.eosdis.nasa.gov/opendap/GPM_L3/GPM_3IMERGM.07/2023/3B-MO.MS.MRG.3IMERG.20230601-S000000-E235959.06.V07B.HDF5"
-          CE='precipitation%5B0%5D%5B1760%5D%5B1300%5D,randomError%5B0%5D%5B1760%5D%5B1300%5D,precipitationQualityIndex%5B0%5D%5B1760%5D%5B1300%5D,gaugeRelativeWeighting%5B0%5D%5B1760%5D%5B1300%5D,lat%5B1300%5D,lon%5B1760%5D,time%5B0%5D'
-          for u in "$G.ascii?$CE" "$G.dap.csv?dap4.ce=/precipitation%5B0%5D%5B1760%5D%5B1300%5D" ; do
-            echo "=== gpm1 $(echo "$u" | cut -c1-60)..."
-            curl -s -o out.txt -D hdr.txt -w 'status=%{http_code} redirect=%{redirect_url}\n' -H "Authorization: Bearer $TOKEN" "$u" | cut -c1-120
-            grep -i '^content-type' hdr.txt || true
-            head -c 1500 out.txt; echo
-          done
-          C="https://opendap.earthdata.nasa.gov/collections/C2723754851-GES_DISC/granules/GPM_3IMERGM.07%3A3B-MO.MS.MRG.3IMERG.20230601-S000000-E235959.06.V07B.HDF5"
-          for u in "$C.ascii?$CE" "$C.dap.csv?dap4.ce=/Grid/precipitation%5B0%5D%5B1760%5D%5B1300%5D"; do
-            echo "=== cloud $(echo "$u" | cut -c1-60)..."
-            curl -s -o out.txt -D hdr.txt -w 'status=%{http_code} redirect=%{redirect_url}\n' -H "Authorization: Bearer $TOKEN" "$u" | cut -c1-120
-            grep -i '^content-type' hdr.txt || true
-            head -c 1500 out.txt; echo
-          done
-          echo "=== token profile check (status only)"
-          curl -s -o /dev/null -w 'status=%{http_code}\n' -H "Authorization: Bearer $TOKEN" https://urs.earthdata.nasa.gov/api/users/tokens || true
+          python3 - <<'PY'
+          import base64, json, os, time
+          t = os.environ['TOKEN'].strip()
+          parts = t.split('.')
+          print('jwt parts:', len(parts), '| has whitespace:', t != os.environ['TOKEN'])
+          if len(parts) == 3:
+              p = json.loads(base64.urlsafe_b64decode(parts[1] + '=' * (-len(parts[1]) % 4)))
+              print('claims keys:', sorted(p))
+              print('type:', p.get('type'), '| iss:', p.get('iss'))
+              for k in ('iat', 'exp'):
+                  if k in p: print(k, time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(p[k])))
+              print('expired:', p.get('exp', 0) < time.time())
+          PY
+          echo "=== GES DISC direct data (Range 0-99)"
+          curl -s -L -o out.bin -w 'status=%{http_code} final=%{url_effective}\n' -r 0-99 -H "Authorization: Bearer $TOKEN" \
+            "https://data.gesdisc.earthdata.nasa.gov/data/GPM_L3/GPM_3IMERGM.07/2023/3B-MO.MS.MRG.3IMERG.20230601-S000000-E235959.06.V07B.HDF5" | sed 's/[?].*//'
+          head -c 300 out.bin | strings | head -5; echo
+          echo "=== LP DAAC HLS COG (Range 0-99)"
+          curl -s -L -o out.bin -w 'status=%{http_code} final=%{url_effective}\n' -r 0-99 -H "Authorization: Bearer $TOKEN" \
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30.020/HLS.L30.T30TVK.2023154T105502.v2.0/HLS.L30.T30TVK.2023154T105502.v2.0.B04.tif" | sed 's/[?].*//'
+          head -c 300 out.bin | strings | head -5; echo
