@@ -140,6 +140,78 @@ def test_invalid_payload_is_never_cached(env):
     assert len(up.requests) == 2
 
 
+# ---------------------------------------------------------------- in-flight deduplication (ABB-27)
+
+def test_concurrent_identical_requests_trigger_one_upstream_call(env):
+    """Two concurrent fetch_power() calls for identical parameters, with nothing yet
+    in the on-disk cache, must result in exactly one NASA POWER request: the second
+    caller joins the first's in-flight task instead of downloading again."""
+    calls = []
+    release = asyncio.Event()
+
+    async def slow_upstream(request):
+        calls.append(request)
+        await release.wait()
+        return httpx.Response(200, json=payload())
+
+    env['use'](slow_upstream)
+
+    async def go():
+        t1 = asyncio.ensure_future(power.fetch_power(41.6, -0.9, 2022, 2019, 2021))
+        t2 = asyncio.ensure_future(power.fetch_power(41.6, -0.9, 2022, 2019, 2021))
+        await asyncio.sleep(0)  # let both callers reach the registry and join one task
+        release.set()
+        return await asyncio.gather(t1, t2)
+
+    rec1, rec2 = asyncio.run(go())
+    assert len(calls) == 1
+    assert rec1.sha256 == rec2.sha256 and not rec1.served_from_cache and not rec2.served_from_cache
+
+
+def test_concurrent_different_requests_are_not_deduplicated(env):
+    """Different parameters must never share a dedup slot."""
+    up = env['use'](Upstream(payload(), payload()))
+
+    async def go():
+        return await asyncio.gather(
+            power.fetch_power(41.6, -0.9, 2022, 2019, 2021),
+            power.fetch_power(10.0, 10.0, 2022, 2019, 2021),
+        )
+
+    asyncio.run(go())
+    assert len(up.requests) == 2
+
+
+def test_concurrent_requests_share_an_upstream_failure(env):
+    """If the single shared download fails, every waiting caller gets the same clean,
+    recoverable error - never a fabricated value for the callers that did not "own"
+    the request."""
+    calls = []
+    release = asyncio.Event()
+
+    async def failing_upstream(request):
+        calls.append(request)
+        await release.wait()
+        return httpx.Response(503)
+
+    env['use'](failing_upstream)
+
+    async def go():
+        async def call():
+            with pytest.raises(power.PowerSourceError):
+                await power.fetch_power(41.6, -0.9, 2022, 2019, 2021)
+
+        t1 = asyncio.ensure_future(call())
+        t2 = asyncio.ensure_future(call())
+        await asyncio.sleep(0)
+        release.set()
+        await asyncio.gather(t1, t2)
+
+    asyncio.run(go())
+    # the shared download still gets its own bounded retries (MAX_ATTEMPTS), just once
+    assert len(calls) == power.MAX_ATTEMPTS
+
+
 # ---------------------------------------------------------------- retries and errors
 
 def test_retries_5xx_with_backoff_then_succeeds(env):

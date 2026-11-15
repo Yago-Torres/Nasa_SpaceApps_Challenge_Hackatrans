@@ -58,6 +58,55 @@ def test_doi_lookup_merges_openalex_and_crossref_with_provenance():
     assert {lic.reported_by for lic in paper.licenses} == {"OpenAlex", "Crossref"}
 
 
+# ---------------------------------------------------------------- ABB-27: dedup
+#
+# lookup_paper is deliberately NOT disk-cached (see services/literature.py): a
+# degraded Crossref status (VERIFICATION_UNAVAILABLE) must stay re-triable on the
+# very next call, which is exactly what api/evidence.py's own re-verification policy
+# (test_evidence_claims.py::test_unverified_paper_is_reverified_on_next_registration)
+# relies on. In-flight deduplication only, covered here and in that policy's own
+# re-fetch-after-degradation test.
+
+def test_sequential_lookups_of_the_same_doi_each_check_upstream_again():
+    """lookup_paper has no disk cache (unlike search_literature): a degraded Crossref
+    status must be re-checkable on the very next call, not stuck for a TTL window."""
+    down = FakeScholarly([oa_work("W1", TITLE, DOI)], {DOI: httpx.Response(503)})
+    first = lookup(down, doi=DOI)
+    assert first.doi_status == "VERIFICATION_UNAVAILABLE"
+    up = FakeScholarly([oa_work("W1", TITLE, DOI)], {DOI: crossref_reply(DOI, TITLE)})
+    second = lookup(up, doi=DOI)
+    assert second.doi_status == "VERIFIED_CROSSREF"
+
+
+def test_concurrent_identical_lookups_trigger_one_openalex_call():
+    calls = []
+    release = asyncio.Event()
+
+    async def router(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "api.openalex.org":
+            calls.append(request)
+            await release.wait()
+            return httpx.Response(200, json=oa_work("W1", TITLE, DOI))
+        if request.url.host == "api.crossref.org":
+            return crossref_reply(DOI, TITLE)
+        raise AssertionError(f"unexpected host {request.url.host}")
+
+    async def call():
+        async with httpx.AsyncClient(transport=httpx.MockTransport(router)) as client:
+            return await lit.lookup_paper(doi=DOI, client=client)
+
+    async def go():
+        t1 = asyncio.ensure_future(call())
+        t2 = asyncio.ensure_future(call())
+        await asyncio.sleep(0)
+        release.set()
+        return await asyncio.gather(t1, t2)
+
+    p1, p2 = asyncio.run(go())
+    assert len(calls) == 1
+    assert p1.doi_status == p2.doi_status == "VERIFIED_CROSSREF"
+
+
 def test_doi_lookup_falls_back_to_crossref_when_openalex_has_no_record():
     fake = FakeScholarly([], {DOI: crossref_reply(DOI, TITLE)})
     paper = lookup(fake, doi=DOI)
