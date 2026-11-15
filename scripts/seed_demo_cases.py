@@ -18,6 +18,7 @@ import httpx
 
 PASSWORD = os.getenv("CROPSTORY_DEMO_PASSWORD", "synthetic-demo-correct-horse-42")
 TITLE = "SYNTHETIC DEMO — ABB-31 local pilot / ABB-32 exchange"
+NOTES_MARKER = "--- AGRO BLACK BOX wizard answers v1 (structured; edit them in the wizard) ---"
 
 
 def email_for(role: str, run_id: str) -> str:
@@ -41,6 +42,38 @@ def account(client: httpx.Client, email: str, display_name: str) -> dict[str, An
     return {"email": email, "display_name": display_name, "token": login["access_token"]}
 
 
+def case_payload() -> dict[str, Any]:
+    """Plausible Spanish agronomy inputs, still explicitly synthetic."""
+    block = {
+        "v": 1, "incidentYear": "2022", "symptomsStart": "2022-05", "symptomsEnd": "2022-07",
+        "affectedShare": "35", "constraints": {
+            "water": "rainfed", "soilKnown": True,
+            "soilNotes": "Textura franca arcillosa; pH 8,1. Medición sintética de demostración.",
+            "priorities": "Reducir el riesgo de estrés hídrico y mantener una ventana de cosecha manejable.",
+        },
+        "crops": [
+            {"year": "2020", "crop": "trigo duro", "notes": "Siembra otoñal"},
+            {"year": "2021", "crop": "garbanzo", "notes": "Sin riego"},
+            {"year": "2022", "crop": "trigo duro", "notes": "Síntomas al final de primavera"},
+        ],
+    }
+    return {
+        "title": TITLE,
+        "incident_start": "2022-05-01", "incident_end": "2022-07-31",
+        "crop_history": ["2020: trigo duro", "2021: garbanzo", "2022: trigo duro"],
+        "incident_notes": "Amarilleo irregular y pérdida de vigor en una primavera seca; fixture sintético para la demo.\n\n"
+                          + NOTES_MARKER + "\n" + json.dumps(block, ensure_ascii=False),
+        "fields": [
+            {"label": "Parcela norte (sintética)", "privacy_tier": "APPROXIMATE", "latitude": 41.65,
+             "longitude": -0.88, "region_label": "Valle del Ebro (sintético)", "rounding_deg": 0.5,
+             "limitations": ["Caso sintético; no representa una explotación real"]},
+            {"label": "Parcela de comparación (sintética)", "privacy_tier": "REGION_ONLY", "latitude": 41.75,
+             "longitude": -0.65, "region_label": "Comarca de comparación (sintética)",
+             "limitations": ["Sin observaciones asociadas; solo comparación de interfaz"]},
+        ],
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default=os.getenv("CROPSTORY_BASE_URL", "http://127.0.0.1:8000"))
@@ -55,22 +88,23 @@ def main() -> None:
 
         cases = check(client.get("/api/v1/cases", headers=owner_headers), {200}, "list owner cases")["items"]
         case = next((item for item in cases if item["title"] == TITLE), None)
+        payload = case_payload()
         if case is None:
-            case = check(client.post("/api/v1/cases", headers=owner_headers, json={
-                "title": TITLE,
-                "incident_start": "2022-05-01",
-                "incident_end": "2022-08-31",
-                "crop_history": ["SYNTHETIC wheat", "SYNTHETIC chickpea"],
-                "incident_notes": "SYNTHETIC demo only. No real farm, person, NASA observation or measured harvest result.",
-                "fields": [
-                    {"label": "SYNTHETIC local parcel", "privacy_tier": "APPROXIMATE", "latitude": 41.65,
-                     "longitude": -0.88, "region_label": "SYNTHETIC Ebro region", "rounding_deg": 0.5,
-                     "limitations": ["SYNTHETIC fixture; not a real farm"]},
-                    {"label": "SYNTHETIC comparison parcel", "privacy_tier": "REGION_ONLY", "latitude": 41.75,
-                     "longitude": -0.65, "region_label": "SYNTHETIC comparison region",
-                     "limitations": ["SYNTHETIC fixture; no observations attached"]},
-                ],
-            }), {201}, "create synthetic case")
+            case = check(client.post("/api/v1/cases", headers=owner_headers, json=payload), {201}, "create synthetic case")
+        else:
+            case = check(client.patch(f"/api/v1/cases/{case['id']}", headers=owner_headers, json={
+                "version": case["version"], **{key: payload[key] for key in ("title", "incident_start", "incident_end", "crop_history", "incident_notes")},
+            }), {200}, "refresh synthetic case")
+            version = case["version"]
+            for index, field in enumerate(payload["fields"]):
+                if index < len(case["fields"]):
+                    case = check(client.patch(f"/api/v1/cases/{case['id']}/fields/{case['fields'][index]['id']}", headers=owner_headers,
+                                               json={"version": version, **field}), {200}, "refresh synthetic field")
+                    version = case["version"]
+                else:
+                    case = check(client.post(f"/api/v1/cases/{case['id']}/fields", headers=owner_headers,
+                                              json={"version": version, "field": field}), {201}, "add synthetic field")
+                    version = case["version"]
 
         invitations = check(client.get(f"/api/v1/cases/{case['id']}/invitations", headers=owner_headers), {200}, "list invitations")["items"]
         invitation = next((item for item in invitations if item["email"] == external["email"] and item["status"] == "PENDING"), None)
@@ -81,11 +115,18 @@ def main() -> None:
         if invitation:
             check(client.post(f"/api/v1/invitations/{invitation['id']}/accept", headers=external_headers), {200, 404}, "accept synthetic invitation")
 
+        evidence_status = "not attempted"
+        imported = client.post(f"/api/v1/cases/{case['id']}/claims/pilot-import", headers=owner_headers)
+        if imported.status_code == 200:
+            evidence_status = imported.json()
+        else:
+            evidence_status = {"status": "unavailable", "detail": imported.text[:300]}
+
         comments = check(client.get(f"/api/v1/cases/{case['id']}/comments", headers=owner_headers), {200}, "list comments")["items"]
-        feedback = "SYNTHETIC external feedback: the comparison needs a local water constraint and must not imply measured yield benefit."
+        feedback = "Comentario sintético de la revisora externa: conviene separar el déficit hídrico observado de cualquier afirmación sobre rendimiento medido y declarar la limitación de no tener una medición local."
         if not any(item["body"] == feedback for item in comments):
             check(client.post(f"/api/v1/cases/{case['id']}/comments", headers=external_headers, json={"body": feedback}), {201}, "write synthetic feedback")
-        owner_note = "SYNTHETIC owner response: recorded as a demo limitation; no agronomic outcome is claimed."
+        owner_note = "Respuesta sintética de la propietaria: se incorpora la limitación y no se presenta ningún resultado agronómico como medido."
         if not any(item["body"] == owner_note for item in comments):
             check(client.post(f"/api/v1/cases/{case['id']}/comments", headers=owner_headers, json={"body": owner_note}), {201}, "write synthetic response")
 
@@ -99,6 +140,7 @@ def main() -> None:
             "reviewer_email": external["email"],
             "password": PASSWORD,
             "case_url": f"{args.base_url.rstrip('/')}/#/cases/{case['id']}",
+            "evidence": evidence_status,
         }, indent=2))
 
 

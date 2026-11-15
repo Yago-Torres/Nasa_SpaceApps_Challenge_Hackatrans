@@ -27,10 +27,13 @@ In another terminal, seed the demo:
 uv run --no-project python scripts/seed_demo_cases.py --base-url http://127.0.0.1:8000 --run-id abb-demo
 ```
 
-The output contains the synthetic owner/reviewer credentials and the case URL. Open the
-URL in the web app, sign in as the owner, then sign in as the reviewer in a separate
-browser profile to show the invitation, approximate/region-only locations and the two
-plain-text comments.
+The output contains the synthetic owner/reviewer credentials, the case URL and the
+evidence import result. The script also requests the three unverified pilot literature
+cards through the normal OpenAlex/Crossref-backed API. If those services are unavailable,
+the case remains usable and the output reports the failure rather than inventing papers.
+Open the URL in the web app, sign in as the owner, then sign in as the reviewer in a
+separate browser profile to show the invitation, approximate/region-only locations, the
+completed Spanish intake fields, the study cards and the two plain-text comments.
 
 To reset only this demo, use the account deletion screen/API for both synthetic accounts
 or recreate the local PostgreSQL volume. Never run this seed against a production database.
