@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  NASA Space Apps Challenge 2026 &nbsp;·&nbsp; English / Español &nbsp;·&nbsp; No account needed to explore
+  NASA Space Apps Challenge 2026 &nbsp;·&nbsp; No account needed to explore
 </p>
 
 <p align="center">
