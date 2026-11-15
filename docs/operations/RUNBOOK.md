@@ -16,6 +16,7 @@ docker compose -p cropstory logs --since 1h api | grep -E '"event": "(upstream_e
 | `checks.migrations = not_at_head` | The schema does not match the running image | Finish or undo a deploy: `deploy.sh <current tag>` or `rollback.sh` |
 | `upstream_error source=nasa_power outcome=error:timeout` (or `rate_limited`, `upstream_error`) | NASA POWER is slow or failing | Nothing to fix locally. Users see an honest 502 and no substitute data. Retry later. |
 | `upstream_error source=openalex_search` | OpenAlex is unavailable or rate limited | Set `OPENALEX_API_KEY` in `deploy/.env` if it keeps happening, then redeploy the same tag. |
+| `upstream_error source=nasa_hls outcome=error:unauthorized` | The Earthdata token expired (60 days) or the account lost LP DAAC access | Generate a new token at urs.earthdata.nasa.gov, put it in `deploy/.env` (`EARTHDATA_TOKEN`) and the `EARTHDATA_TOKEN` Actions secret, then `deploy.sh <current tag>`. |
 | `unhandled_error` | A bug | Use the `request_id` from the user's response header to find the log line, then open an issue with the type and location. |
 
 ## Back up
@@ -87,6 +88,7 @@ Never edit `alembic_version` by hand.
 ## Rotating secrets
 
 - **`METRICS_TOKEN` and API keys:** edit `deploy/.env`, then `deploy.sh <current tag>`.
+- **`EARTHDATA_TOKEN`:** expires 60 days after it is generated (the current one on 2027-01-13). Replace it in `deploy/.env` and in the repository secret before then.
 - **`POSTGRES_PASSWORD`:**
   1. Change it in PostgreSQL:
      ```bash

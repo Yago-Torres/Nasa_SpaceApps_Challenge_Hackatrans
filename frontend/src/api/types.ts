@@ -1518,3 +1518,57 @@ export type EvidenceTrace = {
   review_blockers: string[];
   limitations: string[];
 };
+
+/* ── GET /api/vegetation/hls (ABB-12): NASA HLS v2.0 NDVI with Fmask QA at a point ── */
+export type HlsStatus = 'VALID' | 'OBSCURED' | 'NO_DATA' | 'NOT_READ';
+export type HlsPixelCounts = {
+  clear: number; cloud: number; cloud_shadow: number; adjacent_cloud: number; cirrus: number; snow_ice: number;
+  water: number; high_aerosol: number; fill: number; invalid_reflectance: number;
+};
+export type HlsObservation = {
+  date: string;
+  acquired_at: string;
+  product: 'HLSL30' | 'HLSS30';
+  sensor: string;
+  granule_id: string;
+  mgrs_tile: string;
+  scene_cloud_cover: number | null;
+  status: HlsStatus;
+  reason: string | null;
+  window_pixels: number;
+  pixels: HlsPixelCounts;
+  ndvi: number | null;
+  ndvi_min: number | null;
+  ndvi_max: number | null;
+  red_reflectance: number | null;
+  nir_reflectance: number | null;
+  red_band: string;
+  nir_band: string;
+  epsg: number | null;
+  pixel_size_m: number | null;
+  data_sha256: string | null;
+};
+export type HlsGap = { start: string; end: string; days: number };
+export type VegetationResponse = {
+  kind: 'observation';
+  source_kind: 'OBSERVED';
+  dataset: string;
+  source_url: string;
+  request_params: Record<string, string | number>;
+  start: string;
+  end: string;
+  retrieved_at: string;
+  spatial_resolution: Resolution;
+  temporal_resolution: Resolution;
+  provenance: SourceManifest;
+  observations: HlsObservation[];
+  gaps: HlsGap[];
+  summary: { acquisitions: number; valid: number; obscured: number; no_data: number; not_read: number; granules_found: number; gap_days: number; longest_gap_days: number };
+  method: {
+    id: string; window: string; clear_rule: string; ndvi_formula: string; bands: Record<string, Record<string, string>>;
+    reflectance_scale: number; valid_reflectance_range: number[]; acquisition_rule: string; processing_version: string;
+  };
+  cache: { search_from_cache: boolean; scenes_from_cache: number; upstream_requests: number };
+  limitations: string[];
+  disclaimer: string;
+};

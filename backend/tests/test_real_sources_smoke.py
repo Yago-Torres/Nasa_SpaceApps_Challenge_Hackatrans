@@ -6,6 +6,8 @@ power.larc.nasa.gov, api.crossref.org and api.openalex.org. Run it before a rele
 
     cd backend && RUN_REAL_SOURCES=1 uv run --extra dev pytest -q -m real_network -s tests/test_real_sources_smoke.py
 
+The HLS test (ABB-12) also needs ``EARTHDATA_TOKEN``; the ``earthdata-smoke`` workflow runs it with the repository secret.
+
 It sends only a public, region-level coordinate (Ebro valley, no farm) and a pilot-paper DOI: no private data.
 Assertions live in ``real_source_checks`` (also exercised offline by ``test_real_source_checks_offline.py``).
 """
@@ -20,7 +22,8 @@ import pytest
 from agroblackbox.app import app
 from agroblackbox.evidence_seed import PILOT_SEED
 from agroblackbox.services import literature, power
-from real_source_checks import check_climate_payload, check_doi_verification, check_paper_record, check_search_result
+from real_source_checks import (check_climate_payload, check_doi_verification, check_paper_record, check_search_result,
+                                check_vegetation_payload)
 
 pytestmark = [pytest.mark.real_network,
               pytest.mark.skipif(os.getenv("RUN_REAL_SOURCES") != "1",
@@ -54,3 +57,21 @@ async def test_real_openalex_search_through_the_public_literature_endpoint():
         response = await c.get("/api/literature", params={"query": QUERY})
     assert response.status_code == 200, response.text   # 502 = OpenAlex refused (e.g. 429 without OPENALEX_API_KEY)
     print("OpenAlex search:", json.dumps(check_search_result(response.json(), query=QUERY)))
+
+
+HLS_START, HLS_END = "2023-04-01", "2023-06-30"   # one spring season, 91 days
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(not os.getenv("EARTHDATA_TOKEN"), reason="ABB-12 HLS smoke needs EARTHDATA_TOKEN")
+async def test_real_hls_through_the_public_vegetation_endpoint(monkeypatch, tmp_path):
+    from agroblackbox.services import hls
+    monkeypatch.setattr(hls, "CACHE", tmp_path / "hls")   # live download, not a stale cache
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test", timeout=300) as c:
+        response = await c.get("/api/vegetation/hls", params={"latitude": LAT, "longitude": LON,
+                                                               "start": HLS_START, "end": HLS_END})
+    assert response.status_code == 200, response.text
+    print("NASA HLS:", json.dumps(check_vegetation_payload(response.json(), start=HLS_START, end=HLS_END)))
+    if os.getenv("HLS_SMOKE_OUT"):   # optional evidence file (CI artifact), public coordinate only
+        with open(os.environ["HLS_SMOKE_OUT"], "w", encoding="utf-8") as fh:
+            json.dump(response.json(), fh, indent=1)

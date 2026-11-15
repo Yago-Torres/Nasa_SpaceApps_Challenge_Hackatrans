@@ -8,6 +8,7 @@ import { REFERENCE, useInvestigation, validateInput, type FieldErrors } from '..
 import { hrefFor } from '../app/routes';
 import { AnomalyChart } from './AnomalyChart';
 import { errorText } from './errors';
+import { VegetationPanel } from './vegetation/VegetationPanel';
 
 export function Investigation() {
   const { t, num } = useI18n();
@@ -154,6 +155,8 @@ export function Investigation() {
           />
         </div>
       )}
+
+      <VegetationPanel point={validateInput(input).value ?? null} year={input.year} />
     </>
   );
 }

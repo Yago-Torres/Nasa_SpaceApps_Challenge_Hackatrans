@@ -1,0 +1,33 @@
+name: earthdata-smoke
+# Manual real-source smoke test for the NASA Earthdata sources (ABB-12 HLS). Needs the EARTHDATA_TOKEN
+# repository secret; reads public NASA data for a public, region-level coordinate (no farm, no user data).
+on:
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  hls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+      - name: Install Python 3.12
+        run: uv python install 3.12
+      - name: Real HLS smoke through /api/vegetation/hls
+        working-directory: backend
+        env:
+          RUN_REAL_SOURCES: "1"
+          HLS_SMOKE_OUT: ${{ github.workspace }}/hls-smoke.json
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: |
+          test -n "$EARTHDATA_TOKEN" || { echo "EARTHDATA_TOKEN secret is not set"; exit 1; }
+          uv sync --locked --extra dev
+          uv run --locked --extra dev pytest -q -m real_network -s -rs -k hls tests/test_real_sources_smoke.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hls-smoke-response
+          path: hls-smoke.json
+          retention-days: 14
