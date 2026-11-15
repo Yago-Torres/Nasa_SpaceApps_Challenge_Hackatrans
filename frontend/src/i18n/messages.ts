@@ -42,6 +42,9 @@ export const en = {
 
   'dash.title': 'Investigate a failed harvest with NASA Earth data',
   'dash.lead': 'Enter where and when it happened. You get the weather record for that place against earlier years, the studies worth reading, and rotation options to compare, each marked with where it came from.',
+  'dash.artAlt': 'A concept painting of a green agricultural settlement inside a space habitat.',
+  'dash.artCredit': 'Art: Don Davis for NASA Ames, 1975. Public domain.',
+  'dash.artNote': 'Illustration only. It is not an observation of a field or a scientific result.',
   'dash.start': 'Open saved cases',
   'dash.oneOff': 'Explore without a case',
   'dash.stepsTitle': 'Steps of an investigation',
@@ -1329,6 +1332,9 @@ export const es: Record<MessageKey, string> = {
 
   'dash.title': 'Investiga una cosecha fallida con datos de la NASA',
   'dash.lead': 'Indica dónde y cuándo ocurrió. Verás el registro meteorológico de ese lugar frente a años anteriores, los estudios que merece la pena leer y rotaciones para comparar, cada cosa marcada con su origen.',
+  'dash.artAlt': 'Una pintura conceptual de un asentamiento agrícola verde dentro de un hábitat espacial.',
+  'dash.artCredit': 'Arte: Don Davis para NASA Ames, 1975. Dominio público.',
+  'dash.artNote': 'Solo ilustración. No es una observación de una parcela ni un resultado científico.',
   'dash.start': 'Abrir casos guardados',
   'dash.oneOff': 'Explorar sin caso',
   'dash.stepsTitle': 'Pasos de una investigación',
