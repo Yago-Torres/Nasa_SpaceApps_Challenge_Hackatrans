@@ -3,9 +3,13 @@
 ## Stack decision
 
 - **Backend / science**: Python 3.12+, FastAPI, Pydantic, NumPy/pandas; use validated libraries only as required by the active roadmap work.
-- **Frontend**: React / TypeScript / Vite. MapLibre or Leaflet once mapping feature is approved; no scientific computations in TS.
+- **Frontend**: React / TypeScript / Vite. ABB-21 uses a local SVG privacy map; no third-party
+  basemap or MapLibre dependency is used in 1.0, so exact locations are not disclosed by
+  tile requests. No scientific computations in TS.
 - **Persistence**: PostgreSQL + migrations for accounts, cases, evidence, review and audit. Optional PostGIS after approval if geospatial queries justify it.
-- **Jobs**: Redis-backed worker for slow/retriable ingestion or report processing; current baseline uses direct API requests and is **not** wired to Redis.
+- **Jobs**: Redis-backed worker remains an extension point for slow/retriable ingestion or
+  report processing. ABB-27's current 1.0 path uses direct requests with bounded retries
+  and TTL caches; Redis is not wired until measured workload justifies its operational cost.
 - **Source systems**: NASA POWER mandatory; GPM and HLS integrations for target 1.0 as available/appropriate, OpenAlex and Crossref for discovery. Raster products have different geospatial scales and must not be silently treated as parcel measurements.
 - **External storage**: choose and document object storage when raw assets/reports need persistence; no speculative integration.
 

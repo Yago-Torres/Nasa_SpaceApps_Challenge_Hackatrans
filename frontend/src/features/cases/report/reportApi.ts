@@ -8,7 +8,7 @@ export type ReportChanges = {
   initial: boolean; previous_version: number | null; previous_case_version?: number; case_version: number | null; items: ReportChangeItem[];
 };
 export type ReportView = {
-  id: string; case_id: string; version: number; generated_at: string; status: 'PRELIMINARY' | 'REVIEWED';
+  id: string; case_id: string; version: number; generated_at: string; language?: 'en' | 'es'; status: 'PRELIMINARY' | 'REVIEWED';
   case_version: number | null; generated_by: { id: string; display_name: string } | null; formats: ReportFormat[];
   checksum_sha256: string | null; html_sha256: string | null; pdf_sha256?: string | null; snapshot_sha256: string | null; sources_sha256: string | null;
   source_manifest_ids: string[]; changes: ReportChanges | null; limitations: string[]; downloads: Partial<Record<ReportFormat, string>>;
@@ -44,8 +44,8 @@ export const reportsApi = {
     return ((await (await call(base(caseId), { signal })).json()) as { items: ReportView[] }).items;
   },
   /** Stores a new immutable version built by the server from the case as it is now. */
-  async create(caseId: string): Promise<ReportView> {
-    return (await (await call(base(caseId), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).json()) as ReportView;
+  async create(caseId: string, language: 'en' | 'es'): Promise<ReportView> {
+    return (await (await call(base(caseId), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ language }) })).json()) as ReportView;
   },
   async verify(caseId: string, version: number): Promise<VerifyResult> {
     return (await (await call(`${base(caseId)}/${version}/verify`)).json()) as VerifyResult;

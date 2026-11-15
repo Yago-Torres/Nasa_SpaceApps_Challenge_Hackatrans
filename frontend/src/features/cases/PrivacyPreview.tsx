@@ -2,9 +2,9 @@ import { useI18n } from '../../i18n/I18n';
 import { displayedLocation, parseNumber, roundToCell, type CaseLocation } from '../../cases/model';
 
 /**
- * To-scale diagram of what the owner and reviewers see. No basemap: a tile provider is an
- * external service with privacy/cost impact and needs a team decision (pending in ABB-21).
- * Nothing here contacts any server.
+ * Local, to-scale geospatial map of what the owner and reviewers see. It deliberately
+ * uses no third-party basemap: a tile request can disclose a field through its URL, IP
+ * address and viewport. Nothing here contacts any server.
  */
 export function PrivacyPreview({ location }: { location: CaseLocation }) {
   const { t, num } = useI18n();
@@ -68,7 +68,7 @@ export function PrivacyPreview({ location }: { location: CaseLocation }) {
           </dd>
         </div>
       </dl>
-      <p className="muted">{t('map.basemapPending')}</p>
+      <p className="muted">{t('map.localPrivacy')}</p>
     </figure>
   );
 }

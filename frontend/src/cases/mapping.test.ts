@@ -9,6 +9,7 @@ function filled(): IncidentCase {
   const c = emptyCase(NOW);
   c.title = 'Synthetic test plot';
   c.location = { ...c.location, latitude: '41.6537', longitude: '-0.8773' };
+  c.locations = [c.location];
   c.crops = [
     { id: 'y1', year: '2021', crop: 'barley', notes: 'early sowing' },
     { id: 'y2', year: '2022', crop: 'durum wheat', notes: '' },

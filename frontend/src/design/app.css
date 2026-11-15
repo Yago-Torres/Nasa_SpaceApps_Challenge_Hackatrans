@@ -122,6 +122,36 @@ svg.sym { width: .85em; height: .85em; }
   .page { padding: var(--space-5) var(--space-4) var(--space-7); }
 }
 
+/* Landing is the one persuasive surface: the Ames painting carries the ecological
+   horizon; all case and science views remain focused working surfaces. */
+.hero { grid-template-columns: minmax(0, 1.1fr) minmax(15rem, .9fr); grid-template-areas: "copy art" "note art"; column-gap: var(--space-7); align-items: center; }
+.hero::before, .hero::after { content: none; }
+.hero-copy { grid-area: copy; display: grid; gap: var(--space-4); align-content: center; }
+.hero-copy > p { max-width: 48ch; }
+.hero-copy h1 { position: relative; padding-bottom: var(--space-4); border-bottom: 2px solid var(--action-edge); }
+.hero-copy h1::after { content: ""; position: absolute; bottom: calc(-1 * var(--space-1)); left: 0; width: 5rem; height: 3px; background: var(--action); }
+.hero-art { grid-area: art; align-self: stretch; min-height: 20rem; margin: 0; overflow: hidden; border: 2px solid var(--surface-shell); border-radius: var(--radius-m); background: var(--surface-shell); box-shadow: 7px 7px 0 var(--action); display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+.hero-art img { width: 100%; height: 100%; min-height: 0; object-fit: cover; object-position: center; display: block; }
+.hero-art figcaption { padding: var(--space-2) var(--space-3); border-top: 1px solid var(--ink-on-shell-2); color: var(--ink-on-shell); font-size: var(--text-xs); line-height: var(--leading-snug); }
+.hero-art-note { grid-area: note; color: var(--ink-2); font-size: var(--text-xs); border-left: 3px solid var(--action-edge); padding-left: var(--space-3); }
+
+/* Living-system accents are structural marks: sun, water and biomass are never
+   labelled as case observations or injected into charts. */
+.nav .n { position: relative; }
+.nav a[aria-current="page"] .n { box-shadow: 0 0 0 3px var(--surface-shell-active); }
+.legend { padding-top: var(--space-2); }
+.legend li { padding-top: var(--space-3); border-top: 2px solid var(--rule-2); }
+.legend li:nth-child(2) { border-color: var(--ev-farmer); }
+.legend li:nth-child(3) { border-color: var(--ev-literature); }
+.legend li:nth-child(4) { border-color: var(--ev-hypothesis); }
+.legend li:nth-child(5) { border-color: var(--ev-model); }
+
+@media (max-width: 60rem) {
+  .hero { grid-template-columns: minmax(0, 1fr); grid-template-areas: "copy" "art" "note"; gap: var(--space-5); }
+  .hero-art { min-height: 15rem; box-shadow: 5px 5px 0 var(--action); }
+  .hero-art-note { margin: 0; }
+}
+
 /* ── Panels and layout pieces ── */
 .panel { background: var(--surface); border: 1px solid var(--rule-2); border-radius: var(--radius-m); padding: var(--space-5); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); min-width: 0; }
 .panel h2 { font-size: var(--text-xl); font-weight: var(--weight-bold); }
@@ -512,3 +542,98 @@ table.data.collab-table { min-width: 0; }
 .veg-key .key-gap { width: 18px; border: 1px dotted var(--ev-missing); }
 .veg-gaps { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: grid; gap: var(--space-1); font-variant-numeric: tabular-nums; }
 .veg-gaps li { display: flex; align-items: center; gap: var(--space-2); }
+
+/* Human review and uncertainty workflows (ABB-14/15/16/19/28). */
+.review-box { border-top: 1px solid var(--rule); padding-top: var(--space-3); }
+.workflow-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); margin-block: var(--space-4); }
+.workflow-grid > form, .workflow-grid > .stack { min-width: 0; padding: var(--space-4); border: 1px solid var(--rule-2); border-radius: var(--radius-m); background: var(--surface); }
+.unc-summary { margin-block: var(--space-4); }
+.unc-questions { display: grid; gap: var(--space-5); margin: var(--space-5) 0; padding: 0; list-style: none; }
+.unc-question { border-top: 2px solid var(--rule-3); padding-top: var(--space-4); }
+.unc-question > article > header { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); gap: var(--space-3); align-items: start; }
+.unc-position { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--rule-2); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
+.danger-zone { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 2px solid var(--error-ink); }
+.account-data { margin-bottom: var(--space-5); }
+@media (max-width: 48rem) { .workflow-grid { grid-template-columns: 1fr; } }
+
+/* ── Field Survey refresh: industrial structure, solar-punk materials ──
+   Shared treatment for every route. Structure is built with rules, paper, map
+   notation and living-green accents rather than decorative imagery. */
+body { background: var(--surface-sunken); }
+.shell { background: var(--surface-sunken); }
+.rail { padding: var(--space-5) var(--space-4) var(--space-4); border-right: 3px solid var(--action-edge); box-shadow: 10px 0 0 var(--surface-tint); }
+.rail::before { content: "FIELD SURVEY / 01"; display: block; padding: 0 var(--space-2) var(--space-3); border-bottom: 1px solid var(--ink-on-shell-2); color: var(--ink-on-shell-2); font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: .08em; }
+.brand { min-height: var(--tap); padding: var(--space-2); border: 1px solid var(--ink-on-shell-2); border-radius: var(--radius-s); }
+.brand svg { color: var(--action); }
+.rail .dev { margin-top: calc(-1 * var(--space-3)); padding-top: var(--space-3); border-top: 1px solid color-mix(in srgb, var(--ink-on-shell-2) 50%, transparent); font-family: var(--font-mono); letter-spacing: .04em; }
+.nav { gap: var(--space-1); }
+.nav a { position: relative; border-radius: var(--radius-s); border: 1px solid transparent; }
+.nav a:hover { background: var(--surface-shell-hover); border-color: var(--ink-on-shell-2); }
+.nav a[aria-current="page"] { background: var(--surface-shell-active); border-color: var(--action); }
+.nav a[aria-current="page"]::after { content: ""; position: absolute; right: var(--space-2); width: var(--space-2); height: var(--space-2); border-radius: 50%; background: var(--action); }
+.rail .bottom { padding-top: var(--space-4); border-top: 1px solid var(--ink-on-shell-2); }
+
+.main { position: relative; background: var(--surface-sunken); }
+.main::before, .main::after { content: ""; position: fixed; pointer-events: none; width: var(--space-7); height: var(--space-7); border-color: var(--rule-2); opacity: .7; }
+.main::before { top: var(--space-4); right: var(--space-4); border-top: 2px solid; border-right: 2px solid; }
+.main::after { right: var(--space-4); bottom: var(--space-4); border-right: 2px solid; border-bottom: 2px solid; }
+.page { position: relative; max-width: calc(var(--content-max) + var(--space-8)); padding: var(--space-8) var(--space-7) var(--space-9); }
+.page > * { min-width: 0; }
+.page-head { padding-bottom: var(--space-5); border-bottom: 3px solid var(--rule-3); }
+.page-head h1 { letter-spacing: -.03em; }
+.page-head p { max-width: 58ch; }
+
+.panel { position: relative; border: 1px solid var(--rule-3); border-radius: var(--radius-s); padding: var(--space-5); box-shadow: 5px 5px 0 var(--surface-tint); }
+.panel::before { content: ""; position: absolute; top: calc(-1 * var(--space-1)); left: var(--space-4); width: var(--space-6); height: 3px; background: var(--action-edge); }
+.panel > .panel { box-shadow: none; border-color: var(--rule-2); }
+.panel h2, .panel h3 { letter-spacing: -.015em; }
+.panel-head { padding-bottom: var(--space-3); border-bottom: 1px solid var(--rule); }
+.section-head { padding-bottom: var(--space-3); border-bottom: 1px solid var(--rule); }
+
+.hero { position: relative; overflow: hidden; border: 2px solid var(--rule-3); border-radius: var(--radius-s); background: var(--surface-sky); padding: var(--space-8) var(--space-7); box-shadow: 8px 8px 0 var(--action); }
+.hero::before { content: "CROPSTORY / FIELD NOTE"; font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: .12em; color: var(--ink-2); }
+.hero::after { content: ""; position: absolute; right: var(--space-5); bottom: var(--space-5); width: 4.5rem; height: 4.5rem; border: 2px solid var(--action-edge); border-radius: 50%; box-shadow: inset 0 0 0 9px var(--surface-sky), inset 0 0 0 11px var(--action-edge); opacity: .8; }
+.hero h1 { max-width: 17ch; }
+.hero .actions { position: relative; z-index: 1; }
+
+.btn { border-radius: var(--radius-s); font-weight: var(--weight-bold); letter-spacing: .01em; }
+.btn--primary { border-width: 2px; }
+.btn--secondary { border-width: 1.5px; }
+.field { gap: var(--space-2); }
+.field label { font-family: var(--font-mono); letter-spacing: .035em; color: var(--ink-2); }
+.field .ctl { border-radius: var(--radius-s); background: var(--surface); }
+.field input, .field select, .field textarea { background: var(--surface); }
+
+.msg { border: 1px solid currentColor; border-radius: var(--radius-s); box-shadow: 4px 4px 0 color-mix(in srgb, currentColor 16%, transparent); }
+.msg--illustrative { border-width: 2px; }
+.label { border-radius: var(--radius-s); border-color: var(--rule-3); }
+.label header { background: var(--surface-sunken); }
+.slip { border-radius: var(--radius-s); border-left: 4px solid var(--action-edge); box-shadow: none; }
+.share-once { border-radius: var(--radius-s); box-shadow: 4px 4px 0 var(--surface-tint); }
+
+table.data { border-top: 2px solid var(--rule-3); }
+table.data thead th { background: var(--surface-sunken); font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: .03em; }
+table.data tbody tr:hover { background: var(--surface-tint); }
+.case-tabs { border-bottom: 2px solid var(--rule-3); }
+.case-tabs a { border-radius: var(--radius-s) var(--radius-s) 0 0; }
+.case-tabs a[aria-current="page"] { background: var(--surface); border: 1px solid var(--rule-3); border-bottom: 3px solid var(--action-edge); }
+
+.steps { gap: var(--space-4); }
+.steps a { border-radius: var(--radius-s); border-color: var(--rule-3); box-shadow: 3px 3px 0 var(--surface-tint); }
+.steps .n { border-radius: var(--radius-s); background: var(--surface-shell); }
+.steps a:hover { transform: translateY(-2px) translateX(1px); box-shadow: 6px 6px 0 var(--action); }
+.rotation { border-radius: var(--radius-s); border-color: var(--rule-3); box-shadow: 3px 3px 0 var(--surface-tint); }
+.rotation h3 { padding-bottom: var(--space-2); border-bottom: 1px solid var(--rule); }
+.privacy, .add-study, .claim-form { border-radius: var(--radius-s); border-color: var(--rule-3); }
+.titleblock { border: 2px solid var(--rule-3); border-bottom-width: 4px; border-radius: var(--radius-s); box-shadow: 5px 5px 0 var(--surface-tint); }
+.titleblock .name { background: var(--surface-sky); }
+
+@media (max-width: 60rem) {
+  .topbar { border-bottom: 3px solid var(--action-edge); box-shadow: 0 4px 0 var(--surface-tint); }
+  .topbar .brand { border: 0; padding: 0; }
+  .rail { border-right: 0; box-shadow: none; }
+  .page { padding: var(--space-6) var(--space-4) var(--space-8); }
+  .hero { padding: var(--space-6) var(--space-4); box-shadow: 5px 5px 0 var(--action); }
+  .hero::after { width: 3.25rem; height: 3.25rem; right: var(--space-3); bottom: var(--space-3); }
+  .main::before, .main::after { display: none; }
+}

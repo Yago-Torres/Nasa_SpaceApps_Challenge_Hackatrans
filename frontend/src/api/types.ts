@@ -209,6 +209,11 @@ export type SessionOut = { access_token: string; token_type: 'bearer'; expires_a
 /** POST /api/v1/auth/register (201 → UserOut). Password 12–256 characters. */
 export type RegisterRequest = { email: string; password: string; display_name: string };
 export type LoginRequest = { email: string; password: string };
+export type SessionSummary = { id: string; created_at: string; expires_at: string; revoked: boolean; current: boolean };
+export type AccountExport = { profile: UserOut; cases: CaseView[]; sessions: SessionSummary[]; exported_at: string };
+export type AccountDeletionReceipt = {
+  cases_deleted: number; memberships_revoked: number; sessions_revoked: number; anonymized: true; deleted_at: string;
+};
 
 /** Request body for a field (`FieldInput`). APPROXIMATE without `rounding_deg` defaults to 0.1 server-side. */
 export type FieldInput = {
@@ -1621,3 +1626,69 @@ export type VegetationResponse = {
   limitations: string[];
   disclaimer: string;
 };
+
+export type ClaimReviewRequest = {
+  version: number;
+  decision: Exclude<ClaimReviewStatus, 'PENDING'>;
+  note: string;
+  source_consulted: { basis: EvidenceBasis; access_basis: AccessBasis; license?: string | null; locator?: string | null; consulted_url?: string | null };
+};
+export type DisagreementReviewRequest = {
+  decision: Exclude<DisagreementStatus, 'CANDIDATE'>; note: string; claim_a_version: number; claim_b_version: number;
+};
+export type GraphReviewRequest = { version: number; decision: 'ACCEPTED' | 'REJECTED' | 'CHANGES_REQUESTED'; note: string };
+export type GraphCitation = { node_id: string; note: string };
+export type ConclusionCreate = {
+  title?: string | null; statement: string; limitations: string[]; supporting: GraphCitation[];
+  contradicting?: GraphCitation[]; limited_by?: GraphCitation[]; addresses_hypothesis_ids?: string[];
+};
+export type ConclusionView = {
+  id: string; case_id: string; node_id: string; source_kind: 'CONCLUSION'; title: string | null; statement: string;
+  limitations: string[]; review_status: ClaimReviewStatus; review_note: string | null; reviewer: UserSummary | null;
+  reviewed_at: string | null; created_by: UserSummary | null; created_at: string; updated_at: string; version: number;
+  citations: GraphEdge[]; trace_complete: boolean; review_blockers: string[]; warnings: string[]; can_edit: boolean; can_review: boolean;
+};
+export type ConclusionList = { items: ConclusionView[]; limitations: string[] };
+export type EdgeCreate = { from: string; to: string; relation: 'SUPPORTS' | 'CONTRADICTS' | 'LIMITS' | 'ADDRESSES'; note: string };
+export type EdgeList = { items: GraphEdge[]; limitations: string[] };
+
+/* Uncertainty Hunter (ABB-19). Values and ordering come from the backend; the UI never scores them. */
+export type QuestionStatus = 'OPEN' | 'ANSWERED' | 'REVIEWED' | 'DISMISSED';
+export type QuestionResolution = { status: QuestionStatus; current_answer_id: string | null; updated_at: string | null; note: string | null };
+export type UncertaintyTarget = { target_type: string; target_id: string; label: string; current_state: string; how: string };
+export type UncertaintyQuestion = {
+  id: string; kind: 'LOCAL_INFORMATION' | 'ANALYSIS_TASK'; category: string; question: string; why_it_matters: string;
+  origin: 'CATALOGUE' | 'HYPOTHESIS_TEXT'; measurement: string; units: string[]; answer_route: string | null; answerable_here: boolean;
+  addresses: string[]; addresses_gap_ids: string[]; would_change: UncertaintyTarget[]; would_change_statement: string;
+  open_hypotheses_linked: number; other_items_linked: number; priority_basis: string; resolution: QuestionResolution;
+  position: number | null; tied_with: string[]; currently_generated: boolean;
+};
+export type UncertaintyGap = {
+  id: string; key: string; kind: 'MISSING_DATA'; category: string; cause: string; title: string; description: string; answerable_locally: boolean;
+  sources: { entity_type: string; entity_id: string | null; field: string | null; label: string; stored: boolean }[];
+  question_ids: string[]; would_change: UncertaintyTarget[]; limitations: string[];
+};
+export type UncertaintyReport = {
+  case_id: string; case_version: number; generated_at: string; method_version: string; stored: false;
+  inputs: { farm_profile_supplied: boolean; country_code: string | null; koppen_climate: string | null; rotation_status: string | null };
+  summary: { gaps: number; gaps_by_cause: Record<string, number>; questions: number; open_questions: number; gaps_not_answerable_locally: number };
+  gaps: UncertaintyGap[]; questions: UncertaintyQuestion[];
+  prioritisation: { rule_id: string; status: 'ORDERED_BY_LINK_COUNTS' | 'NO_OPEN_QUESTIONS' | 'NO_BASIS_TO_PRIORITISE'; statement: string; steps: string[]; is_value_of_information: false };
+  limitations: string[];
+};
+export type AnswerOrigin = 'FARMER_REPORTED' | 'LOCAL_MEASUREMENT' | 'FIELD_RECORD' | 'ADVISOR_REPORT';
+export type AnswerCreate = {
+  value_text?: string | null; value_number?: number | null; unit?: string | null; observed_from?: string | null; observed_to?: string | null;
+  origin: AnswerOrigin; method?: string | null; source_reference?: string | null; note?: string | null; replaces_answer_id?: string | null;
+};
+export type UncertaintyAnswer = {
+  id: string; case_id: string; question_id: string; question: string; kind: 'FARMER_REPORTED'; source_kind: 'FARMER_REPORTED';
+  value_text: string | null; value_number: number | null; unit: string | null; observed_from: string | null; observed_to: string | null;
+  origin: AnswerOrigin; method: string | null; source_reference: string | null; note: string | null;
+  status: 'ANSWERED' | 'REVIEWED' | 'REJECTED' | 'SUPERSEDED'; is_reviewed: boolean; answered_by: UserSummary | null;
+  answered_at: string; reviewed_by: UserSummary | null; reviewed_at: string | null; review_note: string | null;
+  superseded_by_id: string | null; superseded_at: string | null; version: number; can_review: boolean; limitations: string[];
+};
+export type AnswerList = { items: UncertaintyAnswer[]; limitations: string[] };
+export type QuestionEvent = { id: string; question_id: string; action: string; answer_id: string | null; actor: UserSummary | null; created_at: string; from_status: string; to_status: string; note: string | null; changes: Record<string, JsonValue> };
+export type QuestionHistory = { case_id: string; question_id: string; question: string | null; resolution: QuestionResolution; events: QuestionEvent[]; answers: UncertaintyAnswer[] };

@@ -126,6 +126,8 @@ const base = (role: Role = 'OWNER') => ({
   'GET /claims': () => json(200, CLAIMS),
   'GET /claims/disagreements': () => json(200, DISAGREEMENTS),
   'GET /evidence-graph': () => json(200, GRAPH),
+  'GET /evidence-graph/conclusions': () => json(200, { items: [], limitations: [] }),
+  'GET /evidence-graph/edges': () => json(200, { items: [], limitations: [] }),
   [`GET /evidence-graph/trace/${encodeURIComponent(CONC.id)}`]: () => json(200, TRACE),
 });
 const renderTab = () => render(<I18nProvider lang="en"><CaseEvidence caseId={CASE_ID} /></I18nProvider>);

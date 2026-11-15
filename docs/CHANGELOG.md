@@ -2,11 +2,49 @@
 
 ## Unreleased
 
+- Web visual refresh: every application route now shares the CropStory Field Survey
+  industrial/solarpunk treatment: ruled paper-like work surfaces, a surveyed green
+  navigation rail, technical title blocks, high-contrast controls, evidence-safe
+  status treatments, responsive case tabs and data tables. No scientific result,
+  privacy boundary or source label changed.
+
+- New case-report versions record the selected EN/ES language in their immutable
+  snapshot. The web sends the current language when generating, and report headings
+  and field labels use Spanish for ES versions. Scientific source text remains verbatim.
+
+- Home now opens saved Cases as the primary action and no longer claims that cases
+  cannot be saved. The one-off Investigation, Evidence, Rotations and Report pages explain that
+  they are separate from saved cases and link back to Cases in English and Spanish.
+  This prevents a temporary comparison from looking like a persisted case result.
+
+- ABB-31/ABB-32 demo kit: `scripts/seed_demo_cases.py` creates a clearly labelled
+  synthetic owner/reviewer journey in PostgreSQL (two synthetic fields, invitation,
+  privacy-redacted views and plain-text feedback), with setup and demo wording in
+  `docs/operations/SYNTHETIC_DEMO_CASES.md`. It is explicitly not evidence of a real
+  pilot or external collaboration.
+
+- Demo collection and web guide: `scripts/reset_seed_demo_collection.py` can explicitly
+  remove the known old demo accounts and create two fictional, plausible-looking profiles
+  plus three Spanish case narratives ending in `— Synthetic`. `DEMO_WEB_GUIDE.md` explains
+  the owner, reviewer and anonymous visitor journeys without presenting fixtures as real
+  people or evidence.
+
+- ABB-21/ABB-27 decisions: the wizard now treats its existing SVG privacy diagram as the
+  1.0 geospatial map. It is local, to scale and makes no third-party tile requests, so a
+  field cannot leak through a basemap URL or tile provider. The wizard now adds, edits and
+  removes up to eight fields with independent privacy tiers. NASA POWER's disk cache now
+  strips the response geometry before persistence while retaining the original source
+  checksum and retrieval time; old cache format entries are invalidated. Current upstream
+  calls remain synchronous with bounded retries and a 24-hour TTL until measured workload
+  justifies Redis/worker deployment. See ADR-0010.
+
 - ABB-09 fix: the GPM rain panel no longer fails after about 90 s when NASA GES DISC is slow (it was answering in 23–50 s, past the server's 30 s limit). The server now waits longer, checks the units while it reads the months and remembers that check, and stops after 3 minutes: months it could not read in time are marked as not read, and asking again completes them. The loading text says it can take up to 3 minutes.
 
 - EN/ES copy review (web): about 50 Spanish strings corrected for consistent es-ES terms ("malla", "suma de verificación", "Declarado por el agricultor", "Puesto n.º"), and English or developer words removed from both languages ("backend" now reads "server"; missing values show "n/d" in Spanish charts). The overview banner no longer says cases cannot be saved and no longer shows internal roadmap ids; the map note no longer cites ABB-21. The browser tab title follows the language. The shared-case page translates the server's "Field N"/"Member N" pseudonyms and hypothesis/review statuses instead of showing raw codes, and the activity feed has wording for archive, report and study-claim events. Text written by the backend itself (comparator explanations, limitations, timeline titles, error details, generated reports) is still English only.
 
 - ABB-12 vegetation from space: the Investigation page has a new panel that reads NASA HLS v2.0 (Landsat 8/9 and Sentinel-2) for the chosen point and a date range of up to 92 days. Every satellite overpass is listed with its cloud and quality result; when the view is clear it shows the greenness index NDVI of the 90 m around the point (median, range and how many pixels were clear). Overpasses hidden by clouds, shadow, snow or water and the days with no valid observation are shown as missing data, never filled in, and the chart does not join points. A table, the source label (granules, checksum, resolution, limitations) and EN/ES text are included. NDVI is described as canopy greenness, not soil health or yield. New endpoint `GET /api/vegetation/hls`; the server needs `EARTHDATA_TOKEN` and answers 503 without it. GPM precipitation is not built yet: the team's Earthdata account must first accept the GES DISC data terms.
+
+- ABB-33 release-gate web integration: case members can now review evidence claims with the consulted-source record, decide candidate disagreements, write and independently review conclusions and manual graph links, and complete the case Uncertainty tab without manual API calls (answer/correct, review/reject, dismiss/reopen, with FARMER_REPORTED labels and no value-of-information score). The Cases screen can download the signed-in account's server export and close the account after password plus explicit irreversible-action confirmation. Wrong confirmation passwords keep the valid session. These routes are checked against the exported OpenAPI contract; live browser E2E with PostgreSQL remains a release check.
 
 - ABB-29 test suite (no user-visible behavior change): a main-journey end-to-end test drives the public API from case creation through NASA POWER, reviewed evidence, a concluded hypothesis, the three rotation alternatives, external review and the versioned report, with SYNTHETIC fixtures and pinned failure cases; a contract check compares the backend OpenAPI document with the frontend types in CI; a manual smoke test for the real NASA POWER, Crossref and OpenAlex services (`make smoke-real`) is provided but has not been run yet. CI publishes `openapi.json` as an artifact. See `docs/operations/E2E_AND_CONTRACTS.md`.
 

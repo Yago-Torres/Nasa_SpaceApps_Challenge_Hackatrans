@@ -9,12 +9,14 @@ import { ApiError } from '../api/client';
 import { canEdit, type IncidentCase } from '../cases/model';
 import { caseRepository, legacyBrowserCases } from '../cases/repository';
 import { AuthPanel } from './account/AuthPanel';
+import { AccountDataPanel } from './account/AccountDataPanel';
 import { IncidentWizard } from './cases/IncidentWizard';
 import { CaseTimeline } from './cases/timeline/CaseTimeline';
 import { CaseReport } from './cases/report/CaseReport';
 import { CollaborationPanel } from './cases/CollaborationPanel';
 import { DiscussionPanel } from './cases/DiscussionPanel';
 import { CaseEvidence } from './cases/evidence/CaseEvidence';
+import { CaseUncertainty } from './cases/uncertainty/CaseUncertainty';
 import { sharedAsText } from './cases/CaseTitleBlock';
 import { caseErrorText, isStorageUnavailable } from './cases/caseErrors';
 
@@ -29,6 +31,7 @@ const CASE_TABS = [
   { id: 'details', label: 'cases.tab.details' as MessageKey, render: (caseId: string) => <IncidentWizard key={caseId} caseId={caseId} /> },
   { id: 'timeline', label: 'cases.tab.timeline' as MessageKey, render: (caseId: string) => <CaseTimeline key={caseId} caseId={caseId} /> },
   { id: 'evidence', label: 'cases.tab.evidence' as MessageKey, render: (caseId: string) => <CaseEvidence key={caseId} caseId={caseId} /> },
+  { id: 'uncertainty', label: 'cases.tab.uncertainty' as MessageKey, render: (caseId: string) => <CaseUncertainty key={caseId} caseId={caseId} /> },
   { id: 'collaboration', label: 'cases.tab.collaboration' as MessageKey, render: (caseId: string) => <CollaborationPanel key={caseId} caseId={caseId} /> },
   { id: 'discussion', label: 'cases.tab.discussion' as MessageKey, render: (caseId: string) => <DiscussionPanel key={caseId} caseId={caseId} /> },
   { id: 'report', label: 'cases.tab.report' as MessageKey, render: (caseId: string) => <CaseReport key={caseId} caseId={caseId} /> },
@@ -142,6 +145,7 @@ function CaseList() {
   return (
     <>
       {header}
+      <AccountDataPanel />
       <LegacyNotice />
       {failure && (
         <StatusMessage tone="error" title={failure.title}

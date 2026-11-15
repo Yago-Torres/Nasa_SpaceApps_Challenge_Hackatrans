@@ -6,6 +6,7 @@ import { useI18n } from '../../../i18n/I18n';
 import { caseErrorText } from '../caseErrors';
 import { useDates } from '../collaboration/format';
 import { DoiLink, NotReviewed, useEnum } from './labels';
+import { DisagreementReviewForm } from './ReviewForms';
 
 /**
  * Candidate and reviewed disagreements between studies (ABB-15), with the recorded differences
@@ -73,6 +74,7 @@ export function DisagreementsSection({ caseId, refreshKey, onOpenClaim }: { case
             </div>
           )}
           <ul className="list-plain">{d.warnings.map((w, i) => <li key={i} className="muted">{w}</li>)}</ul>
+          <DisagreementReviewForm caseId={caseId} item={d} onDone={() => setReload((n) => n + 1)} />
           <div className="stack-tight">
             <h4>{t('evx.dis.reviews')}</h4>
             {d.reviews.length === 0 ? <p className="muted">{t('evx.dis.noReviews')}</p> : (

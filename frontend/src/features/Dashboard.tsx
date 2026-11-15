@@ -10,14 +10,22 @@ export function Dashboard() {
   return (
     <>
       <section className="hero" aria-labelledby="dash-title">
-        <h1 id="dash-title" tabIndex={-1} data-page-title>{t('dash.title')}</h1>
-        <p>{t('dash.lead')}</p>
-        <div className="actions">
-          <ButtonLink variant="primary" href={hrefFor('investigation')} icon={<ArrowRight className="go" aria-hidden="true" />}>{t('dash.start')}</ButtonLink>
+        <div className="hero-copy">
+          <h1 id="dash-title" tabIndex={-1} data-page-title>{t('dash.title')}</h1>
+          <p>{t('dash.lead')}</p>
+          <div className="actions">
+            <ButtonLink variant="primary" href={hrefFor('cases')} icon={<ArrowRight className="go" aria-hidden="true" />}>{t('dash.start')}</ButtonLink>
+            <ButtonLink href={hrefFor('investigation')}>{t('dash.oneOff')}</ButtonLink>
+          </div>
         </div>
+        <figure className="hero-art">
+          <img src="/images/torus-interior-davis-1975.jpg" width="1600" height="1068" fetchPriority="high" alt={t('dash.artAlt')} />
+          <figcaption>{t('dash.artCredit')}</figcaption>
+        </figure>
+        <p className="hero-art-note">{t('dash.artNote')}</p>
       </section>
 
-      <StatusMessage tone="pending" title={t('dash.unsavedTitle')}>{t('dash.unsavedBody')}</StatusMessage>
+      <StatusMessage tone="partial" title={t('dash.unsavedTitle')}>{t('dash.unsavedBody')}</StatusMessage>
 
       <section className="panel" aria-labelledby="dash-steps">
         <h2 id="dash-steps">{t('dash.stepsTitle')}</h2>

@@ -53,6 +53,7 @@ _MEDIA = {"markdown": ("text/markdown; charset=utf-8", "md"), "html": ("text/htm
 
 
 class ReportCreate(RequestModel):
+    language: Literal["en", "es"] = "en"
     rotation: RotationCompareRequest | None = PydanticField(
         default=None,
         description="Optional farmer-declared profile. The server runs the deterministic ABB-17 comparison on it "
@@ -60,6 +61,7 @@ class ReportCreate(RequestModel):
 
 
 class ReportView(schemas.ContractModel):
+    language: Literal["en", "es"] = "en"
     id: UUID
     case_id: UUID
     version: int
@@ -257,6 +259,7 @@ def _view(report: Report, users: dict[UUID, User]) -> ReportView:
     base = f"/api/v1/cases/{report.case_id}/reports/{report.version}"
     return ReportView(
         id=report.id, case_id=report.case_id, version=report.version, generated_at=report.generated_at,
+        language=(report.snapshot or {}).get("language", "en"),
         status=report.status, case_version=report.case_version,
         generated_by=_summary(users.get(report.generated_by_id)) if report.generated_by_id else None,
         formats=[f for f in _MEDIA if f != "pdf" or report.content_pdf is not None], checksum_sha256=report.checksum_sha256, html_sha256=report.html_sha256,
@@ -290,14 +293,15 @@ def create_report(case_id: UUID, body: ReportCreate, principal: CurrentPrincipal
         raise HTTPException(status.HTTP_409_CONFLICT, detail=f"A case can hold at most {MAX_VERSIONS} report versions.")
     now = utcnow()
     snapshot = build_snapshot(db, case, body.rotation)
+    snapshot["language"] = body.language
     snapshot["report"] = {"version": version, "generated_at": now.isoformat(), "status": "PRELIMINARY",
                           "previous_version": previous.version if previous else None}
     snapshot["fingerprints"] = cr.make_fingerprints(snapshot)
     snapshot["changes"] = cr.diff_versions(previous.snapshot if previous else None, snapshot)
     blocks = cr.build_blocks(snapshot)
     markdown = cr.render_markdown(blocks)
-    html_doc = cr.render_html(blocks, f"CropStory case report v{version}")
-    pdf = render_pdf(blocks, f"CropStory case report v{version} - preliminary, not peer reviewed")
+    html_doc = cr.render_html(blocks, f"CropStory {'informe del caso' if body.language == 'es' else 'case report'} v{version}", body.language)
+    pdf = render_pdf(blocks, f"CropStory {'informe del caso' if body.language == 'es' else 'case report'} v{version}")
     report = Report(
         case_id=case_id, version=version, generated_at=now, status="PRELIMINARY", format="MARKDOWN",
         content_uri=None, checksum_sha256=cr.sha256_text(markdown),

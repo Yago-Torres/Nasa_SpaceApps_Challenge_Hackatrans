@@ -2,8 +2,8 @@ import { ApiError, casesApi } from '../api/client';
 import type {
   CaseView, HypothesisCreate, HypothesisList, HypothesisStatusChange, HypothesisTemplateRequest, HypothesisView, Timeline,
 } from '../api/types';
-import { caseAttributes, changedKeys, fromCaseView, toCaseCreate, toFieldInput } from './mapping';
-import type { IncidentCase } from './model';
+import { caseAttributes, changedKeys, fromCaseView, toCaseCreate, toFieldInput, toFieldInputs } from './mapping';
+import { caseLocations, type IncidentCase } from './model';
 
 /**
  * Case storage boundary for ABB-21. Screens talk only to this interface. Since ABB-06 the
@@ -91,9 +91,25 @@ export class HttpCaseRepository implements CaseRepository {
         saved = this.remember(await casesApi.update(c.id, { version, ...attrs }));
         version = saved.version;
       }
-      const field = changedKeys(base && toFieldInput(base), toFieldInput(c));
-      if (Object.keys(field).length) {
-        saved = this.remember(await casesApi.updateField(c.id, c.server.fieldId, { version, ...field }));
+      const beforeLocations = base ? caseLocations(base) : [];
+      const afterLocations = caseLocations(c);
+      const ids = c.server.fieldIds?.length ? c.server.fieldIds : [c.server.fieldId];
+      for (let i = 0; i < Math.min(beforeLocations.length, afterLocations.length); i++) {
+        const beforeField = { ...base!, location: beforeLocations[i] };
+        const afterField = { ...c, location: afterLocations[i] };
+        const field = changedKeys(toFieldInput(beforeField), toFieldInput(afterField));
+        if (Object.keys(field).length) {
+          saved = this.remember(await casesApi.updateField(c.id, ids[i], { version, ...field }));
+          version = saved.version;
+        }
+      }
+      for (let i = beforeLocations.length; i < afterLocations.length; i++) {
+        saved = this.remember(await casesApi.addField(c.id, { version, field: toFieldInputs({ ...c, locations: [afterLocations[i]], location: afterLocations[i] })[0] }));
+        version = saved.version;
+      }
+      for (let i = afterLocations.length; i < beforeLocations.length; i++) {
+        saved = this.remember(await casesApi.removeField(c.id, ids[i], version));
+        version = saved.version;
       }
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {

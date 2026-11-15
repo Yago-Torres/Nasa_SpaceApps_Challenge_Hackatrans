@@ -65,7 +65,7 @@ export function ClaimsSection({ caseId, canAdd, focusClaim, onChanged }: {
             {filters.map((f) => <Button key={f.id} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>{f.label}</Button>)}
           </div>
           {items.length === 0 ? <p className="muted">{t('evx.filter.empty')}</p> : (
-            <div className="claims">{items.map((c) => <ClaimCard key={c.id} caseId={caseId} claim={c} focused={focusClaim?.id === c.id} />)}</div>
+            <div className="claims">{items.map((c) => <ClaimCard key={c.id} caseId={caseId} claim={c} focused={focusClaim?.id === c.id} onChanged={() => { setReload((n) => n + 1); onChanged(); }} />)}</div>
           )}
           <ul className="list-plain">{list.limitations.map((l, i) => <li key={i} className="muted">{l}</li>)}</ul>
         </>

@@ -6,6 +6,7 @@ import { useI18n } from '../../../i18n/I18n';
 import { caseErrorText } from '../caseErrors';
 import { useDates } from '../collaboration/format';
 import { DoiLink, NotReviewed, useEnum } from './labels';
+import { ClaimReviewForm } from './ReviewForms';
 
 export const KOPPEN: KoppenClass[] = ['Af', 'Am', 'Aw', 'As', 'BWh', 'BWk', 'BSh', 'BSk', 'Csa', 'Csb', 'Csc', 'Cwa', 'Cwb', 'Cwc',
   'Cfa', 'Cfb', 'Cfc', 'Dsa', 'Dsb', 'Dsc', 'Dsd', 'Dwa', 'Dwb', 'Dwc', 'Dwd', 'Dfa', 'Dfb', 'Dfc', 'Dfd', 'ET', 'EF'];
@@ -16,7 +17,7 @@ export const KOPPEN: KoppenClass[] = ['Af', 'Am', 'Aw', 'As', 'BWh', 'BWk', 'BSh
  * the outcome as stated, limitations and warnings. Only ACCEPTED claims carry the reviewed-literature
  * symbol; every other status is marked "Not reviewed" with an icon and text.
  */
-export function ClaimCard({ caseId, claim, focused }: { caseId: string; claim: ClaimView; focused?: boolean }) {
+export function ClaimCard({ caseId, claim, focused, onChanged }: { caseId: string; claim: ClaimView; focused?: boolean; onChanged: () => void }) {
   const { t } = useI18n();
   const toEnum = useEnum();
   const dates = useDates();
@@ -67,13 +68,13 @@ export function ClaimCard({ caseId, claim, focused }: { caseId: string; claim: C
           <ul className="list-plain">{[...c.limitations, ...c.warnings].map((l, i) => <li key={i}>{l}</li>)}</ul>
         </dd>
       </dl>
-      <ClaimTools caseId={caseId} claim={c} />
+      <ClaimTools caseId={caseId} claim={c} onChanged={onChanged} />
     </article>
   );
 }
 
 /** Review annotations (claim history) and the transferability check, loaded on demand. */
-function ClaimTools({ caseId, claim }: { caseId: string; claim: ClaimView }) {
+function ClaimTools({ caseId, claim, onChanged }: { caseId: string; claim: ClaimView; onChanged: () => void }) {
   const { t } = useI18n();
   const toEnum = useEnum();
   const dates = useDates();
@@ -107,6 +108,7 @@ function ClaimTools({ caseId, claim }: { caseId: string; claim: ClaimView }) {
 
   return (
     <div className="claim-tools">
+      <ClaimReviewForm caseId={caseId} claim={claim} onDone={onChanged} />
       <div className="slip-actions">
         <Button variant="text" aria-expanded={historyOpen} onClick={toggleHistory}>{historyOpen ? t('evx.hideHistory') : t('evx.history')}</Button>
         <Button variant="text" aria-expanded={fitOpen} onClick={() => setFitOpen((o) => !o)}>{fitOpen ? t('evx.fit.hide') : t('evx.fit.open')}</Button>

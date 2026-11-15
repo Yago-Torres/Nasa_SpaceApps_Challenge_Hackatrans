@@ -35,9 +35,17 @@ afterEach(() => {
 });
 
 describe('App shell', () => {
+  it('marks one-off screens as separate from saved cases', () => {
+    window.location.hash = '#/rotations';
+    renderApp('es');
+    expect(screen.getByText('Espacio de trabajo temporal')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Abrir casos' }).getAttribute('href')).toBe('#/cases');
+  });
   it('offers a skip link and the seven primary destinations', () => {
     renderApp();
     expect(screen.getByRole('link', { name: 'Skip to content' })).toHaveProperty('hash', '#content');
+    expect(screen.getByRole('link', { name: 'Open saved cases' }).getAttribute('href')).toBe('#/cases');
+    expect(screen.queryByText('Investigations are not saved yet')).toBeNull();
     const nav = screen.getByRole('navigation', { name: 'Main navigation' });
     expect(within(within(nav).getByRole('list')).getAllByRole('link')).toHaveLength(7);
   });
