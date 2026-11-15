@@ -22,13 +22,14 @@ jobs:
         working-directory: backend
         env:
           RUN_REAL_SOURCES: "1"
+          HLS_SMOKE_OUT: ${{ github.workspace }}/hls-smoke.json
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
         run: |
           test -n "$EARTHDATA_TOKEN" || { echo "EARTHDATA_TOKEN secret is not set"; exit 1; }
           uv sync --locked --extra dev
           uv run --locked --extra dev pytest -q -m real_network -s -rs -k hls tests/test_real_sources_smoke.py
-      - name: TEMPORARY cross-check against rasterio/GDAL
-        working-directory: backend
-        env:
-          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
-        run: uv run --locked --with rasterio --with numpy python ../.github/probe/crosscheck.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hls-smoke-response
+          path: hls-smoke.json
+          retention-days: 14

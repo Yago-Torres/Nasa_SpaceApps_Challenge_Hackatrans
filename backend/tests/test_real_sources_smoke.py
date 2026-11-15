@@ -70,3 +70,6 @@ async def test_real_hls_through_the_public_vegetation_endpoint(monkeypatch, tmp_
                                                                "start": HLS_START, "end": HLS_END})
     assert response.status_code == 200, response.text
     print("NASA HLS:", json.dumps(check_vegetation_payload(response.json(), start=HLS_START, end=HLS_END)))
+    if os.getenv("HLS_SMOKE_OUT"):   # optional evidence file (CI artifact), public coordinate only
+        with open(os.environ["HLS_SMOKE_OUT"], "w", encoding="utf-8") as fh:
+            json.dump(response.json(), fh, indent=1)

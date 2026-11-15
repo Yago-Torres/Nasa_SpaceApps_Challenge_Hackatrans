@@ -488,3 +488,17 @@ table.data.collab-table { min-width: 0; }
 .eg-legend li { display: inline-flex; align-items: center; gap: var(--space-2); }
 .eg-swatch { display: inline-block; width: 28px; height: 14px; border-radius: var(--radius-s); border: 1.5px dashed var(--warn-ink); background: var(--warn-bg); }
 @media (prefers-reduced-motion: reduce) { .eg-edge, .eg-node { transition: none; } }
+
+/* ── NDVI chart, HLS (ABB-12) ── */
+.chart.ndvi .obs { fill: var(--ev-observed); }
+.chart.ndvi .obs.s30 { fill: var(--surface); stroke: var(--ev-observed); stroke-width: 2; }
+.chart.ndvi .range { stroke: var(--ev-observed); stroke-width: 1.5; opacity: 0.55; }
+.chart.ndvi .obscured { fill: none; stroke: var(--ev-missing); stroke-width: 1.5; stroke-dasharray: 2 2; }
+.veg-key { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
+.veg-key span { display: inline-block; width: 10px; height: 10px; }
+.veg-key .key-obs { background: var(--ev-observed); }
+.veg-key .key-obs.s30 { background: var(--surface); border: 2px solid var(--ev-observed); }
+.veg-key .key-obscured { border: 1.5px dashed var(--ev-missing); }
+.veg-key .key-gap { width: 18px; border: 1px dotted var(--ev-missing); }
+.veg-gaps { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: grid; gap: var(--space-1); font-variant-numeric: tabular-nums; }
+.veg-gaps li { display: flex; align-items: center; gap: var(--space-2); }
