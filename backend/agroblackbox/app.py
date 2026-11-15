@@ -6,6 +6,7 @@ from .schemas import contract_openapi_schemas
 from .crop_catalog import CropCatalog, catalog
 from .farm_profile import FarmProfile, FarmProfileAssessment, assess_profile
 from .climate import router as climate_router
+from .vegetation import router as vegetation_router
 from .services import literature as literature_service
 from .services.literature import LiteratureSearchResult, LiteratureSourceError
 from .services.rotations import rotation_examples
@@ -65,6 +66,9 @@ def metrics(request: Request):
 
 # GET /api/climate (NASA POWER provenance + anomaly QC, ABB-07/ABB-08)
 app.include_router(climate_router)
+
+# GET /api/vegetation/hls (NASA HLS NDVI + Fmask QA, ABB-12)
+app.include_router(vegetation_router)
 
 @app.get('/api/literature', response_model=LiteratureSearchResult)
 async def literature(query:str=Query(min_length=3,max_length=180)):

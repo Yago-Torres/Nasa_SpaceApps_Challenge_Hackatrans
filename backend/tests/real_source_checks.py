@@ -85,3 +85,44 @@ def check_search_result(body: dict, *, query: str) -> dict:
             "verified_crossref": sum(p["doi_status"] == "VERIFIED_CROSSREF" for p in results),
             "total_openalex_matches": body.get("total_openalex_matches"),
             "duplicates_removed": body.get("duplicates_removed")}
+
+
+HLS_STATUSES = {"VALID", "OBSCURED", "NO_DATA", "NOT_READ"}
+
+
+def check_vegetation_payload(body: dict, *, start: str, end: str) -> dict:
+    """ABB-12: assert the /api/vegetation/hls contract on a real answer and summarise it."""
+    assert body["kind"] == "observation" and body["source_kind"] == "OBSERVED"
+    assert body["start"] == start and body["end"] == end
+    prov = body["provenance"]
+    assert prov["provider"] == "NASA LP DAAC" and HEX64.match(prov["checksum_sha256"])
+    assert prov["dataset_version"] == "HLS v2.0" and prov["limitations"]
+    assert body["spatial_resolution"]["value"] == 30 and body["spatial_resolution"]["unit"] == "m"
+    obs = body["observations"]
+    assert obs, "no HLS acquisition found over the point in the range"
+    assert [o["acquired_at"] for o in obs] == sorted(o["acquired_at"] for o in obs)
+    keys = [(o["product"], o["acquired_at"]) for o in obs]
+    assert len(keys) == len(set(keys)), "the same overpass is reported twice"
+    for o in obs:
+        assert start <= o["date"] <= end and o["status"] in HLS_STATUSES
+        assert o["granule_id"].startswith("HLS.") and o["granule_id"].endswith(".v2.0")
+        if o["status"] == "VALID":
+            assert o["ndvi"] is not None and -1 <= o["ndvi_min"] <= o["ndvi"] <= o["ndvi_max"] <= 1
+            assert HEX64.match(o["data_sha256"]) and o["pixel_size_m"] == 30
+            red, nir = o["red_reflectance"], o["nir_reflectance"]
+            assert -0.01 <= red <= 1.6 and -0.01 <= nir <= 1.6
+            assert o["pixels"]["clear"] * 2 > o["window_pixels"] - o["pixels"]["fill"]
+            assert 32601 <= o["epsg"] <= 32760
+        else:
+            assert o["ndvi"] is None and o["reason"], "a non-valid acquisition must say why and carry no value"
+    s = body["summary"]
+    assert s["acquisitions"] == len(obs) == s["valid"] + s["obscured"] + s["no_data"] + s["not_read"]
+    assert s["valid"] > 0, "no clear acquisition in the whole range"
+    total = sum(g["days"] for g in body["gaps"])
+    assert total == s["gap_days"] and all(g["start"] <= g["end"] for g in body["gaps"])
+    return {"acquisitions": s["acquisitions"], "valid": s["valid"], "obscured": s["obscured"],
+            "no_data": s["no_data"], "not_read": s["not_read"], "granules_found": s["granules_found"],
+            "gap_days": s["gap_days"], "longest_gap_days": s["longest_gap_days"],
+            "products": sorted({o["product"] for o in obs}), "tiles": sorted({o["mgrs_tile"] for o in obs}),
+            "ndvi_valid": [(o["date"], o["product"], o["ndvi"]) for o in obs if o["status"] == "VALID"][:40],
+            "upstream_requests": body["cache"]["upstream_requests"]}

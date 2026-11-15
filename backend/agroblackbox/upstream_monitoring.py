@@ -8,7 +8,7 @@ literature module, ``literature.search_literature`` in app.py), so the wrapped v
 from __future__ import annotations
 
 from .observability import track_upstream
-from .services import literature, power
+from .services import hls, literature, power
 
 _WRAPPED = "_cropstory_monitored"
 
@@ -25,6 +25,7 @@ def _wrap(module, name: str, source: str, classify=None) -> None:
 def install() -> None:
     """Idempotent."""
     _wrap(power, "fetch_power", "nasa_power", lambda record: "cache" if record.served_from_cache else "ok")
+    _wrap(hls, "fetch_hls_series", "nasa_hls", lambda series: "cache" if series.requests == 0 else "ok")
     _wrap(literature, "search_literature", "openalex_search")
     _wrap(literature, "lookup_paper", "openalex_lookup")
     _wrap(literature, "verify_doi", "crossref",
