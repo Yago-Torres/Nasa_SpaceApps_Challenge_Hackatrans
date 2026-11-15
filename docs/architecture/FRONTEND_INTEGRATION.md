@@ -99,13 +99,13 @@ Code: `frontend/src/api/session.ts`, `api/client.ts` (`authApi`, `casesApi`), `c
 | Symptoms text | start of `incident_notes` |
 | Incident year, symptom months, affected share, water, soil, priorities, full crop rows (with notes) | a JSON block appended to `incident_notes` after the line `--- AGRO BLACK BOX wizard answers v1 (structured; edit them in the wizard) ---`. Reversible; contains no coordinates. If `crop_history` was changed by another client, `crop_history` wins and the block's rows are ignored. Notes without the block are shown as plain symptom text |
 
-Reading back: `APPROXIMATE`/`EXACT` → Approximate area (an `EXACT` field is not changed unless the owner changes the tier), `REGION_ONLY` with the fixed label or `WITHHELD` → Only me, other `REGION_ONLY` → Region name only. The wizard edits the first field only and says so when a case has more.
+Reading back: `APPROXIMATE`/`EXACT` → Approximate area (an `EXACT` field is not changed unless the owner changes the tier), `REGION_ONLY` with the fixed label or `WITHHELD` → Only me, other `REGION_ONLY` → Region name only. The wizard adds, edits and removes up to eight fields per case, each with its own privacy tier.
 
 **Saving and versions.** A new case is created (`POST`) once it has a name, a valid location and the incident year; before that the form says "Not saved yet" and nothing leaves the browser tab. Afterwards autosave (600 ms) sends only changed attributes: `PATCH /cases/{id}` then `PATCH /cases/{id}/fields/{field_id}`, each with the version last read from the server. Saves are queued so a slow create is never sent twice. On 409 the adapter reloads the case: if the version moved, the user sees "Someone else saved this case first" with *Load the saved version* or *Save my version over it* (explicit overwrite with the new version); otherwise the server detail (archived / not editable) is shown. Delete (owner only) sends `?version=`; a 409 reloads the list.
 
 **Roles and status.** List columns: Case · Status · Your role · Shared as · Incident year · Updated. Case screens open with the title block (ID, location as this user may see it, status, role, owner, updated). Reviewers and viewers, and cases that are REVIEWED, PUBLISHED or archived, open read-only; their location is exactly what the server returned (rounded cell, region label or "Not shared with you"). Status labels avoid implying scientific validation ("Reviewed by a team reviewer", "Final (team only, not public)").
 
-**Not in this UI yet:** sharing/permissions management, workflow status changes, archive, history view, multiple fields per case, basemap (tile provider decision pending).
+**Not in this UI yet:** sharing/permissions management, workflow status changes, archive, history view. There is no third-party basemap: the local SVG privacy map is the 1.0 map (ADR-0010; the opt-in OpenStreetMap draft in PR #55 was closed as superseded).
 
 ## 7. Case timeline and rival hypotheses (IMPLEMENTED, ABB-22)
 
