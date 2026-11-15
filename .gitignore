@@ -38,3 +38,9 @@ backend/.cache/
 # Generated OpenAPI contract (ABB-29)
 /frontend/.openapi.json
 /openapi.json
+
+# ABB-30 deployment: host secrets, release state and local backups never go to git
+deploy/.env
+deploy/state/
+deploy/backups/
+frontend/.openapi.json

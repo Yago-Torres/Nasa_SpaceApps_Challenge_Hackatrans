@@ -88,3 +88,34 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - run: uv run --no-project python scripts/check_context.py
+  deploy-smoke:
+    # ABB-30: build both images, deploy them with the real scripts from a throwaway local tag, check
+    # readiness, take a backup and run the restore drill. Nothing is pushed or published.
+    name: deploy-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy, back up and restore-check with deploy/bin
+        run: |
+          git config user.email ci@example.invalid && git config user.name ci
+          git tag v0.0.0-ci
+          {
+            echo "CROPSTORY_VERSION=v0.0.0-ci"
+            echo "CROPSTORY_IMAGE_PREFIX=local/cropstory"
+            echo "APP_ENV=ci"
+            echo "POSTGRES_PASSWORD=$(openssl rand -hex 16)"
+            echo "WEB_PORT=18080"
+            echo "METRICS_TOKEN=$(openssl rand -hex 24)"
+            echo "BACKUP_DIR=$RUNNER_TEMP/backups"
+          } > deploy/.env
+          chmod 600 deploy/.env
+          deploy/bin/deploy.sh v0.0.0-ci --build
+          deploy/bin/status.sh
+          dump="$(deploy/bin/backup.sh ci | tail -1)"
+          deploy/bin/restore.sh "$dump" --check
+          curl -fsS -o /dev/null -w 'index %{http_code}\n' http://127.0.0.1:18080/
+          curl -fsSI http://127.0.0.1:18080/ | grep -i '^content-security-policy'
+      - name: Container logs
+        if: always()
+        run: docker compose -p cropstory logs --no-color --tail 200 || true
