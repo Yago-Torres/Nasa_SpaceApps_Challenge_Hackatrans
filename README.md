@@ -1,30 +1,66 @@
-# CropStory
+<p align="center">
+  <img src="docs/images/cropstory-banner.jpg" alt="CropStory, the agricultural black box" width="760">
+</p>
 
-**Find out what happened to a crop, with satellite data and real science.**
+<p align="center">
+  <b>Find out what happened to a crop, with satellite data and real science.</b>
+</p>
 
-**Try it: [cropstory.yagotg.dev](https://cropstory.yagotg.dev)**
+<h2 align="center">
+  🌱 <a href="https://cropstory.yagotg.dev">Try the live demo → cropstory.yagotg.dev</a>
+</h2>
 
-CropStory helps farmers and agronomists investigate a crop incident, such as a failed harvest, yellowing or a dry spell, as a case. It puts NASA Earth observation data for the field next to verifiable scientific literature, keeps rival explanations open, and compares crop rotation strategies for what comes next. Built for the **NASA Space Apps Challenge 2026**.
+<p align="center">
+  <a href="https://cropstory.yagotg.dev">
+    <img src="https://img.shields.io/badge/%E2%96%B6%20Live%20demo-cropstory.yagotg.dev-2f6f29?style=for-the-badge" alt="Open the live demo at cropstory.yagotg.dev" width="460">
+  </a>
+</p>
 
-## What it does
+<p align="center">
+  NASA Space Apps Challenge 2026 &nbsp;·&nbsp; English / Español &nbsp;·&nbsp; No account needed to explore
+</p>
 
-- **Investigate a place and a year.** Monthly rain and temperature anomalies from NASA POWER, compared with the 10 years before; monthly satellite rainfall from GPM IMERG; and vegetation (NDVI) from Landsat and Sentinel-2 (HLS), with cloud-screened overpasses.
-- **Build a case.** A guided wizard records the fields, crop history, symptoms and constraints. Each field has its own location privacy: exact, rounded, region only or hidden.
-- **Weigh the evidence.** Search scientific papers (OpenAlex, DOI-checked with Crossref), turn them into reviewed claims, flag contradictions and check whether a study applies to your conditions. A timeline, rival hypotheses, an evidence graph and an "uncertainty hunter" show what is known and what is not.
-- **Compare rotations.** At least three strategies, including the current one, checked against your water, market and equipment constraints and your priorities, with hypothetical climate scenarios and sensitivity to those priorities.
-- **Work together.** Invite reviewers and editors, comment, and share a consented read-only link.
-- **Report.** Export a versioned case report (Markdown, HTML, JSON or PDF, in English or Spanish) with sources and checksums.
+<p align="center">
+  <img src="docs/images/screenshot-home.jpg" alt="CropStory home page: investigate a failed harvest with NASA Earth data" width="900">
+</p>
 
-The web app is available in English and Spanish.
+CropStory helps farmers and agronomists investigate a crop incident, such as a failed harvest, yellowing or a dry spell, as a case. It puts NASA Earth observation data for the field next to verifiable scientific literature, keeps rival explanations open, and compares crop rotation strategies for what comes next.
 
-## Principles
+## ✨ What it does
+
+| Feature | What you get |
+|---|---|
+| 🛰️ **Investigate a place and a year** | Monthly rain and temperature anomalies from NASA POWER against the 10 years before, monthly satellite rainfall from GPM IMERG, and vegetation (NDVI) from Landsat and Sentinel-2 (HLS) with cloud-screened overpasses. |
+| 📋 **Build a case** | A guided wizard records the fields, crop history, symptoms and constraints. Each field has its own location privacy: exact, rounded, region only or hidden. |
+| 📚 **Weigh the evidence** | Search scientific papers (OpenAlex, DOI-checked with Crossref), turn them into reviewed claims, flag contradictions and check whether a study applies to your conditions. A timeline, rival hypotheses, an evidence graph and an "uncertainty hunter" show what is known and what is not. |
+| 🌾 **Compare rotations** | At least three strategies, including the current one, checked against your water, market and equipment constraints and your priorities, with what-if climate scenarios. |
+| 🤝 **Work together** | Invite editors and reviewers, comment, and share a consented read-only link. |
+| 📄 **Report** | Export a versioned case report (Markdown, HTML, JSON or PDF, in English or Spanish) with sources and checksums. |
+
+## 🔭 See it with real NASA data
+
+The same place and year, read from two NASA products (a public grid point in the Ebro valley, Spain, 2022).
+
+<p align="center">
+  <img src="docs/images/screenshot-climate.png" alt="Monthly rain difference in 2022 against 2012–2021 from NASA POWER, with maximum-temperature differences per month" width="680">
+  <br>
+  <sub><b>NASA POWER.</b> Each month of 2022 against the 10 years before: brown is drier, teal wetter; the row shows how much hotter or colder the days were.</sub>
+</p>
+
+<p align="center">
+  <img src="docs/images/screenshot-satellite-rain.png" alt="Monthly 2022 rainfall from NASA GPM IMERG with its error estimate, next to NASA POWER totals" width="820">
+  <br>
+  <sub><b>NASA GPM IMERG.</b> Satellite and rain-gauge rainfall for the 11 km cell, with its own error estimate, next to the NASA POWER total for the same months.</sub>
+</p>
+
+## 🧭 Principles
 
 - **No invented data.** If NASA or another source fails, CropStory says so. It never fills the gap with sample values.
 - **Every number carries its source:** dataset, resolution, retrieval time, checksum and limitations. A ½° NASA POWER cell is not a field measurement, and the app says so.
 - **Explanations, not verdicts.** Satellite data alone do not prove why a crop failed. Hypotheses carry no probabilities, and rotation comparisons are descriptive, not yield forecasts.
 - **Private by default.** Exact field locations are only shown to people the owner allows. The privacy map is drawn locally, with no third-party map tiles.
 
-## Data sources
+## 🌍 Data sources
 
 | Source | Used for | Access |
 |---|---|---|
@@ -33,11 +69,11 @@ The web app is available in English and Spanish.
 | [NASA HLS](https://www.earthdata.nasa.gov/data/projects/hls) (LP DAAC) | NDVI from Landsat 8/9 and Sentinel-2, 30 m | NASA Earthdata token |
 | [OpenAlex](https://openalex.org/) and [Crossref](https://www.crossref.org/) | Scientific papers and DOI verification | Open |
 
-## Tech stack
+## 🛠️ Tech stack
 
 Python 3.12 · FastAPI · PostgreSQL 17 · SQLAlchemy/Alembic · React · TypeScript · Vite · Docker Compose · Caddy · GitHub Actions. Python dependencies are managed with [uv](https://docs.astral.sh/uv/) and frontend dependencies with npm (Node.js 24).
 
-## Run it locally
+## 🚀 Run it locally
 
 You need `git`, [uv](https://docs.astral.sh/uv/), Node.js 24 and Docker.
 
@@ -65,7 +101,7 @@ On Windows, run the API and `npm run dev` in the same environment: both in WSL, 
 
 **Demo data.** With the API running, `uv run --no-project python scripts/seed_demo_cases.py --base-url http://127.0.0.1:8000 --run-id demo` creates a synthetic owner, a reviewer and a filled-in case, and prints their sign-in details. See [`docs/operations/SYNTHETIC_DEMO_CASES.md`](docs/operations/SYNTHETIC_DEMO_CASES.md).
 
-## Tests
+## ✅ Tests
 
 ```bash
 make check    # context check, lock check, backend tests, frontend build
@@ -74,11 +110,11 @@ cd frontend && npm test
 
 Backend tests run offline against recorded NASA response shapes. `make smoke-real` checks the live sources and needs `EARTHDATA_TOKEN`.
 
-## Deploy
+## 📦 Deploy
 
 Tagged releases publish Docker images, and `deploy/bin/deploy.sh <tag>` runs the stack with backups, migrations, a readiness check and automatic rollback. See [`docs/operations/DEPLOYMENT.md`](docs/operations/DEPLOYMENT.md) and [`RUNBOOK.md`](docs/operations/RUNBOOK.md).
 
-## Repository layout
+## 🗂️ Repository layout
 
 ```text
 backend/    FastAPI app (package agroblackbox), science services, migrations, tests
@@ -90,6 +126,16 @@ scripts/    Context check, OpenAPI export, demo seeding
 
 The method behind each feature is documented in [`docs/science/`](docs/science/), for example [climate anomalies](docs/science/CLIMATE_ANOMALIES.md), [GPM rainfall](docs/science/GPM_PRECIPITATION.md), [HLS vegetation](docs/science/HLS_VEGETATION.md) and [rotations](docs/science/ROTATIONS.md).
 
-## Contributing
+## 🤝 Contributing
 
 Read [`AGENTS.md`](AGENTS.md) first. It holds the rules for people and AI coding agents (Claude Code, Codex): uv only for Python, provenance on every scientific value, and the design system for any UI change.
+
+---
+
+<p align="center">
+  <img src="docs/images/cropstory-logo.jpg" alt="CropStory logo" width="96">
+  <br>
+  <b>CropStory</b> · Built for the NASA Space Apps Challenge 2026 · <a href="https://cropstory.yagotg.dev">Try the live demo</a>
+  <br>
+  <sub>Data from NASA POWER, GPM IMERG and HLS (Landsat and Copernicus Sentinel-2). No NASA endorsement implied.</sub>
+</p>
