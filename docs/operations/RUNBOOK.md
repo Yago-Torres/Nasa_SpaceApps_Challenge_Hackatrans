@@ -18,6 +18,7 @@ docker compose -p cropstory logs --since 1h api | grep -E '"event": "(upstream_e
 | `upstream_error source=openalex_search` | OpenAlex is unavailable or rate limited | Set `OPENALEX_API_KEY` in `deploy/.env` if it keeps happening, then redeploy the same tag. |
 | `upstream_error source=nasa_hls outcome=error:unauthorized` | The Earthdata token expired (60 days) or the account lost LP DAAC access | Generate a new token at urs.earthdata.nasa.gov, put it in `deploy/.env` (`EARTHDATA_TOKEN`) and the `EARTHDATA_TOKEN` Actions secret, then `deploy.sh <current tag>`. |
 | `upstream_error source=nasa_gpm outcome=error:unauthorized` | Earthdata token expired, or the account no longer accepts the GES DISC data terms | Renew the token as for HLS; if it persists, approve "NASA GESDISC DATA ARCHIVE" again in the Earthdata profile (Applications → Authorized Apps). |
+| `upstream_error source=nasa_gpm outcome=error:timeout`, or GPM months `NOT_READ` with "time limit" | GES DISC OPeNDAP is slow (it can take 20–50 s per answer) | Nothing to fix on our side: months already read are cached, so asking again completes the year. If it lasts for days, check the GES DISC status page. |
 | `unhandled_error` | A bug | Use the `request_id` from the user's response header to find the log line, then open an issue with the type and location. |
 
 ## Back up
