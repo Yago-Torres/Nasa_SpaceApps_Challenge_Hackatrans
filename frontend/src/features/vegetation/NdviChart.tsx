@@ -1,10 +1,10 @@
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { HlsObservation, VegetationResponse } from '../../api/types';
 import { useI18n } from '../../i18n/I18n';
 import type { MessageKey } from '../../i18n/messages';
 
 const DAY = 86_400_000;
-const W = 720, H = 268, X0 = 52, X1 = 708, Y_TOP = 16, Y_BOT = 186, ROW_OBSCURED = 212, ROW_GAP = 238;
+const H = 268, X0 = 96, Y_TOP = 16, Y_BOT = 186, ROW_OBSCURED = 212, ROW_GAP = 238;
 
 /**
  * NDVI per satellite overpass on one honest scale (0–1, or lower when the data go below 0).
@@ -16,6 +16,18 @@ export function NdviChart({ data }: { data: VegetationResponse }) {
   const { t, num, lang } = useI18n();
   const wrap = useRef<HTMLDivElement>(null);
   const [tip, setTip] = useState<{ text: string; x: number; y: number } | null>(null);
+  const [W, setW] = useState(720);
+  useLayoutEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    // Draw at the real width (1 SVG unit = 1 px) so labels stay readable on phones.
+    setW(Math.max(320, el.clientWidth || 720));
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(([entry]) => setW(Math.max(320, entry.contentRect.width || 720)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const X1 = W - 12;
   const t0 = Date.parse(`${data.start}T00:00:00Z`);
   const t1 = Date.parse(`${data.end}T00:00:00Z`) + DAY;
   const x = (iso: string) => X0 + ((Date.parse(iso) - t0) / (t1 - t0)) * (X1 - X0);

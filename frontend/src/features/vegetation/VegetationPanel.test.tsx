@@ -42,7 +42,7 @@ const response: VegetationResponse = {
 };
 
 function stubFetch(status: number, body: unknown) {
-  const fn = vi.fn(async () => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } }));
+  const fn = vi.fn(async (_input: RequestInfo | URL) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } }));
   vi.stubGlobal('fetch', fn);
   return fn;
 }

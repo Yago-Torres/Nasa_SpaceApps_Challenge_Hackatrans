@@ -3,8 +3,6 @@ name: earthdata-smoke
 # repository secret; reads public NASA data for a public, region-level coordinate (no farm, no user data).
 on:
   workflow_dispatch:
-  push:
-    branches: [feat/09-gpm-imerg]   # TEMPORARY while ABB-12 is verified; removed before merge
 permissions: {contents: read}
 jobs:
   hls:

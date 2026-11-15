@@ -10,4 +10,6 @@
 
 `EVIDENCE_GRAPH.md` defines the case evidence graph, human-authored conclusions, edge rules and the trace back to original evidence (ABB-16).
 
+`HLS_VEGETATION.md` defines the HLS v2.0 NDVI observations at a point: Fmask QA, the 3 × 3 window, the clear rule, missing dates as gaps and why NDVI is not soil health (ABB-12).
+
 `CASE_REPORT.md` defines the versioned, immutable, hash-verified case report and its Markdown/HTML/JSON exports, what they contain, what is never exported and how integrity is checked (ABB-26).

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api, ApiError } from '../../api/client';
-import type { VegetationResponse } from '../../api/types';
+import type { HlsObservation, HlsPixelCounts, VegetationResponse } from '../../api/types';
 import { useI18n } from '../../i18n/I18n';
 import type { MessageKey } from '../../i18n/messages';
 import { Button, EvidenceLabel, Field, SourceLabel, StatusMessage } from '../../design/components';
@@ -9,6 +9,8 @@ import { NdviChart } from './NdviChart';
 
 export const MAX_DAYS = 92;
 const HLS_START = '2013-04-11';
+
+const BLOCKERS: (keyof HlsPixelCounts)[] = ['cloud', 'cloud_shadow', 'adjacent_cloud', 'cirrus', 'snow_ice', 'water', 'high_aerosol', 'invalid_reflectance'];
 
 type Range = { start: string; end: string };
 type RangeErrors = Partial<Record<keyof Range | 'span', true>>;
@@ -40,6 +42,7 @@ export function VegetationPanel({ point, year }: { point: { latitude: number; lo
   const [failure, setFailure] = useState('');
   const [data, setData] = useState<VegetationResponse | null>(null);
   const [showTable, setShowTable] = useState(false);
+  const [showGaps, setShowGaps] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const startRef = useRef<HTMLInputElement>(null);
 
@@ -77,6 +80,15 @@ export function VegetationPanel({ point, year }: { point: { latitude: number; lo
   }
 
   const statusLabel = (s: string) => t(`veg.status.${s}` as MessageKey);
+  /** Localised from the returned pixel counts; the API's English sentence is kept only for retrieval failures. */
+  const reasonText = (o: HlsObservation) => {
+    if (o.status === 'VALID') return '';
+    if (o.status === 'NOT_READ') return o.reason ?? '';
+    if (o.status === 'NO_DATA') return t('veg.reason.outside');
+    if (o.window_pixels === 0) return t('veg.reason.sceneCloudy', { pct: num(o.scene_cloud_cover ?? 100, { digits: 0 }) });
+    const worst = BLOCKERS.reduce((a, b) => (o.pixels[b] > o.pixels[a] ? b : a), BLOCKERS[0]);
+    return t('veg.reason.obscured', { clear: o.pixels.clear, total: o.window_pixels - o.pixels.fill, cause: t(`veg.class.${worst}` as MessageKey) });
+  };
   const s = data?.summary;
 
   return (
@@ -128,14 +140,19 @@ export function VegetationPanel({ point, year }: { point: { latitude: number; lo
           {data.gaps.length > 0 && (
             <div>
               <h3>{t('veg.gapsTitle', { days: s.gap_days, longest: s.longest_gap_days })}</h3>
-              <ul className="veg-gaps">
-                {data.gaps.map((g) => (
-                  <li key={g.start}>
-                    <EvidenceLabel kind="MISSING_DATA" symbolOnly />
-                    {g.start === g.end ? day(g.start) : `${day(g.start)} – ${day(g.end)}`} · {t('veg.days', { n: g.days })}
-                  </li>
-                ))}
-              </ul>
+              <Button variant="text" aria-expanded={showGaps} aria-controls="veg-gaps" onClick={() => setShowGaps((v) => !v)}>
+                {showGaps ? t('veg.hideGaps') : t('veg.showGaps', { n: data.gaps.length })}
+              </Button>
+              {showGaps && (
+                <ul className="veg-gaps" id="veg-gaps">
+                  {data.gaps.map((g) => (
+                    <li key={g.start}>
+                      <EvidenceLabel kind="MISSING_DATA" symbolOnly />
+                      {g.start === g.end ? day(g.start) : `${day(g.start)} – ${day(g.end)}`} · {t(g.days === 1 ? 'veg.oneDay' : 'veg.days', { n: g.days })}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
           {s.acquisitions > 0 && (
@@ -167,7 +184,7 @@ export function VegetationPanel({ point, year }: { point: { latitude: number; lo
                       <td>{statusLabel(o.status)}</td>
                       <td>{o.ndvi === null ? t('inv.noData') : `${num(o.ndvi, { digits: 2 })} (${num(o.ndvi_min ?? o.ndvi, { digits: 2 })}–${num(o.ndvi_max ?? o.ndvi, { digits: 2 })})`}</td>
                       <td>{o.window_pixels ? `${o.pixels.clear}/${o.window_pixels}` : '–'}</td>
-                      <td>{o.reason ?? ''}</td>
+                      <td>{reasonText(o)}</td>
                     </tr>
                   ))}
                 </tbody>
