@@ -43,7 +43,7 @@ To run the backend: `cd backend && uv run uvicorn agroblackbox.app:app --reload 
 
 ## Omarchy, WSL and system access
 
-The README contains the **Omarchy agent setup and operation guide**. Never run privileged commands (`sudo`, `pacman`, `yay`, global `mise` changes, Docker privilege changes) or authenticate external accounts without explicit human permission. WSL users work under the Linux filesystem, not `/mnt/c`.
+The **Omarchy agent setup and operation guide** is in `docs/ai/OMARCHY_AGENT_GUIDE.md`. Never run privileged commands (`sudo`, `pacman`, `yay`, global `mise` changes, Docker privilege changes) or authenticate external accounts without explicit human permission. WSL users work under the Linux filesystem, not `/mnt/c`.
 
 ## Completion checklist
 
