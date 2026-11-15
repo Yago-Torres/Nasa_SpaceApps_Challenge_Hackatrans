@@ -333,8 +333,12 @@ async def test_nothing_read_within_the_budget_is_an_honest_timeout(monkeypatch):
     assert info.value.reason == 'timeout' and 'time limit' in info.value.public_message
 
 
-def test_read_timeout_allows_the_slow_answers_seen_on_ges_disc():
-    assert gpm.REQUEST_TIMEOUT.read >= 90 and gpm.TIME_BUDGET_SECONDS > gpm.REQUEST_TIMEOUT.read
+def test_time_limits_fit_the_slow_ges_disc_and_the_demo_proxy():
+    from agroblackbox import precipitation
+    assert gpm.REQUEST_TIMEOUT.read >= 60   # GES DISC took up to 50 s before the first byte (2026-11-15)
+    assert gpm.REQUEST_TIMEOUT.read < gpm.TIME_BUDGET_SECONDS
+    # GPM and POWER run side by side; both budgets leave headroom under Cloudflare's 100 s cut-off
+    assert max(gpm.TIME_BUDGET_SECONDS, precipitation.POWER_BUDGET_SECONDS) <= gpm.PROXY_LIMIT_SECONDS - 10
 
 
 @pytest.mark.asyncio
@@ -420,6 +424,43 @@ async def test_api_keeps_gpm_when_power_fails(monkeypatch):
     assert body['comparison']['status'] == 'UNAVAILABLE' and 'HTTP 503' in body['comparison']['reason']
     assert all(m['power_precipitation_mm'] is None and m['difference_mm'] is None for m in body['monthly'])
     assert body['monthly'][0]['precipitation_mm'] is not None
+
+
+@pytest.mark.asyncio
+async def test_api_fetches_power_alongside_gpm(monkeypatch):
+    import asyncio
+    import time
+    from agroblackbox import precipitation
+    monkeypatch.setattr(gpm, 'TIME_BUDGET_SECONDS', 5.0)
+    monkeypatch.setattr(gpm, 'CONCURRENCY', 13)
+    monkeypatch.setattr(precipitation, 'POWER_BUDGET_SECONDS', 5.0)
+    monkeypatch.setattr(gpm, '_make_client', SlowNasa(das_delay=0.4, month_delay={m: 0.4 for m in range(1, 13)}).client)
+
+    async def slow_power(*args, **kwargs):
+        await asyncio.sleep(0.4)
+        return power_record()
+    monkeypatch.setattr(power, 'fetch_power', slow_power)
+    start = time.monotonic()
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as c:
+        response = await c.get('/api/precipitation/gpm', params=PARAMS)
+    assert response.status_code == 200 and response.json()['comparison']['status'] == 'COMPARED'
+    assert time.monotonic() - start < 0.75   # ~0.4 s side by side, >= 0.8 s one after the other
+
+
+@pytest.mark.asyncio
+async def test_api_power_beyond_its_budget_is_unavailable_and_gpm_is_kept(monkeypatch):
+    import asyncio
+    from agroblackbox import precipitation
+    monkeypatch.setattr(precipitation, 'POWER_BUDGET_SECONDS', 0.2)
+    monkeypatch.setattr(gpm, '_make_client', FakeNasa().client)
+
+    async def hanging_power(*args, **kwargs):
+        await asyncio.sleep(10)
+    monkeypatch.setattr(power, 'fetch_power', hanging_power)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as c:
+        body = (await c.get('/api/precipitation/gpm', params=PARAMS)).json()
+    assert body['comparison']['status'] == 'UNAVAILABLE' and 'time limit' in body['comparison']['reason']
+    assert body['summary']['observed'] == 12 and all(m['power_precipitation_mm'] is None for m in body['monthly'])
 
 
 @pytest.mark.asyncio

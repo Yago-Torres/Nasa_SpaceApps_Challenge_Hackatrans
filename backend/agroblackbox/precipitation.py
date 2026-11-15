@@ -3,9 +3,12 @@ side by side with NASA POWER monthly totals for the same year.
 
 The two products are compared month by month on their own grids (IMERG 0.1° cell, POWER
 ½° × ⅝° cell); nothing is regridded or interpolated, and differences are descriptive.
+POWER is fetched alongside GPM, and both have a time budget so the response arrives before the
+demo proxy's 100 s limit.
 """
 from __future__ import annotations
 
+import asyncio
 import calendar
 import hashlib
 import json
@@ -122,31 +125,34 @@ def _power_monthly(record: power.PowerRecord, year: int) -> dict[int, float | No
     return out
 
 
-async def _comparison(latitude: float, longitude: float, year: int) -> tuple[PowerComparison, dict[int, float | None]]:
-    base = dict(dataset=power.DATASET_LABEL, parameter='PRECTOTCORR',
-                spatial_resolution='0.5° × 0.625° (MERRA-2 grid)')
+PowerResult = tuple[PowerComparison, dict[int, float | None]]
+POWER_BUDGET_SECONDS = gpm.TIME_BUDGET_SECONDS   # runs alongside GPM, so it adds no time to the response
+
+
+def _power_unavailable(reason: str) -> PowerResult:
+    return PowerComparison(status='UNAVAILABLE', reason=reason, dataset=power.DATASET_LABEL, parameter='PRECTOTCORR',
+                           spatial_resolution='0.5° × 0.625° (MERRA-2 grid)', data_sha256=None, retrieved_at=None,
+                           months_compared=0, gpm_total_mm=None, power_total_mm=None), {}
+
+
+async def _comparison(latitude: float, longitude: float, year: int) -> PowerResult:
     if year < 1981:
-        return PowerComparison(status='UNAVAILABLE', reason='NASA POWER daily data start in 1981.', data_sha256=None,
-                               retrieved_at=None, months_compared=0, gpm_total_mm=None, power_total_mm=None,
-                               **base), {}
+        return _power_unavailable('NASA POWER daily data start in 1981.')
     try:
-        record = await power.fetch_power(latitude, longitude, year, year, year)
+        record = await asyncio.wait_for(power.fetch_power(latitude, longitude, year, year, year),
+                                        POWER_BUDGET_SECONDS)
     except power.PowerSourceError as e:
-        return PowerComparison(status='UNAVAILABLE', reason=e.public_message, data_sha256=None, retrieved_at=None,
-                               months_compared=0, gpm_total_mm=None, power_total_mm=None, **base), {}
-    return PowerComparison(status='COMPARED', reason=None, data_sha256=record.sha256,
-                           retrieved_at=record.retrieved_at, months_compared=0, gpm_total_mm=None,
-                           power_total_mm=None, **base), _power_monthly(record, year)
+        return _power_unavailable(e.public_message)
+    except TimeoutError:
+        return _power_unavailable('NASA POWER did not answer within the time limit of this request; retry later.')
+    comparison, _ = _power_unavailable('')
+    comparison.status, comparison.reason = 'COMPARED', None
+    comparison.data_sha256, comparison.retrieved_at = record.sha256, record.retrieved_at
+    return comparison, _power_monthly(record, year)
 
 
-async def build_precipitation_response(series: gpm.GpmSeries, compare_power: bool) -> PrecipitationResponse:
-    if compare_power:
-        comparison, power_months = await _comparison(series.latitude, series.longitude, series.year)
-    else:
-        comparison, power_months = PowerComparison(
-            status='UNAVAILABLE', reason='Comparison not requested.', dataset=power.DATASET_LABEL,
-            parameter='PRECTOTCORR', spatial_resolution='0.5° × 0.625° (MERRA-2 grid)', data_sha256=None,
-            retrieved_at=None, months_compared=0, gpm_total_mm=None, power_total_mm=None), {}
+def build_precipitation_response(series: gpm.GpmSeries, power_result: PowerResult) -> PrecipitationResponse:
+    comparison, power_months = power_result
     monthly = []
     for m in series.months:
         p = power_months.get(m.month)
@@ -213,10 +219,16 @@ async def precipitation_gpm(latitude: float = Query(ge=-90, le=90), longitude: f
         gpm.validate_year(year, datetime.now(UTC))
     except ValueError as e:
         raise HTTPException(422, detail=f'Invalid year: {e}.') from e
+    power_task = asyncio.create_task(_comparison(latitude, longitude, year)) if compare_power else None
     try:
         series = await gpm.fetch_gpm_year(latitude, longitude, year)
+        power_result = await power_task if power_task else _power_unavailable('Comparison not requested.')
     except gpm.GpmNotConfigured as e:
         raise HTTPException(503, detail=e.public_message) from e
     except gpm.GpmSourceError as e:
         raise HTTPException(502, detail=e.public_message) from e
-    return await build_precipitation_response(series, compare_power)
+    finally:
+        if power_task and not power_task.done():
+            power_task.cancel()
+            await asyncio.gather(power_task, return_exceptions=True)
+    return build_precipitation_response(series, power_result)

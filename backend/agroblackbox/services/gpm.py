@@ -71,9 +71,12 @@ RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 # DAS took 23-50 s, so a 30 s read limit failed every request. A timed-out read is not retried (that
 # only repeats the wait), a slow connection (TLS took ~3.5 s, longer under load) is; the whole year must
 # finish within TIME_BUDGET_SECONDS. More parallel requests made GES DISC answer 503, so it stays at 4.
-REQUEST_TIMEOUT = httpx.Timeout(120.0, connect=30.0)
+# The demo is served through a Cloudflare tunnel, which ends a request with HTTP 524 after 100 s, so the
+# budget (and the read limit inside it) keeps the whole API response below that.
+REQUEST_TIMEOUT = httpx.Timeout(75.0, connect=20.0)
 CONCURRENCY = 4
-TIME_BUDGET_SECONDS = 180.0
+TIME_BUDGET_SECONDS = 85.0
+PROXY_LIMIT_SECONDS = 100.0   # Cloudflare's origin response timeout (non-Enterprise plans)
 BUDGET_REASON = 'Not read within the time limit of this request (NASA GES DISC was slow); retry to complete it.'
 
 _GRANULE = re.compile(r'^(?:GPM_3IMERGM\.07:)?(3B-MO\.MS\.MRG\.3IMERG\.(\d{4})(\d{2})01-S000000-E235959\.(\d{2})\.V07[A-Z]\.HDF5)$')
