@@ -1,0 +1,33 @@
+name: earthdata-probe (temporary)
+on:
+  push:
+    branches: [feat/09-gpm-imerg]
+permissions: {contents: read}
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+    steps:
+      - name: probe OPeNDAP access with the Earthdata bearer token
+        run: |
+          set -u
+          [ -n "$TOKEN" ] && echo "token present (${#TOKEN} chars)" || { echo "NO TOKEN"; exit 1; }
+          G="https://gpm1.gesdisc.eosdis.nasa.gov/opendap/GPM_L3/GPM_3IMERGM.07/2023/3B-MO.MS.MRG.3IMERG.20230601-S000000-E235959.06.V07B.HDF5"
+          CE='precipitation%5B0%5D%5B1760%5D%5B1300%5D,randomError%5B0%5D%5B1760%5D%5B1300%5D,precipitationQualityIndex%5B0%5D%5B1760%5D%5B1300%5D,gaugeRelativeWeighting%5B0%5D%5B1760%5D%5B1300%5D,lat%5B1300%5D,lon%5B1760%5D,time%5B0%5D'
+          for u in "$G.ascii?$CE" "$G.dap.csv?dap4.ce=/precipitation%5B0%5D%5B1760%5D%5B1300%5D" ; do
+            echo "=== gpm1 $(echo "$u" | cut -c1-60)..."
+            curl -s -o out.txt -D hdr.txt -w 'status=%{http_code} redirect=%{redirect_url}\n' -H "Authorization: Bearer $TOKEN" "$u" | cut -c1-120
+            grep -i '^content-type' hdr.txt || true
+            head -c 1500 out.txt; echo
+          done
+          C="https://opendap.earthdata.nasa.gov/collections/C2723754851-GES_DISC/granules/GPM_3IMERGM.07%3A3B-MO.MS.MRG.3IMERG.20230601-S000000-E235959.06.V07B.HDF5"
+          for u in "$C.ascii?$CE" "$C.dap.csv?dap4.ce=/Grid/precipitation%5B0%5D%5B1760%5D%5B1300%5D"; do
+            echo "=== cloud $(echo "$u" | cut -c1-60)..."
+            curl -s -o out.txt -D hdr.txt -w 'status=%{http_code} redirect=%{redirect_url}\n' -H "Authorization: Bearer $TOKEN" "$u" | cut -c1-120
+            grep -i '^content-type' hdr.txt || true
+            head -c 1500 out.txt; echo
+          done
+          echo "=== token profile check (status only)"
+          curl -s -o /dev/null -w 'status=%{http_code}\n' -H "Authorization: Bearer $TOKEN" https://urs.earthdata.nasa.gov/api/users/tokens || true
