@@ -9,8 +9,8 @@ Status labels follow `docs/ai/CONTEXT_MAP.md`: only what a runnable check suppor
 | Main journey E2E (API level) | creation → NASA POWER → evidence (paper, claim, independent review) → hypothesis → conclusion with a complete evidence trail → 3 rotation alternatives → REVIEWER closes review → versioned, verifiable report (Markdown, HTML, JSON and PDF) with no private data | `backend/tests/test_e2e_main_journey.py` (`-m e2e`) | yes, own step that fails if the tests are skipped |
 | Pinned failures of that journey | NASA 503 / 429 / invalid JSON → 502 with a generic message and no stored data; a month with only NASA fill values is `NOT_CLASSIFIED`, never a number; roles hold from ingestion to report; account delete leaves no case/observation rows | same file | yes |
 | OpenAPI vs `frontend/src/api/types.ts` | field existence, nullability, primitive kinds and enum values for every type whose name is also an OpenAPI schema (~130 types); every `/api/...` path the frontend calls exists | `frontend/src/api/contract.test.ts` | yes (`web-build` exports the schema with `scripts/export_openapi.py`) |
-| Real-source smoke test | the real NASA POWER, Crossref and OpenAlex still answer in the shape the code needs | `backend/tests/test_real_sources_smoke.py` (`-m real_network`) | **never** (manual) |
-| Smoke assertions self-test | the smoke checks accept valid payloads and reject seven broken ones | `backend/tests/test_real_source_checks_offline.py` | yes |
+| Real-source smoke test | the real NASA POWER (`/api/climate`), Crossref (DOI verification), OpenAlex work lookup and OpenAlex search (`/api/literature`, used by the case Evidence tab to add studies) still answer in the shape the code needs | `backend/tests/test_real_sources_smoke.py` (`-m real_network`) | **never** (manual, before a release; last run below) |
+| Smoke assertions self-test | the smoke checks accept valid payloads and reject broken ones (7 climate, 7 search, an unverified DOI) | `backend/tests/test_real_source_checks_offline.py` | yes |
 
 CI also publishes the generated `openapi.json` as the `openapi-contract` artifact (FRONTEND_INTEGRATION A7, first half: the schema is published; switching the frontend to generated types is still open).
 
@@ -50,11 +50,14 @@ A frontend type is a *request* when its name ends in Create, Update, Patch, Requ
 
 - **No browser E2E.** The journey is API-level; no Playwright/Cypress click-through exists, so RELEASE_1_0 F-10 "real user without manual API calls" stays PARTIAL. A browser suite needs a new dependency and its own decision.
 - The journey runs with mocked upstreams; upstream drift is caught only by the manual smoke test.
-- The smoke test was **not executed against the real services by the author**: the cloud session that wrote it blocks `power.larc.nasa.gov`, `api.crossref.org` and `api.openalex.org` (CONNECT tunnel 403). Run `make smoke-real` from a networked machine and paste the output below.
+- The smoke test is manual: upstream drift between runs is not detected. Run `make smoke-real` before every release and log it below.
+- OpenAlex search without `OPENALEX_API_KEY` shares an anonymous per-IP quota; a 429 makes the search smoke fail with a 502 (an honest failure, not a contract break). Retry or set the key.
 - Frontend types for endpoints added later (e.g. evidence graph UI, PR #58) are compared automatically once they share a name with an OpenAPI schema.
 
 ## Real-source smoke log (fill in after each manual run)
 
 | Date (UTC) | Who | Result | Notes |
 |---|---|---|---|
-| 2026-11-14 | cloud agent | **not run** — outbound network blocked, both tests fail with `NASA POWER could not be reached (network error)` and `VERIFICATION_UNAVAILABLE` (clear failure, no false pass) | needs a human run |
+| 2026-11-14 | cloud agent | **not run**: outbound network blocked, both tests fail with `NASA POWER could not be reached (network error)` and `VERIFICATION_UNAVAILABLE` (clear failure, no false pass) | needs a networked run |
+| 2026-11-15 10:29 | Claude Code (WSL, networked, uv 0.12.21, branch `feat/29-real-smoke` from `main` at `f3e8752`) | **2 passed** in 4.74 s (the two original tests) | NASA POWER `POWER Daily API v2.10.3`, live download (not cache), 24 anomalies computed, quality `complete`, 1 warning, payload SHA-256 `932dd8b1…`; Crossref verified `10.1038/s41467-022-32464-0` (2022, 2 licences); OpenAlex lookup + Crossref → `VERIFIED_CROSSREF`, sources Crossref + OpenAlex |
+| 2026-11-15 10:30 | Claude Code (same machine) | **3 passed** in 5.52 s (with the new OpenAlex search smoke) | NASA POWER v2.10.3 live, 24 anomalies, `complete`; the one warning is "Short reference window (12 years): a descriptive comparison period, not a 30-year climatological normal" (expected for 2010–2021); Crossref and OpenAlex lookup as above; OpenAlex search "legume rotation wheat yield": 6 results, 4 with a DOI, 3 `VERIFIED_CROSSREF`, 40 960 OpenAlex matches, 0 duplicates, every result with retrieval provenance and `BIBLIOGRAPHIC_MATCH_ONLY` |

@@ -39,7 +39,8 @@ def check_climate_payload(body: dict, *, event_year: int, expect_live: bool) -> 
     assert body["quality"]["status"] in {"complete", "partial", "insufficient"}
     return {"dataset_version": prov["dataset_version"], "retrieved_at": body["retrieved_at"],
             "sha256": body["data_sha256"], "anomalies_computed": computed,
-            "quality": body["quality"]["status"], "warnings": len(body["quality"]["warnings"])}
+            "quality": body["quality"]["status"], "warnings": len(body["quality"]["warnings"]),
+            "warning_texts": [str(w)[:160] for w in body["quality"]["warnings"]]}
 
 
 def check_doi_verification(check, *, doi: str) -> dict:
@@ -54,3 +55,33 @@ def check_paper_record(record, *, doi: str) -> dict:
     assert record.source_kind == "LITERATURE_METADATA" and record.evidence_status == "BIBLIOGRAPHIC_MATCH_ONLY"
     assert record.retrievals, "a paper without retrieval records has no provenance"
     return {"doi": record.doi_id, "doi_status": record.doi_status, "sources": sorted({r.source for r in record.retrievals})}
+
+
+DOI_STATUSES = {"VERIFIED_CROSSREF", "METADATA_MISMATCH", "NOT_FOUND_IN_CROSSREF", "VERIFICATION_UNAVAILABLE",
+                "MALFORMED_DOI", "NO_DOI"}
+
+
+def check_search_result(body: dict, *, query: str) -> dict:
+    """/api/literature: bibliographic matches only, each with provenance; DOIs only as resolvable doi.org URLs
+    that agree with the normalized id; no duplicate works (ABB-13 search, used by the ABB-23 'Add a study')."""
+    assert body["query"] == query and body["source_kind"] == "LITERATURE_METADATA"
+    assert body["retrieved_at"] and body["limitations"], "search without retrieval time or limitations"
+    results = body["results"]
+    assert results, "OpenAlex returned no work for a broad agronomic query"
+    seen: set[str] = set()
+    for paper in results:
+        assert paper["title"] and paper["kind"] == "literature"
+        assert paper["source_kind"] == "LITERATURE_METADATA" and paper["evidence_status"] == "BIBLIOGRAPHIC_MATCH_ONLY"
+        assert paper["doi_status"] in DOI_STATUSES
+        assert paper["retrievals"], "a search result without retrieval records has no provenance"
+        if paper["doi"] is None:
+            assert paper["doi_id"] is None and paper["doi_status"] in {"NO_DOI", "MALFORMED_DOI"}
+        else:
+            assert paper["doi"] == "https://doi.org/" + paper["doi_id"], "DOI link does not match the normalized DOI"
+            assert paper["doi_status"] != "NO_DOI"
+            assert paper["doi_id"] not in seen, "duplicate work in the results"
+            seen.add(paper["doi_id"])
+    return {"results": len(results), "with_doi": len(seen),
+            "verified_crossref": sum(p["doi_status"] == "VERIFIED_CROSSREF" for p in results),
+            "total_openalex_matches": body.get("total_openalex_matches"),
+            "duplicates_removed": body.get("duplicates_removed")}
