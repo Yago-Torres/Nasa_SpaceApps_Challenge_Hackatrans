@@ -489,6 +489,16 @@ table.data.collab-table { min-width: 0; }
 .eg-swatch { display: inline-block; width: 28px; height: 14px; border-radius: var(--radius-s); border: 1.5px dashed var(--warn-ink); background: var(--warn-bg); }
 @media (prefers-reduced-motion: reduce) { .eg-edge, .eg-node { transition: none; } }
 
+/* ── GPM IMERG vs POWER monthly rain (ABB-09) ── */
+.chart.rain2 .gpm { fill: var(--ev-observed); }
+.chart.rain2 .pwr { fill: var(--surface); stroke: var(--viz-cat-1); stroke-width: 2; }
+.chart.rain2 .err { stroke: var(--ink); stroke-width: 1.5; }
+.rain2-key { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
+.rain2-key span { display: inline-block; width: 10px; height: 10px; }
+.rain2-key .key-gpm { background: var(--ev-observed); }
+.rain2-key .key-pwr { background: var(--surface); border: 2px solid var(--viz-cat-1); }
+.rain2-key .key-err { width: 2px; height: 12px; background: var(--ink); }
+
 /* ── NDVI chart, HLS (ABB-12) ── */
 .chart.ndvi .obs { fill: var(--ev-observed); }
 .chart.ndvi .obs.s30 { fill: var(--surface); stroke: var(--ev-observed); stroke-width: 2; }
@@ -502,13 +512,3 @@ table.data.collab-table { min-width: 0; }
 .veg-key .key-gap { width: 18px; border: 1px dotted var(--ev-missing); }
 .veg-gaps { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: grid; gap: var(--space-1); font-variant-numeric: tabular-nums; }
 .veg-gaps li { display: flex; align-items: center; gap: var(--space-2); }
-
-/* ── GPM IMERG vs POWER monthly rain (ABB-09) ── */
-.chart.rain2 .gpm { fill: var(--ev-observed); }
-.chart.rain2 .pwr { fill: var(--surface); stroke: var(--viz-cat-1); stroke-width: 2; }
-.chart.rain2 .err { stroke: var(--ink); stroke-width: 1.5; }
-.rain2-key { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
-.rain2-key span { display: inline-block; width: 10px; height: 10px; }
-.rain2-key .key-gpm { background: var(--ev-observed); }
-.rain2-key .key-pwr { background: var(--surface); border: 2px solid var(--viz-cat-1); }
-.rain2-key .key-err { width: 2px; height: 12px; background: var(--ink); }
