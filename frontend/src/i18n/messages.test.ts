@@ -11,6 +11,10 @@ describe('messages', () => {
     const vars = (s: string) => (s.match(/\{\w+\}/g) ?? []).sort();
     for (const key of Object.keys(en) as (keyof typeof en)[]) expect(vars(es[key]), key).toEqual(vars(en[key]));
   });
+  it('Spanish copy has no leftover English UI words', () => {
+    const english = /\b(backend|n\/a|Field \d|Member \d|the|and|with|not)\b/;
+    for (const [key, value] of Object.entries(es)) expect(value, key).not.toMatch(english);
+  });
   it('interpolates named variables and leaves unknown ones', () => {
     expect(interpolate('Year {n} of {m}', { n: 2 })).toBe('Year 2 of {m}');
   });
