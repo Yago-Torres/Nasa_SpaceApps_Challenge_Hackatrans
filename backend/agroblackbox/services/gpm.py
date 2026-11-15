@@ -69,9 +69,10 @@ BACKOFF_SECONDS = (1.0, 2.0)
 RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 # GES DISC OPeNDAP opens the cloud-hosted granule before it answers: on 2026-11-15 the first byte of a
 # DAS took 23-50 s, so a 30 s read limit failed every request. A timed-out read is not retried (that
-# only repeats the wait); the whole year must finish within TIME_BUDGET_SECONDS.
-REQUEST_TIMEOUT = httpx.Timeout(120.0, connect=10.0)
-CONCURRENCY = 6
+# only repeats the wait), a slow connection (TLS took ~3.5 s, longer under load) is; the whole year must
+# finish within TIME_BUDGET_SECONDS. More parallel requests made GES DISC answer 503, so it stays at 4.
+REQUEST_TIMEOUT = httpx.Timeout(120.0, connect=30.0)
+CONCURRENCY = 4
 TIME_BUDGET_SECONDS = 180.0
 BUDGET_REASON = 'Not read within the time limit of this request (NASA GES DISC was slow); retry to complete it.'
 
@@ -225,7 +226,10 @@ class _Http:
                 self.requests += 1
                 try:
                     response = await self.client.get(url, params=params, headers=headers)
-                except httpx.TimeoutException as e:   # not retried: a retry only repeats a long wait
+                except (httpx.ConnectTimeout, httpx.PoolTimeout) as e:   # no work done upstream: retried
+                    failure, cause = GpmSourceError(f'{source} could not be reached in time; retry later.',
+                                                    reason='timeout'), e
+                except httpx.TimeoutException as e:   # slow answer: not retried, a retry only repeats the wait
                     raise GpmSourceError(f'{source} did not respond in time; retry later.', reason='timeout') from e
                 except httpx.RequestError as e:
                     failure, cause = GpmSourceError(f'{source} could not be reached (network error).',

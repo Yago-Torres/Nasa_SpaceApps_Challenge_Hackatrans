@@ -249,9 +249,10 @@ async def test_wrong_units_stop_before_any_value_is_accepted():
 class SlowNasa(FakeNasa):
     """GES DISC answering slowly (2026-11-15: 23-50 s per DAS) or timing out, in scaled-down time."""
 
-    def __init__(self, *, das_delay=0.0, month_delay=None, timeout_months=(), **kw):
+    def __init__(self, *, das_delay=0.0, month_delay=None, timeout_months=(), connect_fail=None, **kw):
         super().__init__(**kw)
         self.das_delay, self.month_delay, self.timeout_months = das_delay, month_delay or {}, set(timeout_months)
+        self.connect_fail = dict(connect_fail or {})   # month -> connection timeouts before it answers
 
     async def handler(self, request):
         import asyncio
@@ -263,6 +264,10 @@ class SlowNasa(FakeNasa):
             if month in self.timeout_months:
                 self.requests.append(request)
                 raise httpx.ReadTimeout('slow', request=request)
+            if self.connect_fail.get(month, 0) > 0:
+                self.connect_fail[month] -= 1
+                self.requests.append(request)
+                raise httpx.ConnectTimeout('busy', request=request)
             await asyncio.sleep(self.month_delay.get(month, 0.0))
         return super().handler(request)
 
@@ -277,12 +282,21 @@ async def test_a_timed_out_read_is_not_retried_and_only_that_month_is_lost():
 
 
 @pytest.mark.asyncio
+async def test_a_connection_timeout_is_retried():
+    fake = SlowNasa(connect_fail={2: 2, 3: 5})
+    series = await run(fake)
+    assert series.months[1].status == 'OBSERVED'   # third attempt answered
+    assert series.months[2].status == 'NOT_READ' and 'could not be reached in time' in series.months[2].reason
+    assert sum(1 for r in fake.requests if f'{YEAR}0301' in r.url.path) == gpm.MAX_ATTEMPTS
+
+
+@pytest.mark.asyncio
 async def test_a_slow_units_check_runs_alongside_the_month_reads(monkeypatch):
     monkeypatch.setattr(gpm, 'TIME_BUDGET_SECONDS', 5.0)
     import time
     start = time.monotonic()
-    series = await run(SlowNasa(das_delay=0.4, month_delay={m: 0.4 for m in range(1, 6)}))
-    # DAS + 5 slow months fit in the 6 concurrent slots: ~0.4 s, versus >= 0.8 s for DAS-then-months
+    series = await run(SlowNasa(das_delay=0.4, month_delay={m: 0.4 for m in range(1, 4)}))
+    # DAS + 3 slow months fit in the 4 concurrent slots: ~0.4 s, versus >= 0.8 s for DAS-then-months
     assert time.monotonic() - start < 0.7
     assert series.units_checked and not series.units_from_cache
     assert all(m.status == 'OBSERVED' for m in series.months)
