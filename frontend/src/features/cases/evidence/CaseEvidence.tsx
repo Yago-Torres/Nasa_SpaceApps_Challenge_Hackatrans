@@ -6,6 +6,7 @@ import { CaseTitleBlock } from '../CaseTitleBlock';
 import { ClaimsSection } from './ClaimsSection';
 import { DisagreementsSection } from './DisagreementsSection';
 import { GraphSection } from './GraphSection';
+import { GraphWorkflowSection } from './ReviewForms';
 
 /**
  * Case "Evidence" tab (ABB-23): the studies kept for this case with their review status, context
@@ -24,6 +25,7 @@ export function CaseEvidence({ caseId }: { caseId: string }) {
         <>
           <CaseTitleBlock c={c} lead={t('evx.lead')} />
           <GraphSection caseId={caseId} refreshKey={version} onOpenClaim={openClaim} />
+          <GraphWorkflowSection caseId={caseId} canWrite={canEdit(c)} refreshKey={version} onChanged={() => setVersion((n) => n + 1)} />
           <ClaimsSection caseId={caseId} canAdd={canEdit(c)} focusClaim={focusClaim} onChanged={() => setVersion((n) => n + 1)} />
           <DisagreementsSection caseId={caseId} refreshKey={version} onOpenClaim={openClaim} />
         </>

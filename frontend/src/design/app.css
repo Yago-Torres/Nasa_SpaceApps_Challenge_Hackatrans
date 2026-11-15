@@ -502,3 +502,16 @@ table.data.collab-table { min-width: 0; }
 .veg-key .key-gap { width: 18px; border: 1px dotted var(--ev-missing); }
 .veg-gaps { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: grid; gap: var(--space-1); font-variant-numeric: tabular-nums; }
 .veg-gaps li { display: flex; align-items: center; gap: var(--space-2); }
+
+/* Human review and uncertainty workflows (ABB-14/15/16/19/28). */
+.review-box { border-top: 1px solid var(--rule); padding-top: var(--space-3); }
+.workflow-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); margin-block: var(--space-4); }
+.workflow-grid > form, .workflow-grid > .stack { min-width: 0; padding: var(--space-4); border: 1px solid var(--rule-2); border-radius: var(--radius-m); background: var(--surface); }
+.unc-summary { margin-block: var(--space-4); }
+.unc-questions { display: grid; gap: var(--space-5); margin: var(--space-5) 0; padding: 0; list-style: none; }
+.unc-question { border-top: 2px solid var(--rule-3); padding-top: var(--space-4); }
+.unc-question > article > header { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); gap: var(--space-3); align-items: start; }
+.unc-position { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--rule-2); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
+.danger-zone { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 2px solid var(--error-ink); }
+.account-data { margin-bottom: var(--space-5); }
+@media (max-width: 48rem) { .workflow-grid { grid-template-columns: 1fr; } }

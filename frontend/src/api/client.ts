@@ -7,6 +7,9 @@ import type {
   InvitationCreate, InvitationDecision, InvitationList, InvitationView, ReceivedInvitationList, SharedCaseView,
   ShareLinkCreate, ShareLinkCreated, ShareLinkList, ApplicabilityReport, ApplicabilityRequest, ClaimCreate, ClaimEventView,
   ClaimList, ClaimView, DisagreementList, EvidenceGraph, EvidenceTrace, PaperRegistration, PaperView,
+  AccountExport, AccountDeletionReceipt, ClaimReviewRequest, DisagreementReviewRequest, ConclusionCreate,
+  ConclusionList, ConclusionView, EdgeCreate, EdgeList, GraphEdge, GraphReviewRequest, UncertaintyReport,
+  AnswerCreate, AnswerList, UncertaintyAnswer, QuestionHistory,
 } from './types';
 import { clearSession, getSession } from './session';
 
@@ -35,10 +38,12 @@ type RequestOptions = RequestInit & {
   auth?: boolean;
   /** JSON request body. */
   json?: unknown;
+  /** A confirmation endpoint may use 401 for a wrong re-entered password while the bearer is still valid. */
+  keepSessionOn401?: boolean;
 };
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { auth, json, headers: extra, ...init } = options;
+  const { auth, json, keepSessionOn401, headers: extra, ...init } = options;
   const headers: Record<string, string> = { Accept: 'application/json', ...(extra as Record<string, string> | undefined) };
   if (json !== undefined) {
     headers['Content-Type'] = 'application/json';
@@ -66,7 +71,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       /* non-JSON error body */
     }
     const seconds = Number.parseInt(response.headers?.get('Retry-After') ?? '', 10);
-    if (auth && response.status === 401) clearSession();
+    if (auth && response.status === 401 && !keepSessionOn401) clearSession();
     throw new ApiError(detail ? `HTTP ${response.status}: ${detail}` : `HTTP ${response.status}`, response.status, path, detail, Number.isFinite(seconds) ? seconds : null);
   }
   if (response.status === 204) return undefined as T;
@@ -267,8 +272,14 @@ export const evidenceApi = {
   createClaim(caseId: string, body: ClaimCreate) {
     return request<ClaimView>(`${casePath(caseId)}/claims`, { method: 'POST', auth: true, json: body });
   },
+  reviewClaim(caseId: string, claimId: string, body: ClaimReviewRequest) {
+    return request<ClaimView>(`${casePath(caseId)}/claims/${encodeURIComponent(claimId)}/review`, { method: 'POST', auth: true, json: body });
+  },
   disagreements(caseId: string, signal?: AbortSignal) {
     return request<DisagreementList>(`${casePath(caseId)}/claims/disagreements`, { auth: true, signal });
+  },
+  reviewDisagreement(caseId: string, disagreementId: string, body: DisagreementReviewRequest) {
+    return request<DisagreementList['items'][number]>(`${casePath(caseId)}/claims/disagreements/${encodeURIComponent(disagreementId)}/review`, { method: 'POST', auth: true, json: body });
   },
   applicability(caseId: string, claimId: string, body: ApplicabilityRequest) {
     return request<ApplicabilityReport>(`${casePath(caseId)}/claims/${encodeURIComponent(claimId)}/applicability`, { method: 'POST', auth: true, json: body });
@@ -279,4 +290,51 @@ export const evidenceApi = {
   trace(caseId: string, nodeId: string, signal?: AbortSignal) {
     return request<EvidenceTrace>(`${casePath(caseId)}/evidence-graph/trace/${encodeURIComponent(nodeId)}`, { auth: true, signal });
   },
+  conclusions(caseId: string, signal?: AbortSignal) {
+    return request<ConclusionList>(`${casePath(caseId)}/evidence-graph/conclusions`, { auth: true, signal });
+  },
+  createConclusion(caseId: string, body: ConclusionCreate) {
+    return request<ConclusionView>(`${casePath(caseId)}/evidence-graph/conclusions`, { method: 'POST', auth: true, json: body });
+  },
+  reviewConclusion(caseId: string, conclusionId: string, body: GraphReviewRequest) {
+    return request<ConclusionView>(`${casePath(caseId)}/evidence-graph/conclusions/${encodeURIComponent(conclusionId)}/review`, { method: 'POST', auth: true, json: body });
+  },
+  edges(caseId: string, signal?: AbortSignal) {
+    return request<EdgeList>(`${casePath(caseId)}/evidence-graph/edges`, { auth: true, signal });
+  },
+  createEdge(caseId: string, body: EdgeCreate) {
+    return request<GraphEdge>(`${casePath(caseId)}/evidence-graph/edges`, { method: 'POST', auth: true, json: body });
+  },
+  reviewEdge(caseId: string, edgeId: string, body: GraphReviewRequest) {
+    return request<GraphEdge>(`${casePath(caseId)}/evidence-graph/edges/${encodeURIComponent(edgeId)}/review`, { method: 'POST', auth: true, json: body });
+  },
+};
+
+export const uncertaintyApi = {
+  report(caseId: string, signal?: AbortSignal) {
+    return request<UncertaintyReport>(`${casePath(caseId)}/uncertainty`, { auth: true, signal });
+  },
+  answers(caseId: string, signal?: AbortSignal) {
+    return request<AnswerList>(`${casePath(caseId)}/uncertainty/answers`, { auth: true, signal });
+  },
+  answer(caseId: string, questionId: string, body: AnswerCreate) {
+    return request<UncertaintyAnswer>(`${casePath(caseId)}/uncertainty/questions/${encodeURIComponent(questionId)}/answers`, { method: 'POST', auth: true, json: body });
+  },
+  reviewAnswer(caseId: string, answerId: string, body: { version: number; decision: 'REVIEWED' | 'REJECTED'; note: string }) {
+    return request<UncertaintyAnswer>(`${casePath(caseId)}/uncertainty/answers/${encodeURIComponent(answerId)}/review`, { method: 'POST', auth: true, json: body });
+  },
+  dismiss(caseId: string, questionId: string, note: string) {
+    return request<QuestionHistory>(`${casePath(caseId)}/uncertainty/questions/${encodeURIComponent(questionId)}/dismiss`, { method: 'POST', auth: true, json: { note } });
+  },
+  reopen(caseId: string, questionId: string, note: string) {
+    return request<QuestionHistory>(`${casePath(caseId)}/uncertainty/questions/${encodeURIComponent(questionId)}/reopen`, { method: 'POST', auth: true, json: { note } });
+  },
+  history(caseId: string, questionId: string, signal?: AbortSignal) {
+    return request<QuestionHistory>(`${casePath(caseId)}/uncertainty/questions/${encodeURIComponent(questionId)}/history`, { auth: true, signal });
+  },
+};
+
+export const accountApi = {
+  export() { return request<AccountExport>('/api/v1/account/export', { auth: true, cache: 'no-store' }); },
+  delete(password: string) { return request<AccountDeletionReceipt>('/api/v1/account/delete', { method: 'POST', auth: true, keepSessionOn401: true, json: { password } }); },
 };
