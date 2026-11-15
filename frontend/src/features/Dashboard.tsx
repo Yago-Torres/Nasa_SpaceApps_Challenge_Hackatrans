@@ -13,11 +13,12 @@ export function Dashboard() {
         <h1 id="dash-title" tabIndex={-1} data-page-title>{t('dash.title')}</h1>
         <p>{t('dash.lead')}</p>
         <div className="actions">
-          <ButtonLink variant="primary" href={hrefFor('investigation')} icon={<ArrowRight className="go" aria-hidden="true" />}>{t('dash.start')}</ButtonLink>
+          <ButtonLink variant="primary" href={hrefFor('cases')} icon={<ArrowRight className="go" aria-hidden="true" />}>{t('dash.start')}</ButtonLink>
+          <ButtonLink href={hrefFor('investigation')}>{t('dash.oneOff')}</ButtonLink>
         </div>
       </section>
 
-      <StatusMessage tone="pending" title={t('dash.unsavedTitle')}>{t('dash.unsavedBody')}</StatusMessage>
+      <StatusMessage tone="partial" title={t('dash.unsavedTitle')}>{t('dash.unsavedBody')}</StatusMessage>
 
       <section className="panel" aria-labelledby="dash-steps">
         <h2 id="dash-steps">{t('dash.stepsTitle')}</h2>

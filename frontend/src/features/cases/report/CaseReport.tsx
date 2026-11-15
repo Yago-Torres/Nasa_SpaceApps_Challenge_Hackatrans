@@ -38,7 +38,7 @@ export function CaseReport({ caseId }: { caseId: string }) {
 }
 
 function Versions({ caseId, canGenerate }: { caseId: string; canGenerate: boolean }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const dates = useDates();
   const [items, setItems] = useState<ReportView[] | null>(null);
   const [error, setError] = useState('');
@@ -61,7 +61,7 @@ function Versions({ caseId, canGenerate }: { caseId: string; canGenerate: boolea
   }
 
   const generate = () => run('new', async () => {
-    const created = await reportsApi.create(caseId);
+    const created = await reportsApi.create(caseId, lang);
     setItems(await reportsApi.list(caseId));
     setNotice(t('rep2.created', { n: created.version }));
   });

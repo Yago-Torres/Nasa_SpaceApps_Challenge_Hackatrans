@@ -173,6 +173,103 @@ def _short(uid: Any) -> str:
     return str(uid)[:8]
 
 
+# Report chrome is localised at render time from the immutable snapshot. Source titles,
+# author statements and engine explanations remain verbatim as evidence records.
+_ES = {
+    "CropStory — Case report": "CropStory — Informe del caso",
+    "Report version": "Versión del informe", "Generated at (UTC)": "Generado (UTC)",
+    "Status": "Estado", "Case ID": "ID del caso", "Source hash (SHA-256)": "Hash de fuentes (SHA-256)",
+    "Schema": "Esquema", "Version and relevant changes": "Versión y cambios relevantes",
+    "Section": "Sección", "Change": "Cambio", "Record": "Registro", "ID": "ID",
+    "Context": "Contexto", "Incident period": "Periodo del incidente",
+    "Crop history (as reported)": "Historial de cultivos (declarado)",
+    "Case workflow status": "Estado del caso", "Parcels": "Parcelas", "Parcel": "Parcela",
+    "Region": "Región", "Location shared in exports": "Ubicación compartida en exportaciones",
+    "Area (ha)": "Superficie (ha)", "Sources and provenance": "Fuentes y procedencia",
+    "Source ID": "ID de fuente", "Endpoint": "Dirección de origen",
+    "Request period/variables": "Periodo y variables solicitados",
+    "Retrieved at (UTC)": "Recuperado (UTC)", "Dataset version (as reported)": "Versión del conjunto de datos",
+    "Processing version": "Versión de procesamiento", "Retrieval checksum (SHA-256)": "Hash de descarga (SHA-256)",
+    "Content checksum (SHA-256)": "Hash del contenido (SHA-256)",
+    "Event year / reference window": "Año del incidente / periodo de referencia",
+    "Spatial resolution": "Resolución espacial", "Temporal resolution": "Resolución temporal", "Licence": "Licencia",
+    "Observed monthly values and anomalies (NASA POWER)": "Valores mensuales observados y anomalías (NASA POWER)",
+    "Source": "Fuente", "Month": "Mes", "Variable": "Variable", "Value": "Valor",
+    "Reference mean": "Media de referencia", "Anomaly": "Anomalía", "Ref. years": "Años de referencia",
+    "Departure": "Desviación", "Flags": "Indicadores", "Obs. ID": "ID de observación",
+    "Rival hypotheses (candidate explanations, not proven causes)": "Hipótesis rivales (posibles explicaciones, sin causa demostrada)",
+    "Hypothesis ID": "ID de hipótesis", "Origin": "Origen", "Evidence links": "Vínculos de evidencia",
+    "Evaluation note": "Nota de evaluación", "Missing evidence:": "Evidencia ausente:",
+    "Literature claims and DOIs": "Afirmaciones de estudios y DOI", "Evidence class": "Clase de evidencia",
+    "Claim": "Afirmación", "Paper (year)": "Estudio (año)", "Design": "Diseño", "Basis": "Base",
+    "Review": "Revisión", "Claim ID": "ID de afirmación",
+    "Human-authored conclusions": "Conclusiones redactadas por personas", "Conclusion ID": "ID de conclusión",
+    "Review note": "Nota de revisión", "Crop rotation strategies": "Estrategias de rotación",
+    "Strategy ID": "ID de estrategia", "Sequence by year": "Secuencia por año",
+    "Screening result": "Resultado de selección", "Selection rule": "Regla de selección",
+    "Conflicts and open checks:": "Conflictos y comprobaciones pendientes:",
+    "Possible risks:": "Posibles riesgos:", "Possible benefits (unverified):": "Posibles beneficios (sin verificar):",
+    "Reference (metadata only)": "Referencia (solo metadatos)",
+    "Rotations stored on the case": "Rotaciones guardadas en el caso", "Name": "Nombre",
+    "Source kind": "Tipo de fuente", "Years": "Años", "Collaboration and review": "Colaboración y revisión",
+    "Members by role": "Miembros por función", "Active comments": "Comentarios activos",
+    "Distinct claim reviewers": "Revisores distintos de afirmaciones",
+    "Conclusions reviewed": "Conclusiones revisadas", "Privacy of this export": "Privacidad de esta exportación",
+    "Exact coordinates: never included.": "Coordenadas exactas: nunca incluidas.",
+    "Free-text incident notes: not included.": "Notas libres del incidente: no incluidas.",
+    "Limitations and data required": "Limitaciones y datos necesarios",
+    "Reproduction and integrity": "Reproducción e integridad",
+    "not recorded": "no registrado", "not evaluated": "sin evaluar", "not reviewed": "sin revisar",
+    "none": "ninguno", "current": "actual", "DOI unavailable": "DOI no disponible",
+    "ADDED": "AÑADIDO", "REMOVED": "ELIMINADO", "CHANGED": "CAMBIADO",
+    "First stored version of this report: there is no earlier version to compare with.":
+        "Primera versión guardada de este informe; no hay una versión anterior con la que comparar.",
+    "No stored record in these sections changed since that version.":
+        "Ningún registro guardado en estas secciones ha cambiado desde esa versión.",
+    "No observed-data source has been ingested for this case. No NASA values are reported.":
+        "No se ha incorporado ninguna fuente de observaciones a este caso. No se presentan valores de la NASA.",
+    "No observed monthly values are stored for this case.":
+        "Este caso no tiene valores mensuales observados guardados.",
+    "Anomaly = month value minus the mean of the same month over the reference years. Descriptive only; no significance test and no causal claim.":
+        "Anomalía = valor del mes menos la media del mismo mes en los años de referencia. Es descriptiva: no es una prueba de significación ni demuestra causalidad.",
+    "No hypothesis is recorded for this case.": "No hay hipótesis registradas en este caso.",
+    "No literature claim is registered for this case.": "No hay afirmaciones de estudios registradas en este caso.",
+    "ACCEPTED claims were reviewed by a person against the source. Any other status is bibliographic metadata and must not be read as a validated finding.":
+        "Una persona contrastó las afirmaciones ACEPTADAS con la fuente. Los demás estados son metadatos bibliográficos, no resultados validados.",
+    "No conclusion has been written for this case.": "No se han redactado conclusiones para este caso.",
+    "No farm profile was supplied when this report was generated, so no rotation comparison is included.":
+        "No se proporcionó un perfil de explotación al generar este informe; no incluye una comparación de rotaciones.",
+    "Names, e-mail addresses and comment text are not part of this export.":
+        "Esta exportación excluye nombres, direcciones de correo y texto de comentarios.",
+    "Generalised location cell: not included; only the region label chosen by the owner appears.":
+        "Celda de ubicación generalizada: excluida; solo aparece la región elegida por el propietario.",
+    "**Preliminary autogenerated technical case investigation; local review required.**":
+        "**Investigación técnica preliminar generada automáticamente; requiere revisión local.**",
+}
+
+
+def _localise_blocks(blocks: list[tuple]) -> list[tuple]:
+    def translated(value: Any) -> Any:
+        if isinstance(value, str):
+            if value in _ES:
+                return _ES[value]
+            for original, replacement in (
+                ("Compared with version ", "Comparado con la versión "),
+                ("Limitations of claim ", "Limitaciones de la afirmación "),
+                ("Coordinate strings removed by the final guard: ", "Coordenadas eliminadas por la comprobación final: "),
+                ("No farm profile was supplied", "No se proporcionó un perfil de explotación"),
+            ):
+                if value.startswith(original):
+                    return replacement + value[len(original):]
+            return value
+        if isinstance(value, list):
+            return [translated(item) for item in value]
+        if isinstance(value, tuple):
+            return tuple(translated(item) for item in value)
+        return value
+    return [translated(block) for block in blocks]
+
+
 def build_blocks(s: dict[str, Any]) -> list[tuple]:
     """Neutral document model: ('h1'|'h2'|'h3', text), ('p', text), ('ul', [text]), ('table', headers, rows)."""
     case, rep = s["case"], s["report"]
@@ -349,7 +446,7 @@ def build_blocks(s: dict[str, Any]) -> list[tuple]:
                    "while the upstream archive is unchanged."))
     b.append(("kv", [("Source hash (SHA-256 over every source ID and checksum above)", s["source_hash"])]))
     b.append(("p", "**Preliminary autogenerated technical case investigation; local review required.**"))
-    return b
+    return _localise_blocks(b) if s.get("language") == "es" else b
 
 
 # ── renderers ────────────────────────────────────────────────────────────────
@@ -396,8 +493,8 @@ def _linkify(text: str) -> str:
     return f'<a href="{html.escape(url)}" rel="noopener noreferrer">{escaped}</a>' if url else escaped
 
 
-def render_html(blocks: list[tuple], title: str) -> str:
-    out = ["<!doctype html>", '<html lang="en"><head><meta charset="utf-8">',
+def render_html(blocks: list[tuple], title: str, language: str = "en") -> str:
+    out = ["<!doctype html>", f'<html lang="{language if language in ("en", "es") else "en"}"><head><meta charset="utf-8">',
            '<meta name="viewport" content="width=device-width,initial-scale=1">',
            '<meta name="robots" content="noindex,nofollow">',
            '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'">',

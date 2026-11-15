@@ -11,6 +11,7 @@
 | Farm profile: soil, crops, local calendar, constraints, priorities (ABB-11) | IMPLEMENTED & TESTED (stateless validation; no storage) | `farm_profile.py`, `crop_catalog.py`, `backend/tests/test_farm_profile.py`, `docs/science/FARM_PROFILE.md` | persistence + case link (ABB-03/06), wizard integration (C), human taxonomic review of the catalogue, reviewed calendar/parameter sources |
 | Case note Markdown export | IMPLEMENTED DEVELOPMENT BASELINE | `services/report.py` | persisted cases, citations, report snapshot and download |
 | React app shell, design system, EN/ES (ABB-20) | IMPLEMENTED & TESTED | `frontend/src/app`, `frontend/src/design`, `frontend/src/i18n`, `frontend/src/features`, 95 Vitest tests (all frontend suites, run in CI since ABB-21), PR #36 | persisted cases (ABB-06 UI), timeline (ABB-22), rotation comparator (ABB-24), collaboration (ABB-25) and case evidence (ABB-23) done; map (ABB-21) |
+
 | Reproducible development toolchain | IMPLEMENTED & TESTED | tracked Python/npm locks, `.github/workflows/ci.yml`, `scripts/check_context.py`, CI run `43593848025` | keep locks and runtime pins synchronized when dependencies change |
 | Shared API 1.0 data contracts | IN PROGRESS — LOCALLY VERIFIED | `backend/agroblackbox/schemas.py`, `backend/tests/test_contracts.py`, ADR-0002 | B/C semantic review, generated frontend types and route-by-route adoption remain |
 | User accounts / permissions (ABB-05) | IMPLEMENTED & TESTED (API + web sign-in) | `backend/agroblackbox/security.py`, `api/auth.py`, `api/deps.py`, `backend/tests/test_api_cases.py`, `test_auth_privacy.py`, ADR-0004; web: `frontend/src/api/session.ts`, `features/account/*` | e-mail verification/reset, invitation acceptance, IP rate limiting remain open; session purge now exists as a manual/maintenance function (ABB-28, `retention.py`), not yet wired to a scheduler |
@@ -34,6 +35,20 @@
 | Deployment, monitoring and recovery (ABB-30) | IMPLEMENTED & REHEARSED LOCALLY (amd64); DEMO HOST NOT DEPLOYED, NO PUBLIC URL YET (Raspberry Pi owner to do the first deploy, `DEPLOYMENT.md` → Status) | `backend/Dockerfile`, `frontend/Dockerfile` + `Caddyfile`, `deploy/compose.yaml`, `deploy/bin/*.sh`, `.github/workflows/release.yml`, CI job `deploy-smoke`, `backend/agroblackbox/observability.py`, `backend/tests/test_operations.py`, `docs/operations/DEPLOYMENT.md`, `RUNBOOK.md`, ADR-0008 | first published tag and GHCR images, off-site backup copies, alerting (metrics are pull-only and reset on restart), Redis/async jobs (ABB-27) |
 
 ## Verification (update with exact command outputs after each run)
+
+2026-11-15 local worktree: new case report versions store requested `en`/`es`
+language in the immutable snapshot and translate report structure for Spanish.
+`tests/test_case_report_offline.py tests/test_contracts.py`: 17 passed;
+`npm run build`: passed. This does not yet localise recorded source text or
+backend-generated scientific explanations, and the rotation profile remains
+case-independent; F-10/F-11 are still PARTIAL.
+
+The top-level Investigation, Evidence, Rotations and Report pages remain a temporary,
+case-independent workspace. A bilingual notice now directs users to saved Cases for
+case-bound work (local production build passed on 2026-11-15). This is orientation only:
+rotation profiles/results are still not stored per case, and a case report cannot
+retrieve them automatically. Browser tests require Node 24; the local Node 20 runner
+failed before executing any Vitest test with `ERR_REQUIRE_ESM`.
 
 - Static project-context integrity: `uv run --no-project python scripts/check_context.py`.
 - Backend: `cd backend && uv lock --check && uv run --locked --extra dev pytest -q` with dependencies.

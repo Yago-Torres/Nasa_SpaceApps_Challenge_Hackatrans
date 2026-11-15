@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { Menu, X } from 'lucide-react';
 import { useI18n } from '../i18n/I18n';
 import type { Lang } from '../i18n/messages';
-import { LegendSprite } from '../design/components';
+import { ButtonLink, LegendSprite, StatusMessage } from '../design/components';
 import { ROUTES, hrefFor, useRoute, useSharedToken, type RouteId } from './routes';
 import { InvestigationProvider } from './investigation';
 import { Dashboard } from '../features/Dashboard';
@@ -116,6 +116,12 @@ export function App() {
 
         <main className="main" id="content" tabIndex={-1}>
           <div className="page">
+            {!sharedToken && ['investigation', 'evidence', 'rotations', 'report'].includes(route) && (
+              <StatusMessage tone="partial" title={t('app.standaloneTitle')}
+                action={<ButtonLink href={hrefFor('cases')}>{t('app.openCases')}</ButtonLink>}>
+                {t('app.standaloneBody')}
+              </StatusMessage>
+            )}
             {sharedToken ? <SharedCase key={sharedToken} token={sharedToken} /> : <Screen />}
           </div>
         </main>

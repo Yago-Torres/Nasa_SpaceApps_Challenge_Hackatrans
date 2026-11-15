@@ -115,6 +115,11 @@ Same auth, 404/403, 503 and error rules as the cases API; requires migration `a7
 
 ## Case reports (IMPLEMENTED — ABB-26)
 
+`POST /api/v1/cases/{case_id}/reports` also accepts `language: "en" | "es"`
+(default `en`). The chosen language is stored in the immutable snapshot and reported
+as `ReportView.language`; new Markdown, HTML and PDF versions use it for report
+headings and labels. Existing versions retain their original bytes and language.
+
 Same auth, 404/403 and 503 rules as the cases API; requires migrations `d5f3a8b21c64` (after `a7c2e9d4b158`) and `e8a4c1d7f905` (PDF). Method, privacy rules and limits: `docs/science/CASE_REPORT.md`.
 
 - `POST /api/v1/cases/{case_id}/reports` (OWNER, EDITOR, REVIEWER) `{rotation?: RotationCompareRequest}` → 201 `ReportView` `{id, version, generated_at, status PRELIMINARY, case_version, generated_by, formats, checksum_sha256 (Markdown), html_sha256, snapshot_sha256, sources_sha256, source_manifest_ids, changes{initial, previous_version, case_version, items[{section, change ADDED|REMOVED|CHANGED, id, label}]}, limitations, downloads}`. Unknown body fields → 422. The server computes the optional rotation comparison itself; client-computed rotations are not accepted. Records `REPORT_GENERATED` in the case history without bumping the case version. At most 200 versions per case (409).

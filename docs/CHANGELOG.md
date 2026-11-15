@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- New case-report versions record the selected EN/ES language in their immutable
+  snapshot. The web sends the current language when generating, and report headings
+  and field labels use Spanish for ES versions. Scientific source text remains verbatim.
+
+- Home now opens saved Cases as the primary action and no longer claims that cases
+  cannot be saved. The one-off Investigation, Evidence, Rotations and Report pages explain that
+  they are separate from saved cases and link back to Cases in English and Spanish.
+  This prevents a temporary comparison from looking like a persisted case result.
+
 - ABB-31/ABB-32 demo kit: `scripts/seed_demo_cases.py` creates a clearly labelled
   synthetic owner/reviewer journey in PostgreSQL (two synthetic fields, invitation,
   privacy-redacted views and plain-text feedback), with setup and demo wording in

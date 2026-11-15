@@ -43,6 +43,17 @@ def test_empty_case_says_so_explicitly_and_never_invents_data():
     assert "First stored version" in md and "not peer reviewed" in md
 
 
+def test_spanish_report_has_localised_structure_and_html_language():
+    snap = snapshot(language="es")
+    blocks = cr.build_blocks(snap)
+    md = cr.render_markdown(blocks)
+    page = cr.render_html(blocks, "Informe", "es")
+    assert "# CropStory — Informe del caso" in md
+    assert "## Fuentes y procedencia" in md
+    assert '<html lang="es">' in page
+    assert cr.render_markdown(cr.build_blocks(copy.deepcopy(snap))) == md
+
+
 def test_markdown_is_table_safe_and_tag_safe_and_html_is_escaped():
     snap = snapshot(claims=[claim(claim_text="a | b <script>alert(1)</script>")])
     blocks = cr.build_blocks(snap)
