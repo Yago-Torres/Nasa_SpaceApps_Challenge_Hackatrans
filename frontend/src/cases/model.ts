@@ -147,7 +147,7 @@ export function validateStep(c: IncidentCase, step: Step, now = new Date()): Fie
   }
   if (step === 'incident') {
     const y = parseNumber(c.incidentYear);
-    if (!(Number.isInteger(y) && y >= 1981 && y <= 2025)) e.push('incidentYear');
+    if (!(Number.isInteger(y) && y >= 1981 && y <= new Date().getFullYear())) e.push('incidentYear');
     const month = /^\d{4}-(0[1-9]|1[0-2])$/;
     if (c.symptomsStart && !month.test(c.symptomsStart)) e.push('symptomsStart');
     if (c.symptomsEnd && !month.test(c.symptomsEnd)) e.push('symptomsEnd');

@@ -14,9 +14,16 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .schemas import Resolution, SourceManifest
 from .services import power
+from .services.forensics import default_reference_window
 from .services.metrics import MIN_REFERENCE_YEARS, NORMAL_PERIOD_YEARS, VARIABLES, analyze_power
 
 router = APIRouter(tags=['climate (ABB-07, ABB-08)'])
+
+# Without explicit reference years, the event year is compared with the years just before it, so
+# every year from FIRST_EVENT_YEAR can be investigated (a fixed window would exclude its own years).
+DEFAULT_REFERENCE_YEARS = 10
+POWER_FIRST_YEAR = 1981
+FIRST_EVENT_YEAR = POWER_FIRST_YEAR + MIN_REFERENCE_YEARS   # 1984: 1981-1983 is the shortest valid window
 
 
 class _Model(BaseModel):
@@ -242,12 +249,26 @@ def build_climate_response(record: power.PowerRecord, analysis: dict[str, Any], 
 
 @router.get('/api/climate', response_model=ClimateResponse)
 async def climate(latitude: float = Query(ge=-90, le=90), longitude: float = Query(ge=-180, le=180),
-                  event_year: int = Query(ge=1981, le=2025),
-                  reference_start: int = Query(default=2010, ge=1981, le=2025),
-                  reference_end: int = Query(default=2021, ge=1981, le=2025)):
+                  event_year: int = Query(ge=POWER_FIRST_YEAR, le=2100,
+                                          description='Up to the current year; months not yet complete get no value.'),
+                  reference_start: int | None = Query(
+                      default=None, ge=POWER_FIRST_YEAR, le=2100,
+                      description=f'Default: the {DEFAULT_REFERENCE_YEARS} years before event_year (from 1981).'),
+                  reference_end: int | None = Query(default=None, ge=POWER_FIRST_YEAR, le=2100,
+                                                    description='Default: event_year - 1.')):
     """NASA POWER daily point data aggregated to monthly anomalies with provenance and quality flags.
 
     Upstream failures return 502 with a short generic message; no value is ever simulated."""
+    current_year = date.today().year
+    if event_year > current_year:
+        raise HTTPException(422, detail='Event year cannot be in the future.')
+    if (reference_start is None) != (reference_end is None):
+        raise HTTPException(422, detail='Send both reference years or neither.')
+    if reference_start is None or reference_end is None:
+        reference_start, reference_end = default_reference_window(
+            event_year, years=DEFAULT_REFERENCE_YEARS, earliest=POWER_FIRST_YEAR)
+    if reference_end > current_year:
+        raise HTTPException(422, detail='Reference years cannot be in the future.')
     if reference_end < reference_start or reference_start <= event_year <= reference_end:
         raise HTTPException(422, detail='Reference years must be ordered and exclude event year.')
     if reference_end - reference_start + 1 < MIN_REFERENCE_YEARS:

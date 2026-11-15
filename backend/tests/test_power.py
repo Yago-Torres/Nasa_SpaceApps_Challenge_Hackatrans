@@ -6,7 +6,7 @@ response (API v2.10.3, sources MERRA2/POWER, fill_value -999.0) inspected on 202
 import asyncio
 import calendar
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import httpx
 import pytest
@@ -306,11 +306,35 @@ def test_endpoint_no_event_data_is_502(env):
     'latitude=41.6&longitude=-0.9&event_year=2022&reference_start=2020&reference_end=2021',
     'latitude=91&longitude=-0.9&event_year=2022',
     'latitude=41.6&longitude=-0.9&event_year=1980',
+    'latitude=41.6&longitude=-0.9&event_year=1983',                       # default window 1981-1982: < 3 years
+    f'latitude=41.6&longitude=-0.9&event_year={date.today().year + 1}',   # future
+    'latitude=41.6&longitude=-0.9&event_year=2022&reference_start=2015',  # only one bound
+    f'latitude=41.6&longitude=-0.9&event_year=2000&reference_start=2010&reference_end={date.today().year + 1}',
 ])
 def test_endpoint_rejects_invalid_requests_without_calling_upstream(env, query):
     up = env['use'](Upstream(payload()))
     assert asyncio.run(call(f'/api/climate?{query}')).status_code == 422
     assert up.requests == []
+
+
+@pytest.mark.parametrize('event_year,expected', [(2022, (2012, 2021)), (2015, (2005, 2014)), (1990, (1981, 1989)),
+                                                 (1984, (1981, 1983))])
+def test_default_reference_is_the_ten_preceding_years(env, event_year, expected):
+    up = env['use'](Upstream(payload(years=range(expected[0], event_year + 1))))
+    r = asyncio.run(call(f'/api/climate?latitude=41.6&longitude=-0.9&event_year={event_year}'))
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert (body['reference_start'], body['reference_end']) == expected
+    params = up.requests[0].url.params
+    assert (params['start'], params['end']) == (f'{expected[0]}0101', f'{event_year}1231')
+
+
+def test_the_current_year_is_accepted(env):
+    year = date.today().year
+    env['use'](Upstream(payload(years=range(year - 10, year + 1))))
+    r = asyncio.run(call(f'/api/climate?latitude=41.6&longitude=-0.9&event_year={year}'))
+    assert r.status_code == 200, r.text
+    assert (r.json()['reference_start'], r.json()['reference_end']) == (year - 10, year - 1)
 
 
 def test_openapi_documents_typed_climate_response():

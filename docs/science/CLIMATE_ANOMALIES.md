@@ -57,7 +57,7 @@ Aggregation: precipitation = sum of daily `PRECTOTCORR` (mm/day × 1 day) → mm
 
 ## Reference value and anomaly
 
-- Reference years: `reference_start`…`reference_end`, which must exclude the event year and span at least 3 years.
+- Reference years: `reference_start`…`reference_end`, which must exclude the event year and span at least 3 years. When `/api/climate` receives neither, it uses the 10 years before the event year, clipped at 1981 (so the first event year with a valid default is 1984); the Investigation page sends that same window. Saved-case ingestion (ABB-10) keeps its own 12-year default. The event year may be the current year: months that are not complete yet have no value and no anomaly.
 - For each calendar month, only reference years where that month is complete are used. `reference.sample_count`, `years_excluded` and `reason` say which.
 - `reference.status`: `complete` (all years used), `reduced` (some excluded, ≥ 3 left), `insufficient` (< 3 left: the reference value and anomaly are `null`).
 - Anomaly = event-year monthly value − mean of the usable reference monthly values, in the variable's units (mm or °C). It is computed from unrounded values and rounded to 0.01.

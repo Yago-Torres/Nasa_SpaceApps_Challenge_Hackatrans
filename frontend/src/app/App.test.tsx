@@ -121,6 +121,6 @@ describe('Investigation states', () => {
     expect(screen.getByText('Part of the record is missing')).toBeTruthy();
     expect(screen.getByRole('img', { name: 'September: no data' })).toBeTruthy();
     expect(screen.getByText(FIXTURE.disclaimer)).toBeTruthy();
-    expect(String((vi.mocked(fetch).mock.calls[0] ?? [])[0])).toContain('reference_start=2010');
+    expect(String((vi.mocked(fetch).mock.calls[0] ?? [])[0])).toContain('reference_start=2012&reference_end=2021'); // the 10 years before 2022
   });
 });

@@ -10,7 +10,7 @@ Owner: C (frontend). Status of each item is explicit: **IMPLEMENTED** means it e
 
 | Screen (`#/route`) | Endpoint | Evidence label shown |
 |---|---|---|
-| Investigation (`#/investigation`) | `GET /api/climate` (reference fixed to 2010–2021) | Observed · NASA POWER |
+| Investigation (`#/investigation`) | `GET /api/climate` (reference: the 10 years before the event year, from 1981) | Observed · NASA POWER |
 | Evidence (`#/evidence`) | `GET /api/literature` | Metadata only (never Reviewed literature); points to the case Evidence tab to keep a study |
 | Case tab `#/cases/<id>/evidence` (ABB-23) | `…/claims`, `…/claims/{id}/history`, `POST /api/v1/evidence/papers`, `POST …/claims`, `…/claims/disagreements`, `POST …/claims/{id}/applicability`, `…/evidence-graph`, `…/evidence-graph/trace/{node}` | Reviewed literature only for ACCEPTED claims; everything else "Not reviewed"; graph kinds from the backend; DOIs as registered |
 | Rotations (`#/rotations`) | `GET /api/v1/crop-catalog`, `POST /api/v1/rotations/scenarios`, `/sensitivity` | Backend-returned MODEL_SCENARIO, with declared inputs and limitations |

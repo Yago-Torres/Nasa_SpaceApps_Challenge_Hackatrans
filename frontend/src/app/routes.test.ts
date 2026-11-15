@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { hrefForCaseTab, parseCaseTab, parseHash, parseParam, ROUTES } from './routes';
-import { validateInput } from './investigation';
+import { referenceWindow, validateInput } from './investigation';
 
 describe('routes', () => {
   it('has the seven screens required by ABB-20', () => {
@@ -39,11 +39,25 @@ describe('validateInput (mirrors backend limits)', () => {
   it('accepts valid input, including comma decimals and a true minus sign', () => {
     expect(validateInput({ latitude: '41,6', longitude: '−0.9', year: '2022' }).value).toEqual({ latitude: 41.6, longitude: -0.9, year: 2022 });
   });
-  it('rejects out-of-range coordinates, years outside POWER and years inside the reference window', () => {
+  it('rejects out-of-range coordinates, years without 3 reference years, and future years', () => {
     expect(validateInput({ latitude: '91', longitude: '0', year: '2022' }).errors).toEqual({ latitude: true });
     expect(validateInput({ latitude: '0', longitude: '-181', year: '2022' }).errors).toEqual({ longitude: true });
-    expect(validateInput({ latitude: '0', longitude: '0', year: '1980' }).errors).toEqual({ year: true });
-    expect(validateInput({ latitude: '0', longitude: '0', year: '2015' }).errors).toEqual({ year: true });
+    expect(validateInput({ latitude: '0', longitude: '0', year: '1983' }).errors).toEqual({ year: true });
+    expect(validateInput({ latitude: '0', longitude: '0', year: '2027' }, 2026).errors).toEqual({ year: true });
     expect(validateInput({ latitude: '', longitude: '', year: '2022.5' }).errors).toEqual({ latitude: true, longitude: true, year: true });
+  });
+  it('accepts the years of the former fixed reference window, 1984 and the current year', () => {
+    for (const year of ['2010', '2015', '2021', '1984', '2026']) {
+      expect(validateInput({ latitude: '0', longitude: '0', year }, 2026).errors).toEqual({});
+    }
+  });
+});
+
+describe('referenceWindow (same rule as the backend default)', () => {
+  it('takes the 10 years before the event year, from 1981', () => {
+    expect(referenceWindow(2015)).toEqual({ start: 2005, end: 2014 });
+    expect(referenceWindow(2026)).toEqual({ start: 2016, end: 2025 });
+    expect(referenceWindow(1988)).toEqual({ start: 1981, end: 1987 });
+    expect(referenceWindow(1984)).toEqual({ start: 1981, end: 1983 });
   });
 });
