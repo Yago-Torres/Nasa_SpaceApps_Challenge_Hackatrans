@@ -10,27 +10,15 @@ jobs:
     env:
       TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
     steps:
-      - name: diagnose the Earthdata token (never prints it)
+      - uses: actions/checkout@v4
+      - name: dump HLS COG headers
         run: |
-          set -u
-          python3 - <<'PY'
-          import base64, json, os, time
-          t = os.environ['TOKEN'].strip()
-          parts = t.split('.')
-          print('jwt parts:', len(parts), '| has whitespace:', t != os.environ['TOKEN'])
-          if len(parts) == 3:
-              p = json.loads(base64.urlsafe_b64decode(parts[1] + '=' * (-len(parts[1]) % 4)))
-              print('claims keys:', sorted(p))
-              print('type:', p.get('type'), '| iss:', p.get('iss'))
-              for k in ('iat', 'exp'):
-                  if k in p: print(k, time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(p[k])))
-              print('expired:', p.get('exp', 0) < time.time())
-          PY
-          echo "=== GES DISC direct data (Range 0-99)"
-          curl -s -L -o out.bin -w 'status=%{http_code} final=%{url_effective}\n' -r 0-99 -H "Authorization: Bearer $TOKEN" \
-            "https://data.gesdisc.earthdata.nasa.gov/data/GPM_L3/GPM_3IMERGM.07/2023/3B-MO.MS.MRG.3IMERG.20230601-S000000-E235959.06.V07B.HDF5" | sed 's/[?].*//'
-          head -c 300 out.bin | strings | head -5; echo
-          echo "=== LP DAAC HLS COG (Range 0-99)"
-          curl -s -L -o out.bin -w 'status=%{http_code} final=%{url_effective}\n' -r 0-99 -H "Authorization: Bearer $TOKEN" \
-            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30.020/HLS.L30.T30TVK.2023154T105502.v2.0/HLS.L30.T30TVK.2023154T105502.v2.0.B04.tif" | sed 's/[?].*//'
-          head -c 300 out.bin | strings | head -5; echo
+          B=https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/HLSL30.020/HLS.L30.T30TVK.2023154T105502.v2.0/HLS.L30.T30TVK.2023154T105502.v2.0
+          for band in B04 Fmask; do
+            echo "##### $band"
+            curl -s -L -D h.txt -o $band.bin -r 0-65535 -H "Authorization: Bearer $TOKEN" "$B.$band.tif"
+            grep -i '^HTTP\|content-range\|content-length' h.txt
+            python3 .github/probe/tiffdump.py $band.bin
+          done
+          echo "##### public stac"
+          curl -s -L -w '\nstatus=%{http_code}\n' "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-public/HLSL30.020/HLS.L30.T30TVK.2023154T105502.v2.0/HLS.L30.T30TVK.2023154T105502.v2.0_stac.json" | head -c 2500
