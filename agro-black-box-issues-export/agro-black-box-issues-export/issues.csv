@@ -1,0 +1,1204 @@
+id,title,phase,lead,priority,dependencies,approval,body
+ABB-01,"Estabilizar herramientas, locks y CI reproducible",F0,A,P0,,2/3,"<!-- AGRO-ISSUE-ID: ABB-01 -->
+## Objetivo
+Estabilizar herramientas, locks y CI reproducible. Contribución a **Best Use of Data; transversal**. Trabajo de fase **F0**, prioridad **P0**.
+
+**Responsable recomendado:** Persona A (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ninguna.
+**Votación humana:** 2/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Generar y commitear `backend/uv.lock` con `uv lock`; instalar mediante `uv sync --locked --extra dev`.
+- [ ] Generar y commitear `frontend/package-lock.json`; en CI ejecutar `npm ci`, no instalar versiones flotantes.
+- [ ] Verificar el arranque en Ubuntu/WSL y Omarchy; documentar errores reales y sus soluciones.
+- [ ] Confirmar `api-tests`, `web-build` y `context-policy` en una instalación limpia.
+
+## Criterios de aceptación
+- [ ] CI pasa con lockfiles en un checkout limpio.
+- [ ] `uv run pytest -q`, `npm run build` y `scripts/check_context.py` reproducibles.
+- [ ] README documenta el flujo de trabajo sin pip ni activación manual.
+
+## Archivos o dominios afectados
+- `backend/pyproject.toml`
+- `backend/uv.lock`
+- `frontend/package-lock.json`
+- `.github/workflows/ci.yml`
+- `README.md`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-02,Congelar contrato API y esquemas de datos v1,F0,A,P0,ABB-01,3/3,"<!-- AGRO-ISSUE-ID: ABB-02 -->
+## Objetivo
+Congelar contrato API y esquemas de datos v1. Contribución a **Best Use of Data; transversal**. Trabajo de fase **F0**, prioridad **P0**.
+
+**Responsable recomendado:** Persona A (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-01.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Inventariar rutas actuales y tipos de respuesta en FastAPI y React.
+- [ ] Diseñar Pydantic: Case, Field, SourceManifest, Observation, Anomaly, Hypothesis, Paper, EvidenceClaim, Rotation, Review y Report.
+- [ ] Definir errores, nulos, unidades, metadatos de resolución, privacidad y versionado API.
+- [ ] Revisar con responsables B y C y registrar ADR y contrato actualizado.
+
+## Criterios de aceptación
+- [ ] OpenAPI refleja esquemas completos con ejemplos reales o claramente marcados como fixtures.
+- [ ] Contrato pasa una prueba de validación JSON y otra de error 422/4xx.
+- [ ] A, B y C aprueban el cambio de contrato antes de codificar dependencias.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/app.py`
+- `docs/architecture/API_CONTRACTS.md`
+- `docs/architecture/ADRs/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-03,"Modelo PostgreSQL, migraciones y repositorio de datos",F0,A,P0,ABB-02,3/3,"<!-- AGRO-ISSUE-ID: ABB-03 -->
+## Objetivo
+Modelo PostgreSQL, migraciones y repositorio de datos. Contribución a **Local Impact; transversal**. Trabajo de fase **F0**, prioridad **P0**.
+
+**Responsable recomendado:** Persona A (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-02.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Definir relaciones para usuarios, permisos, casos, parcelas, fuentes, observaciones, hipótesis, evidencias, rotaciones, revisiones e informes.
+- [ ] Implementar SQLAlchemy + Alembic y migración inicial; no guardar coordenadas privadas en logs.
+- [ ] Separar entidades, repositorios y lógica de negocio; añadir seeds explícitamente sintéticos.
+- [ ] Probar creación, actualización, lectura, cambios concurrentes y rollback de migraciones.
+
+## Criterios de aceptación
+- [ ] Una base vacía se inicializa con migraciones reproducibles.
+- [ ] Persisten casos y artefactos y se pueden leer tras reiniciar.
+- [ ] Tests de integridad referencial y recuperación funcionan con PostgreSQL.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/`
+- `compose.yaml`
+- `backend/tests/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-04,"Configurar gobierno del equipo, GitHub Project y protección de main",F0,C,P0,ABB-01,2/3,"<!-- AGRO-ISSUE-ID: ABB-04 -->
+## Objetivo
+Configurar gobierno del equipo, GitHub Project y protección de main. Contribución a **Global Connection; transversal**. Trabajo de fase **F0**, prioridad **P0**.
+
+**Responsable recomendado:** Persona C (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-01.
+**Votación humana:** 2/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Activar Issues, configurar etiquetas, Project y columnas del flujo de aprobación.
+- [ ] Invitar a los tres humanos y asociar sus logins a tareas; exigir PR y revisión de otra persona.
+- [ ] Configurar CODEOWNERS para ciencia, backend, frontend y documentación.
+- [ ] Añadir a las plantillas PR enlaces a Issue, pruebas, cambios en contratos y evidencia de votos.
+
+## Criterios de aceptación
+- [ ] Las Issues tienen propietario, estado y criterios verificables.
+- [ ] Una PR sin revisión o con checks rojos no se fusiona en main.
+- [ ] Las IA no pueden otorgar aprobación de funcionalidades en nombre de humanos.
+
+## Archivos o dominios afectados
+- `.github/`
+- `docs/governance/`
+- `docs/ai/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-05,Diseñar y aplicar permisos y autenticación segura,F0,C,P0,"ABB-02, ABB-03",3/3,"<!-- AGRO-ISSUE-ID: ABB-05 -->
+## Objetivo
+Diseñar y aplicar permisos y autenticación segura. Contribución a **Global Connection; Local Impact**. Trabajo de fase **F0**, prioridad **P0**.
+
+**Responsable recomendado:** Persona C (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-02, ABB-03.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Seleccionar implementación de sesiones/autenticación y registrar ADR aprobado.
+- [ ] Crear roles owner, editor, reviewer; casos privados por defecto y acceso por invitación.
+- [ ] Incluir consentimiento para compartir y posibilidad de revocarlo.
+- [ ] Escribir pruebas de autorización negativas, expiración y acceso entre usuarios.
+
+## Criterios de aceptación
+- [ ] Usuarios sin permiso no acceden a casos, fuentes ni coordenadas.
+- [ ] Rol reviewer solo modifica contenido autorizado.
+- [ ] Revocar invitación bloquea inmediatamente el acceso.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/`
+- `frontend/src/`
+- `docs/architecture/ADRs/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-06,Gestión completa de investigaciones y parcelas,F1,C,P0,"ABB-03, ABB-05",2/3,"<!-- AGRO-ISSUE-ID: ABB-06 -->
+## Objetivo
+Gestión completa de investigaciones y parcelas. Contribución a **Local Impact**. Trabajo de fase **F1**, prioridad **P0**.
+
+**Responsable recomendado:** Persona C (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-03, ABB-05.
+**Votación humana:** 2/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Implementar CRUD de caso con zona, precisión espacial, fecha de evento, cultivo, cronología y observaciones aportadas.
+- [ ] Validar lat/lon, fechas, consentimiento y entradas no válidas; permitir editar sin perder versiones.
+- [ ] Implementar workflow draft → investigating → reviewed → published y su historial.
+- [ ] Conectar primera pantalla web a API persistente, sin fixtures ocultos.
+
+## Criterios de aceptación
+- [ ] Crear, reabrir y actualizar un caso desde UI persiste tras reinicio.
+- [ ] Un usuario sin acceso no puede listar ni obtener un caso privado.
+- [ ] Toda edición conserva autor, fecha, revisión y procedencia.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/`
+- `frontend/src/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-07,Robustecer NASA POWER y registrar procedencia,F1,A,P0,ABB-02,2/3,"<!-- AGRO-ISSUE-ID: ABB-07 -->
+## Objetivo
+Robustecer NASA POWER y registrar procedencia. Contribución a **Best Use of Data**. Trabajo de fase **F1**, prioridad **P0**.
+
+**Responsable recomendado:** Persona A (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-02.
+**Votación humana:** 2/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Auditar `services/power.py`: parámetros, cobertura temporal, unidades, fill values y validación de coordenadas.
+- [ ] Añadir timeouts, retries con backoff, caché, rate limits y estados de error claros.
+- [ ] Guardar hash SHA-256, fecha de acceso, versión del producto, URL y resoluciones espaciales/temporales.
+- [ ] Probar respuesta real autorizada y fixtures versionados por separado.
+
+## Criterios de aceptación
+- [ ] El mismo caso recupera variables con unidades y procedencia.
+- [ ] Errores de NASA no devuelven valores simulados como observados.
+- [ ] Existen tests de éxito, ausencia de datos, timeout y respuesta incompleta.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/services/power.py`
+- `backend/tests/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-08,Motor de anomalías y control de calidad científico,F1,A,P0,ABB-07,3/3,"<!-- AGRO-ISSUE-ID: ABB-08 -->
+## Objetivo
+Motor de anomalías y control de calidad científico. Contribución a **Best Use of Data**. Trabajo de fase **F1**, prioridad **P0**.
+
+**Responsable recomendado:** Persona A (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-07.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Definir climatología de referencia, tratamiento de años incompletos, umbrales, fechas y unidades.
+- [ ] Distinguir datos diarios/mensuales y evitar mezclar productos a distinta resolución sin documentar transformación.
+- [ ] Registrar máscaras de calidad, faltantes y método empleado por indicador.
+- [ ] Validar contra cálculos independientes y casos con datos sintéticos de resultado conocido.
+
+## Criterios de aceptación
+- [ ] Las anomalías reproducen resultados esperados de fixtures con tolerancias explícitas.
+- [ ] Se etiquetan lagunas, incertidumbre y años sin cobertura suficiente.
+- [ ] El informe puede explicar qué periodo y método generó cada indicador.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/services/metrics.py`
+- `backend/tests/`
+- `docs/science/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-09,Integrar GPM IMERG con armonización espacial y temporal,F1,A,P1,"ABB-07, ABB-08",3/3,"<!-- AGRO-ISSUE-ID: ABB-09 -->
+## Objetivo
+Integrar GPM IMERG con armonización espacial y temporal. Contribución a **Best Use of Data**. Trabajo de fase **F1**, prioridad **P1**.
+
+**Responsable recomendado:** Persona A (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-07, ABB-08.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Seleccionar producto/servicio GPM y documentar condiciones de acceso, resolución, unidades y latencia.
+- [ ] Implementar adaptador de precipitación con descarga/acceso estable y metadatos.
+- [ ] Comparar temporalmente con POWER sin confundir series/rejillas o interpolaciones.
+- [ ] Ofrecer errores honestos y caché local; añadir datos para un episodio real.
+
+## Criterios de aceptación
+- [ ] Al menos un caso obtiene una serie GPM real, reproducible y documentada.
+- [ ] La interfaz diferencia claramente producto GPM de POWER.
+- [ ] Tests comprueban unidades, agregación, huecos y fallo de red.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/services/`
+- `backend/tests/`
+- `docs/science/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-10,Construir línea temporal forense e hipótesis rivales,F1,A,P0,"ABB-06, ABB-08",3/3,"<!-- AGRO-ISSUE-ID: ABB-10 -->
+## Objetivo
+Construir línea temporal forense e hipótesis rivales. Contribución a **Best Use of Data; Local Impact**. Trabajo de fase **F1**, prioridad **P0**.
+
+**Responsable recomendado:** Persona A (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-06, ABB-08.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Generar eventos observacionales con fecha, fuente, variable, severidad definida y confianza en el dato.
+- [ ] Separar hechos observados de inferencias, hipótesis y ausencia de evidencia.
+- [ ] Definir hipótesis alternativas y preguntas de verificación local; no calcular falsos porcentajes de causalidad.
+- [ ] Publicar API de timeline e hipótesis para frontend.
+
+## Criterios de aceptación
+- [ ] Timeline contiene observaciones reales, procedencia y límites.
+- [ ] Se puede marcar una hipótesis como compatible, contradicha o no evaluable.
+- [ ] Ninguna inferencia se etiqueta automáticamente como causa demostrada.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/`
+- `docs/science/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-11,"Registrar suelos, cultivos y calendario local del agricultor",F1,B,P0,"ABB-02, ABB-06",2/3,"<!-- AGRO-ISSUE-ID: ABB-11 -->
+## Objetivo
+Registrar suelos, cultivos y calendario local del agricultor. Contribución a **Local Impact**. Trabajo de fase **F1**, prioridad **P0**.
+
+**Responsable recomendado:** Persona B (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-02, ABB-06.
+**Votación humana:** 2/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Permitir propiedades de suelo locales, unidades, profundidad y fuente de medida.
+- [ ] Modelar cultivos, sistema de secano/regadío, fechas, restricciones de equipos y mercados.
+- [ ] Usar catálogo inicial revisado con origen científico, no inventar parámetros.
+- [ ] Definir advertencias por dato ausente y validaciones agronómicas.
+
+## Criterios de aceptación
+- [ ] Se puede distinguir medición local de estimación regional.
+- [ ] El usuario puede registrar historial de cultivos, suelo y restricciones.
+- [ ] Datos no disponibles provocan resultados limitados, no certezas simuladas.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/`
+- `docs/science/`
+- `frontend/src/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-12,Integrar HLS como observación de cobertura vegetal,F1,A,P1,"ABB-07, ABB-09",3/3,"<!-- AGRO-ISSUE-ID: ABB-12 -->
+## Objetivo
+Integrar HLS como observación de cobertura vegetal. Contribución a **Best Use of Data**. Trabajo de fase **F1**, prioridad **P1**.
+
+**Responsable recomendado:** Persona A (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-07, ABB-09.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Seleccionar colecciones HLS, autorización, búsqueda y manejo de nubes/QA.
+- [ ] Calcular o recuperar indicadores de vegetación por fechas y geometría autorizada.
+- [ ] Documentar resolución de 30 m y escala de interpretación; no igualar NDVI con salud del suelo.
+- [ ] Mostrar periodos de observación válidos y ausentes.
+
+## Criterios de aceptación
+- [ ] Un caso muestra imágenes/índices observados con QA y metadatos verificables.
+- [ ] Las fechas sin escenas útiles aparecen como falta de dato.
+- [ ] Existe test del pipeline con fixtures y una verificación real documentada.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/services/`
+- `docs/science/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-13,OpenAlex + Crossref: búsqueda y verificación bibliográfica,F2,B,P0,ABB-02,2/3,"<!-- AGRO-ISSUE-ID: ABB-13 -->
+## Objetivo
+OpenAlex + Crossref: búsqueda y verificación bibliográfica. Contribución a **Best Use of Data; Galactic Impact**. Trabajo de fase **F2**, prioridad **P0**.
+
+**Responsable recomendado:** Persona B (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-02.
+**Votación humana:** 2/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Extender búsqueda existente y combinar metadatos mediante DOI con Crossref.
+- [ ] Normalizar autores, título, año, DOI, licencia, fecha de consulta y URL.
+- [ ] Separar coincidencia bibliográfica de evidencia confirmada en el texto.
+- [ ] Probar errores de API, DOI faltante, duplicados y límites de uso.
+
+## Criterios de aceptación
+- [ ] Cada artículo tiene referencia verificable y procedencia.
+- [ ] Un artículo sin DOI no se inventa.
+- [ ] Búsqueda fallida no devuelve contenido científico fabricado.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/services/literature.py`
+- `backend/tests/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-14,Registro estructurado de claims científicos con revisión humana,F2,B,P0,"ABB-03, ABB-13",3/3,"<!-- AGRO-ISSUE-ID: ABB-14 -->
+## Objetivo
+Registro estructurado de claims científicos con revisión humana. Contribución a **Best Use of Data**. Trabajo de fase **F2**, prioridad **P0**.
+
+**Responsable recomendado:** Persona B (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-03, ABB-13.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Crear entidad EvidenceClaim: afirmación, población/cultivos/suelos, diseño, resultado, incertidumbre, DOI, página/fragmento y estatus.
+- [ ] Implementar flujo unverified → reviewed/rejected y mantener historial.
+- [ ] Exigir licencia y acceso legítimo para procesar contenido completo.
+- [ ] Añadir fichas verificadas para el caso piloto y avisos cuando solo haya metadatos.
+
+## Criterios de aceptación
+- [ ] Ningún abstract se presenta automáticamente como resultado de un ensayo.
+- [ ] La UI distingue claims revisados y no revisados.
+- [ ] Se conserva qué persona revisó y qué fuente se consultó.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/`
+- `docs/science/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-15,Detector de contradicciones y aplicabilidad de estudios,F2,B,P1,"ABB-11, ABB-14",3/3,"<!-- AGRO-ISSUE-ID: ABB-15 -->
+## Objetivo
+Detector de contradicciones y aplicabilidad de estudios. Contribución a **Best Use of Data; Galactic Impact**. Trabajo de fase **F2**, prioridad **P1**.
+
+**Responsable recomendado:** Persona B (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-11, ABB-14.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Definir reglas comparables por intervención, resultado y condiciones del estudio.
+- [ ] Detectar desacuerdos entre claims sin afirmar que siempre se contradigan metodológicamente.
+- [ ] Comparar clima, suelo, cultivos y prácticas del paper con las del caso; producir notas de transferibilidad.
+- [ ] Integrar revisión humana y estado no concluyente.
+
+## Criterios de aceptación
+- [ ] Una contradicción real/revisada se muestra con sus dos referencias.
+- [ ] Ausencia de datos impide un score de aplicabilidad falsamente preciso.
+- [ ] Al menos un ejemplo de transferencia limitada documenta las diferencias.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/`
+- `docs/science/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-16,Modelo de grafo de evidencia y trazabilidad,F2,B,P1,"ABB-10, ABB-14",3/3,"<!-- AGRO-ISSUE-ID: ABB-16 -->
+## Objetivo
+Modelo de grafo de evidencia y trazabilidad. Contribución a **Best Use of Data; Global Connection**. Trabajo de fase **F2**, prioridad **P1**.
+
+**Responsable recomendado:** Persona B (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-10, ABB-14.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Diseñar nodos observación, hipótesis, estudio, claim, limitación y conclusión.
+- [ ] Registrar aristas con tipo y estado de revisión; prohibir referencias huérfanas.
+- [ ] Exponer endpoint navegable por caso con fuente verificable y control de permisos.
+- [ ] Probar que toda conclusión científica remite a datos y/o revisión humana.
+
+## Criterios de aceptación
+- [ ] Cada conclusión importante se rastrea hasta su evidencia original.
+- [ ] Grafo no crea enlaces inexistentes y soporta hipótesis contradictorias.
+- [ ] El endpoint respeta permisos privados de caso.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/`
+- `docs/architecture/API_CONTRACTS.md`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-17,Motor de rotaciones con restricciones y tres estrategias,F2,B,P0,"ABB-08, ABB-11, ABB-14",3/3,"<!-- AGRO-ISSUE-ID: ABB-17 -->
+## Objetivo
+Motor de rotaciones con restricciones y tres estrategias. Contribución a **Local Impact; Galactic Impact**. Trabajo de fase **F2**, prioridad **P0**.
+
+**Responsable recomendado:** Persona B (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-08, ABB-11, ABB-14.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Implementar secuencias multianuales y calendarios por cultivo, con rotación actual obligatoria.
+- [ ] Construir dos alternativas viables bajo suelo, clima, agua, equipo, cultivos y prioridades declaradas.
+- [ ] Excluir combinaciones imposibles y documentar reglas y referencias agrícolas.
+- [ ] Ejecutar comparación basada en exposición, cobertura potencial y restricciones; evitar predicción no validada de rendimiento.
+
+## Criterios de aceptación
+- [ ] Siempre se comparan >=3 estrategias, incluida la actual, o se explica por qué no son factibles.
+- [ ] Cada recomendación indica beneficios posibles, riesgos y condiciones que requieren revisión.
+- [ ] Los casos de calendario incompatible se rechazan en tests.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/services/rotations.py`
+- `backend/tests/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-18,"Análisis de escenarios, prioridades y sensibilidad",F2,B,P1,ABB-17,3/3,"<!-- AGRO-ISSUE-ID: ABB-18 -->
+## Objetivo
+Análisis de escenarios, prioridades y sensibilidad. Contribución a **Galactic Impact; Local Impact**. Trabajo de fase **F2**, prioridad **P1**.
+
+**Responsable recomendado:** Persona B (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-17.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Permitir modificar prioridades del agricultor, agua disponible y escenarios climáticos etiquetados.
+- [ ] Comparar alternativas bajo episodios históricos comunes y escenarios hipotéticos diferenciados.
+- [ ] Aplicar reglas de multicriterio transparentes y mostrar tradeoffs, sin prometer ahorros específicos.
+- [ ] Probar estabilidad, ordenación y explicación de cambios.
+
+## Criterios de aceptación
+- [ ] La misma entrada obtiene la misma comparación reproducible.
+- [ ] Al cambiar una prioridad se muestra qué criterio cambia y por qué.
+- [ ] No se confunden simulación, observación y resultado validado de campo.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/`
+- `backend/tests/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-19,Uncertainty Hunter: carencias y comprobaciones útiles,F2,B,P1,"ABB-10, ABB-15, ABB-18",3/3,"<!-- AGRO-ISSUE-ID: ABB-19 -->
+## Objetivo
+Uncertainty Hunter: carencias y comprobaciones útiles. Contribución a **Best Use of Data; Local Impact**. Trabajo de fase **F2**, prioridad **P1**.
+
+**Responsable recomendado:** Persona B (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-10, ABB-15, ABB-18.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Localizar datos que faltan o son poco fiables para decidir entre rotaciones.
+- [ ] Definir preguntas locales concretas (suelo, riego, etapa fenológica, manejo) con justificación.
+- [ ] Mostrar qué conclusión podría cambiar al introducir esa observación, sin prometer cálculo de valor de información sin modelo.
+- [ ] Añadir estado de resolución por agricultor o experto.
+
+## Criterios de aceptación
+- [ ] Cada pregunta propuesta explica qué incertidumbre abordaría.
+- [ ] La interfaz permite registrar una respuesta local revisable.
+- [ ] Si no hay base para priorizar una medición, se dice explícitamente.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/`
+- `frontend/src/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-20,"Sistema de diseño, navegación, accesibilidad e idioma EN/ES",F3,C,P0,ABB-02,2/3,"<!-- AGRO-ISSUE-ID: ABB-20 -->
+## Objetivo
+Sistema de diseño, navegación, accesibilidad e idioma EN/ES. Contribución a **Global Connection; Local Impact**. Trabajo de fase **F3**, prioridad **P0**.
+
+**Responsable recomendado:** Persona C (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-02.
+**Votación humana:** 2/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Definir layout, estados vacíos, skeleton, error, componente de fuentes y avisos de simulación.
+- [ ] Crear rutas principales: Dashboard, Cases, Investigation, Evidence, Rotations, Collaboration, Report.
+- [ ] Incorporar internacionalización EN/ES, responsive y navegación teclado.
+- [ ] Probar build TS y accesibilidad de interacciones críticas.
+
+## Criterios de aceptación
+- [ ] Frontend navega entre pantallas con estados definidos.
+- [ ] Los textos principales están disponibles en español e inglés.
+- [ ] No hay errores TS y los flujos críticos son utilizables con teclado.
+
+## Archivos o dominios afectados
+- `frontend/src/`
+- `frontend/package.json`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-21,Wizard de incidente y mapa geoespacial con privacidad,F3,C,P0,"ABB-05, ABB-06, ABB-20",2/3,"<!-- AGRO-ISSUE-ID: ABB-21 -->
+## Objetivo
+Wizard de incidente y mapa geoespacial con privacidad. Contribución a **Local Impact; Global Connection**. Trabajo de fase **F3**, prioridad **P0**.
+
+**Responsable recomendado:** Persona C (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-05, ABB-06, ABB-20.
+**Votación humana:** 2/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Crear formulario guiado de incidente y selección espacial, con precisión configurable.
+- [ ] Mostrar datos introducidos y alertas de variables/campos faltantes.
+- [ ] Integrar guardado/autosave y control de autorización.
+- [ ] Ocultar coordenadas exactas al compartir externamente, salvo consentimiento explícito.
+
+## Criterios de aceptación
+- [ ] Un usuario crea un caso desde cero y vuelve a editarlo.
+- [ ] Datos incorrectos reciben mensajes útiles, sin perder información.
+- [ ] Un invitado no ve la ubicación exacta de la parcela privada.
+
+## Archivos o dominios afectados
+- `frontend/src/`
+- `docs/product/UX_FLOWS.md`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-22,"Visualización avanzada de timeline, anomalías y fuentes NASA",F3,C,P0,"ABB-08, ABB-10, ABB-20",2/3,"<!-- AGRO-ISSUE-ID: ABB-22 -->
+## Objetivo
+Visualización avanzada de timeline, anomalías y fuentes NASA. Contribución a **Best Use of Data**. Trabajo de fase **F3**, prioridad **P0**.
+
+**Responsable recomendado:** Persona C (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-08, ABB-10, ABB-20.
+**Votación humana:** 2/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Añadir gráfico de series y anomalías con selección temporal y capas disponibles.
+- [ ] Mostrar unidad, periodo base, QA, procedencia y resolución por variable.
+- [ ] Diferenciar NASA real, datos locales y escenarios simulados en leyenda permanente.
+- [ ] Diseñar estados de carga, sin datos, error externo y datos parciales.
+
+## Criterios de aceptación
+- [ ] El usuario puede inspeccionar cada hallazgo hasta su origen.
+- [ ] Los gráficos no interpolan silenciosamente huecos de datos.
+- [ ] La UI representa errores NASA sin inventar valores.
+
+## Archivos o dominios afectados
+- `frontend/src/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-23,Explorador visual de papers y Evidence Graph,F3,C,P1,"ABB-14, ABB-16, ABB-20",2/3,"<!-- AGRO-ISSUE-ID: ABB-23 -->
+## Objetivo
+Explorador visual de papers y Evidence Graph. Contribución a **Best Use of Data; Global Connection**. Trabajo de fase **F3**, prioridad **P1**.
+
+**Responsable recomendado:** Persona C (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-14, ABB-16, ABB-20.
+**Votación humana:** 2/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Mostrar búsqueda, ficha de artículo, claim revisado/no revisado, contexto y limitaciones.
+- [ ] Construir grafo navegable desde observación hasta conclusión y DOI.
+- [ ] Visualizar contradicciones, transferibilidad y anotaciones de revisión.
+- [ ] Asegurar legibilidad sin depender de color y respeto de permisos.
+
+## Criterios de aceptación
+- [ ] Desde una conclusión se abre el conjunto de evidencias pertinentes.
+- [ ] El sistema muestra claramente evidencias no revisadas.
+- [ ] Los enlaces DOI resuelven a sus URL originales sin inventar bibliografía.
+
+## Archivos o dominios afectados
+- `frontend/src/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-24,Constructor y comparador interactivo de rotaciones,F3,C,P0,"ABB-17, ABB-18, ABB-20",2/3,"<!-- AGRO-ISSUE-ID: ABB-24 -->
+## Objetivo
+Constructor y comparador interactivo de rotaciones. Contribución a **Galactic Impact; Local Impact**. Trabajo de fase **F3**, prioridad **P0**.
+
+**Responsable recomendado:** Persona C (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-17, ABB-18, ABB-20.
+**Votación humana:** 2/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Crear editor de secuencia actual y dos alternativas, con años y estaciones.
+- [ ] Añadir preferencias del agricultor y restricciones con formularios validados.
+- [ ] Mostrar calendario, criterios, riesgos, explicaciones y por qué cada estrategia entra o se descarta.
+- [ ] Incluir accesibilidad, estados de cálculo/error y guardado de selección.
+
+## Criterios de aceptación
+- [ ] Se pueden evaluar tres estrategias desde la UI.
+- [ ] Cambiar las prioridades recalcula el resultado autorizado desde backend.
+- [ ] No se presentan ahorros numéricos sin un modelo y fuente verificados.
+
+## Archivos o dominios afectados
+- `frontend/src/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-25,"Invitaciones, revisión y colaboración entre comunidades",F3,C,P0,"ABB-05, ABB-06, ABB-14, ABB-20",3/3,"<!-- AGRO-ISSUE-ID: ABB-25 -->
+## Objetivo
+Invitaciones, revisión y colaboración entre comunidades. Contribución a **Global Connection**. Trabajo de fase **F3**, prioridad **P0**.
+
+**Responsable recomendado:** Persona C (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-05, ABB-06, ABB-14, ABB-20.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Permitir invitación revocable a personas identificadas, con permisos definidos.
+- [ ] Registrar comentarios, revisión de hipótesis/claims, decisiones y marca de autoría.
+- [ ] Ofrecer vista pública anonimizada/compartida solo con consentimiento.
+- [ ] Prevenir XSS, acceso no autorizado y cambios de revisión sin auditoría.
+
+## Criterios de aceptación
+- [ ] Dos usuarios distintos colaboran en un caso sin exposición de información privada.
+- [ ] Un invitado puede comentar y otro revisar o revocar permisos.
+- [ ] El registro de revisiones conserva autor, instante y evidencia.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/`
+- `frontend/src/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-26,Informe de caso completo y exportación verificable,F3,B,P0,"ABB-10, ABB-14, ABB-16, ABB-17, ABB-25",3/3,"<!-- AGRO-ISSUE-ID: ABB-26 -->
+## Objetivo
+Informe de caso completo y exportación verificable. Contribución a **Best Use of Data; Local Impact**. Trabajo de fase **F3**, prioridad **P0**.
+
+**Responsable recomendado:** Persona B (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-10, ABB-14, ABB-16, ABB-17, ABB-25.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Ampliar Markdown existente con contexto, fuentes, periodos, métodos, hipótesis rivales, 3 rotaciones, claims/DOIs y limitaciones.
+- [ ] Crear snapshot inmutable o versionado del informe y registrar hash de fuentes.
+- [ ] Ofrecer descarga desde UI (Markdown y HTML, o PDF si el equipo aprueba la dependencia).
+- [ ] Probar el informe con un caso que combine NASA real, evidencias revisadas y colaboración.
+
+## Criterios de aceptación
+- [ ] Descarga contiene resultados auténticos y los IDs/DOIs rastreables.
+- [ ] Un informe regenerado identifica fecha, versión y cambios relevantes.
+- [ ] Se evita filtrar coordenadas personales en exportaciones compartidas.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/services/report.py`
+- `frontend/src/`
+- `docs/science/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-27,"Caché, tareas asíncronas y resiliencia ante APIs externas",F4,A,P1,"ABB-03, ABB-07, ABB-13",3/3,"<!-- AGRO-ISSUE-ID: ABB-27 -->
+## Objetivo
+Caché, tareas asíncronas y resiliencia ante APIs externas. Contribución a **Best Use of Data**. Trabajo de fase **F4**, prioridad **P1**.
+
+**Responsable recomendado:** Persona A (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-03, ABB-07, ABB-13.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Definir tareas con identificador, estado, timeout, reintento, cancelación y deduplicación.
+- [ ] Integrar Redis/worker si se justifica mediante ADR y límites claros; evitar bloquear peticiones largas.
+- [ ] Registrar cuota de upstream y política de caché por recurso y fecha.
+- [ ] Probar caída de POWER/OpenAlex, reintentos limitados y recuperación.
+
+## Criterios de aceptación
+- [ ] Solicitudes repetidas no disparan descargas innecesarias.
+- [ ] Un upstream caído produce error recuperable y nunca dato ficticio.
+- [ ] Tareas largas reportan progreso/estado y pueden retomarse.
+
+## Archivos o dominios afectados
+- `backend/agroblackbox/`
+- `compose.yaml`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-28,"Seguridad, privacidad y operaciones de datos",F4,C,P0,"ABB-05, ABB-25, ABB-26",3/3,"<!-- AGRO-ISSUE-ID: ABB-28 -->
+## Objetivo
+Seguridad, privacidad y operaciones de datos. Contribución a **Global Connection; Local Impact**. Trabajo de fase **F4**, prioridad **P0**.
+
+**Responsable recomendado:** Persona C (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-05, ABB-25, ABB-26.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Definir minimización de datos, retención, borrado/exportación, consentimiento y perfiles de acceso.
+- [ ] Auditar secretos, tokens, CORS, rate limit, logs y datos sensibles de ubicación.
+- [ ] Añadir pruebas negativas de permisos para endpoints y descargas.
+- [ ] Documentar aviso legal, descargo agronómico y política para datos de terceros.
+
+## Criterios de aceptación
+- [ ] Un usuario puede exportar y solicitar borrar sus datos según política definida.
+- [ ] Ninguna coordenada ni token aparece en logs/PRs por defecto.
+- [ ] Suite de permisos y compartición cubre denegación y revocación.
+
+## Archivos o dominios afectados
+- `backend/`
+- `frontend/`
+- `docs/operations/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-29,Suite E2E y contratos entre backend y frontend,F4,C,P0,"ABB-06, ABB-10, ABB-14, ABB-17, ABB-21, ABB-22, ABB-24, ABB-26",2/3,"<!-- AGRO-ISSUE-ID: ABB-29 -->
+## Objetivo
+Suite E2E y contratos entre backend y frontend. Contribución a **Transversal**. Trabajo de fase **F4**, prioridad **P0**.
+
+**Responsable recomendado:** Persona C (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-06, ABB-10, ABB-14, ABB-17, ABB-21, ABB-22, ABB-24, ABB-26.
+**Votación humana:** 2/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Preparar fixtures explícitas, marcadas como sintéticas, y casos de red real separados.
+- [ ] Añadir tests end-to-end de creación → NASA → evidencia → 3 rotaciones → revisión → informe.
+- [ ] Comprobar contrato OpenAPI frente a tipos de frontend; fallos, nulos y permisos.
+- [ ] Automatizar ejecución de pruebas en PR y documentar evidencia reproducible.
+
+## Criterios de aceptación
+- [ ] Pasa el recorrido principal completo en CI con fixtures controladas.
+- [ ] Existe un smoke test de fuentes reales ejecutado manualmente y documentado.
+- [ ] No se fusionan regresiones conocidas del flujo principal.
+
+## Archivos o dominios afectados
+- `backend/tests/`
+- `frontend/`
+- `.github/workflows/ci.yml`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-30,"Despliegue seguro, monitorización y recuperación",F4,A,P1,"ABB-01, ABB-03, ABB-05, ABB-27, ABB-29",3/3,"<!-- AGRO-ISSUE-ID: ABB-30 -->
+## Objetivo
+Despliegue seguro, monitorización y recuperación. Contribución a **Galactic Impact; transversal**. Trabajo de fase **F4**, prioridad **P1**.
+
+**Responsable recomendado:** Persona A (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-01, ABB-03, ABB-05, ABB-27, ABB-29.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Elegir plataforma y registrar costes, variables y controles de acceso.
+- [ ] Configurar entornos de demo y release con migraciones, healthcheck, logs y seguimiento de errores.
+- [ ] Definir backup/restauración de PostgreSQL y rollback de releases.
+- [ ] Probar despliegue desde tag y recuperación ante una migración fallida simulada.
+
+## Criterios de aceptación
+- [ ] Hay URL de demo funcional accesible con el mínimo dato privado.
+- [ ] El equipo puede repetir deploy, restaurar backup y revertir versión.
+- [ ] Errores de fuentes externas son visibles en monitoreo sin exponer datos sensibles.
+
+## Archivos o dominios afectados
+- `.github/workflows/`
+- `compose.yaml`
+- `docs/operations/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-31,Piloto agrícola local con revisión externa documentada,F4,B,P0,"ABB-10, ABB-17, ABB-21, ABB-24, ABB-26",2/3,"<!-- AGRO-ISSUE-ID: ABB-31 -->
+## Objetivo
+Piloto agrícola local con revisión externa documentada. Contribución a **Local Impact; Galactic Impact**. Trabajo de fase **F4**, prioridad **P0**.
+
+**Responsable recomendado:** Persona B (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-10, ABB-17, ABB-21, ABB-24, ABB-26.
+**Votación humana:** 2/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Seleccionar un caso situado en zona agrícola concreta; documentar disponibilidad de observaciones.
+- [ ] Recoger necesidades reales de un agricultor o agrónomo, con consentimiento y sin divulgar datos privados.
+- [ ] Presentar las 3 alternativas y pedir corrección sobre restricciones y explicaciones.
+- [ ] Registrar feedback, cambios y límites sin inventar resultados de cosecha.
+
+## Criterios de aceptación
+- [ ] Existe caso piloto trazable y evaluación cualitativa de un humano relevante.
+- [ ] Se documenta qué feedback cambió el producto.
+- [ ] No se afirman beneficios medidos sin ensayo real.
+
+## Archivos o dominios afectados
+- `docs/operations/`
+- `fixtures/`
+- `docs/science/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-32,Colaboración internacional real y prueba de intercambio,F4,B,P1,"ABB-25, ABB-31",2/3,"<!-- AGRO-ISSUE-ID: ABB-32 -->
+## Objetivo
+Colaboración internacional real y prueba de intercambio. Contribución a **Global Connection**. Trabajo de fase **F4**, prioridad **P1**.
+
+**Responsable recomendado:** Persona B (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-25, ABB-31.
+**Votación humana:** 2/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Contactar a una segunda comunidad/persona voluntaria de otro contexto regional.
+- [ ] Solicitar revisión de un caso anonimizado o una hipótesis usando el flujo de colaboración.
+- [ ] Guardar evidencia de la interacción con consentimiento, fecha y contribución real.
+- [ ] Recoger barreras idiomáticas y mejorar EN/ES si procede.
+
+## Criterios de aceptación
+- [ ] Existe al menos una aportación humana real y verificable al caso.
+- [ ] No se confunde un perfil ficticio con colaboración real.
+- [ ] Se respeta privacidad y se puede retirar consentimiento.
+
+## Archivos o dominios afectados
+- `docs/operations/`
+- `frontend/src/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-33,Validación de release 1.0 y cierre técnico,F4,A,P0,"ABB-09, ABB-12, ABB-15, ABB-19, ABB-23, ABB-25, ABB-26, ABB-28, ABB-29, ABB-30, ABB-31, ABB-32",3/3,"<!-- AGRO-ISSUE-ID: ABB-33 -->
+## Objetivo
+Validación de release 1.0 y cierre técnico. Contribución a **Transversal**. Trabajo de fase **F4**, prioridad **P0**.
+
+**Responsable recomendado:** Persona A (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-09, ABB-12, ABB-15, ABB-19, ABB-23, ABB-25, ABB-26, ABB-28, ABB-29, ABB-30, ABB-31, ABB-32.
+**Votación humana:** 3/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Pasar la checklist completa de `RELEASE_1_0.md`, módulos F-01 a F-12.
+- [ ] Revisar resultados de CI, pruebas de permisos, pruebas en Linux/WSL/Omarchy y smoke externo.
+- [ ] Actualizar CURRENT_STATE, changelog, contratos, limitaciones y manual de operación.
+- [ ] Obtener validación humana de los tres y etiquetar release v1.0.0 solo si todos los gates pasan.
+
+## Criterios de aceptación
+- [ ] Cada criterio F-01...F-12 tiene prueba/PR o incidencia sin resolver; si falta, no llamar release final.
+- [ ] La demo puede completarse sin operaciones manuales sobre la API.
+- [ ] El tag está asociado a versión desplegada y reproducible.
+
+## Archivos o dominios afectados
+- `docs/product/RELEASE_1_0.md`
+- `docs/operations/`
+- `.github/`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"
+ABB-34,"Narrativa NASA Space Apps, vídeo y envío oficial",F4,C,P0,"ABB-22, ABB-24, ABB-26, ABB-31",2/3,"<!-- AGRO-ISSUE-ID: ABB-34 -->
+## Objetivo
+Narrativa NASA Space Apps, vídeo y envío oficial. Contribución a **Todos los awards**. Trabajo de fase **F4**, prioridad **P0**.
+
+**Responsable recomendado:** Persona C (A = usuario/ChatGPT, B = Claude científico, C = Claude producto). Cualquier integrante puede implementarla si el equipo aprueba la asignación.
+
+**Dependencias previas:** ABB-22, ABB-24, ABB-26, ABB-31.
+**Votación humana:** 2/3; revisar `docs/governance/FEATURE_POLICY.md`. La creación de esta Issue **no implica aprobación**.
+
+## Pasos de implementación
+- [ ] Redactar demo de 2 minutos basada en incidentes y datos realmente verificados.
+- [ ] Explicar claramente cuatro awards: data provenance, impacto potencial, colaboración real y caso local.
+- [ ] Preparar captura de pantalla, vídeo, repositorio y lista exacta de funciones implementadas.
+- [ ] Verificar requisitos y plazo de la plataforma de entrega vigente; enviar sin atribuir aval NASA.
+
+## Criterios de aceptación
+- [ ] Vídeo y materiales muestran únicamente funcionalidades que funcionan.
+- [ ] Enlaces de repo y demo válidos; referencias NASA y permisos correctos.
+- [ ] No se atribuyen ahorros ni causalidades sin evidencia.
+
+## Archivos o dominios afectados
+- `docs/operations/`
+- `README.md`
+
+## Contrato de entrega
+- [ ] Cambios vinculados a esta Issue y revisados por otra persona cuando el equipo habilite su flujo Git.
+- [ ] Tests/comprobaciones ejecutados y resultados registrados en la Issue o en la revisión (no inventados).
+- [ ] Contratos y ADR actualizados si cambian; `CURRENT_STATE.md` solo tras validación.
+- [ ] Handoff entre agentes según `docs/ai/HANDOFF_TEMPLATE.md`.
+
+**Aprobaciones humanas (completar antes de programar):**
+- [ ] Voto 1:
+- [ ] Voto 2:
+- [ ] Voto 3 (si se requieren 3/3):
+"

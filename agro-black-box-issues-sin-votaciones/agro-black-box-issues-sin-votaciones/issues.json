@@ -1,0 +1,993 @@
+[
+  {
+    "id": "ABB-01",
+    "title": "Estabilizar herramientas, locks y CI reproducible",
+    "phase": "F0",
+    "lead": "A",
+    "deps": [],
+    "steps": [
+      "Generar y commitear `backend/uv.lock` con `uv lock`; instalar mediante `uv sync --locked --extra dev`.",
+      "Generar y commitear `frontend/package-lock.json`; en CI ejecutar `npm ci`, no instalar versiones flotantes.",
+      "Verificar el arranque en Ubuntu/WSL y Omarchy; documentar errores reales y sus soluciones.",
+      "Confirmar `api-tests`, `web-build` y `context-policy` en una instalación limpia."
+    ],
+    "acceptance": [
+      "CI pasa con lockfiles en un checkout limpio.",
+      "`uv run pytest -q`, `npm run build` y `scripts/check_context.py` reproducibles.",
+      "README documenta el flujo de trabajo sin pip ni activación manual."
+    ],
+    "paths": [
+      "backend/pyproject.toml",
+      "backend/uv.lock",
+      "frontend/package-lock.json",
+      ".github/workflows/ci.yml",
+      "README.md"
+    ],
+    "impact": "Best Use of Data; transversal",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-01 -->\n## Objetivo\nEstabilizar herramientas, locks y CI reproducible. Contribución a **Best Use of Data; transversal**. Fase **F0**, prioridad **P0**.\n\n**Responsable sugerido:** A (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ninguna. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Generar y commitear `backend/uv.lock` con `uv lock`; instalar mediante `uv sync --locked --extra dev`.\n- [ ] Generar y commitear `frontend/package-lock.json`; en CI ejecutar `npm ci`, no instalar versiones flotantes.\n- [ ] Verificar el arranque en Ubuntu/WSL y Omarchy; documentar errores reales y sus soluciones.\n- [ ] Confirmar `api-tests`, `web-build` y `context-policy` en una instalación limpia.\n\n## Criterios de aceptación\n- [ ] CI pasa con lockfiles en un checkout limpio.\n- [ ] `uv run pytest -q`, `npm run build` y `scripts/check_context.py` reproducibles.\n- [ ] README documenta el flujo de trabajo sin pip ni activación manual.\n\n## Archivos o dominios afectados\n- `backend/pyproject.toml`\n- `backend/uv.lock`\n- `frontend/package-lock.json`\n- `.github/workflows/ci.yml`\n- `README.md`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-02",
+    "title": "Congelar contrato API y esquemas de datos v1",
+    "phase": "F0",
+    "lead": "A",
+    "deps": [
+      "ABB-01"
+    ],
+    "steps": [
+      "Inventariar rutas actuales y tipos de respuesta en FastAPI y React.",
+      "Diseñar Pydantic: Case, Field, SourceManifest, Observation, Anomaly, Hypothesis, Paper, EvidenceClaim, Rotation, Review y Report.",
+      "Definir errores, nulos, unidades, metadatos de resolución, privacidad y versionado API.",
+      "Revisar con responsables B y C y registrar ADR y contrato actualizado."
+    ],
+    "acceptance": [
+      "OpenAPI refleja esquemas completos con ejemplos reales o claramente marcados como fixtures.",
+      "Contrato pasa una prueba de validación JSON y otra de error 422/4xx.",
+      "El contrato compartido se comunica a A, B y C y se documentan los cambios para permitir integración paralela."
+    ],
+    "paths": [
+      "backend/agroblackbox/app.py",
+      "docs/architecture/API_CONTRACTS.md",
+      "docs/architecture/ADRs/"
+    ],
+    "impact": "Best Use of Data; transversal",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-02 -->\n## Objetivo\nCongelar contrato API y esquemas de datos v1. Contribución a **Best Use of Data; transversal**. Fase **F0**, prioridad **P0**.\n\n**Responsable sugerido:** A (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-01. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Inventariar rutas actuales y tipos de respuesta en FastAPI y React.\n- [ ] Diseñar Pydantic: Case, Field, SourceManifest, Observation, Anomaly, Hypothesis, Paper, EvidenceClaim, Rotation, Review y Report.\n- [ ] Definir errores, nulos, unidades, metadatos de resolución, privacidad y versionado API.\n- [ ] Revisar con responsables B y C y registrar ADR y contrato actualizado.\n\n## Criterios de aceptación\n- [ ] OpenAPI refleja esquemas completos con ejemplos reales o claramente marcados como fixtures.\n- [ ] Contrato pasa una prueba de validación JSON y otra de error 422/4xx.\n- [ ] El contrato compartido se comunica a A, B y C y se documentan los cambios para permitir integración paralela.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/app.py`\n- `docs/architecture/API_CONTRACTS.md`\n- `docs/architecture/ADRs/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-03",
+    "title": "Modelo PostgreSQL, migraciones y repositorio de datos",
+    "phase": "F0",
+    "lead": "A",
+    "deps": [
+      "ABB-02"
+    ],
+    "steps": [
+      "Definir relaciones para usuarios, permisos, casos, parcelas, fuentes, observaciones, hipótesis, evidencias, rotaciones, revisiones e informes.",
+      "Implementar SQLAlchemy + Alembic y migración inicial; no guardar coordenadas privadas en logs.",
+      "Separar entidades, repositorios y lógica de negocio; añadir seeds explícitamente sintéticos.",
+      "Probar creación, actualización, lectura, cambios concurrentes y rollback de migraciones."
+    ],
+    "acceptance": [
+      "Una base vacía se inicializa con migraciones reproducibles.",
+      "Persisten casos y artefactos y se pueden leer tras reiniciar.",
+      "Tests de integridad referencial y recuperación funcionan con PostgreSQL."
+    ],
+    "paths": [
+      "backend/agroblackbox/",
+      "compose.yaml",
+      "backend/tests/"
+    ],
+    "impact": "Local Impact; transversal",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-03 -->\n## Objetivo\nModelo PostgreSQL, migraciones y repositorio de datos. Contribución a **Local Impact; transversal**. Fase **F0**, prioridad **P0**.\n\n**Responsable sugerido:** A (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-02. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Definir relaciones para usuarios, permisos, casos, parcelas, fuentes, observaciones, hipótesis, evidencias, rotaciones, revisiones e informes.\n- [ ] Implementar SQLAlchemy + Alembic y migración inicial; no guardar coordenadas privadas en logs.\n- [ ] Separar entidades, repositorios y lógica de negocio; añadir seeds explícitamente sintéticos.\n- [ ] Probar creación, actualización, lectura, cambios concurrentes y rollback de migraciones.\n\n## Criterios de aceptación\n- [ ] Una base vacía se inicializa con migraciones reproducibles.\n- [ ] Persisten casos y artefactos y se pueden leer tras reiniciar.\n- [ ] Tests de integridad referencial y recuperación funcionan con PostgreSQL.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/`\n- `compose.yaml`\n- `backend/tests/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-04",
+    "title": "Configurar gobierno del equipo, GitHub Project y protección de main",
+    "phase": "F0",
+    "lead": "C",
+    "deps": [
+      "ABB-01"
+    ],
+    "steps": [
+      "Activar Issues, etiquetas y un tablero sencillo (Backlog, Ready, In Progress, Review, Done).",
+      "Invitar a los tres colaboradores y documentar cómo se asignan Issues y se comparten avances.",
+      "Configurar CODEOWNERS para ciencia, backend, frontend y documentación.",
+      "Añadir a las plantillas PR enlaces a Issue, pruebas y cambios de contratos."
+    ],
+    "acceptance": [
+      "Las Issues tienen propietario, estado y criterios verificables.",
+      "La CI comunica con claridad los fallos; los integrantes pueden revisar cambios y decidir cuándo integrarlos.",
+      "El tablero permite que los agentes trabajen directamente sobre las Issues."
+    ],
+    "paths": [
+      ".github/",
+      "docs/governance/",
+      "docs/ai/"
+    ],
+    "impact": "Global Connection; transversal",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-04 -->\n## Objetivo\nConfigurar gobierno del equipo, GitHub Project y protección de main. Contribución a **Global Connection; transversal**. Fase **F0**, prioridad **P0**.\n\n**Responsable sugerido:** C (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-01. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Activar Issues, etiquetas y un tablero sencillo (Backlog, Ready, In Progress, Review, Done).\n- [ ] Invitar a los tres colaboradores y documentar cómo se asignan Issues y se comparten avances.\n- [ ] Configurar CODEOWNERS para ciencia, backend, frontend y documentación.\n- [ ] Añadir a las plantillas PR enlaces a Issue, pruebas y cambios de contratos.\n\n## Criterios de aceptación\n- [ ] Las Issues tienen propietario, estado y criterios verificables.\n- [ ] La CI comunica con claridad los fallos; los integrantes pueden revisar cambios y decidir cuándo integrarlos.\n- [ ] El tablero permite que los agentes trabajen directamente sobre las Issues.\n\n## Archivos o dominios afectados\n- `.github/`\n- `docs/governance/`\n- `docs/ai/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-05",
+    "title": "Diseñar y aplicar permisos y autenticación segura",
+    "phase": "F0",
+    "lead": "C",
+    "deps": [
+      "ABB-02",
+      "ABB-03"
+    ],
+    "steps": [
+      "Seleccionar implementación de sesiones/autenticación y documentar la decisión técnica en un ADR.",
+      "Crear roles owner, editor, reviewer; casos privados por defecto y acceso por invitación.",
+      "Incluir consentimiento para compartir y posibilidad de revocarlo.",
+      "Escribir pruebas de autorización negativas, expiración y acceso entre usuarios."
+    ],
+    "acceptance": [
+      "Usuarios sin permiso no acceden a casos, fuentes ni coordenadas.",
+      "Rol reviewer solo modifica contenido autorizado.",
+      "Revocar invitación bloquea inmediatamente el acceso."
+    ],
+    "paths": [
+      "backend/agroblackbox/",
+      "frontend/src/",
+      "docs/architecture/ADRs/"
+    ],
+    "impact": "Global Connection; Local Impact",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-05 -->\n## Objetivo\nDiseñar y aplicar permisos y autenticación segura. Contribución a **Global Connection; Local Impact**. Fase **F0**, prioridad **P0**.\n\n**Responsable sugerido:** C (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-02, ABB-03. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Seleccionar implementación de sesiones/autenticación y documentar la decisión técnica en un ADR.\n- [ ] Crear roles owner, editor, reviewer; casos privados por defecto y acceso por invitación.\n- [ ] Incluir consentimiento para compartir y posibilidad de revocarlo.\n- [ ] Escribir pruebas de autorización negativas, expiración y acceso entre usuarios.\n\n## Criterios de aceptación\n- [ ] Usuarios sin permiso no acceden a casos, fuentes ni coordenadas.\n- [ ] Rol reviewer solo modifica contenido autorizado.\n- [ ] Revocar invitación bloquea inmediatamente el acceso.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/`\n- `frontend/src/`\n- `docs/architecture/ADRs/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-06",
+    "title": "Gestión completa de investigaciones y parcelas",
+    "phase": "F1",
+    "lead": "C",
+    "deps": [
+      "ABB-03",
+      "ABB-05"
+    ],
+    "steps": [
+      "Implementar CRUD de caso con zona, precisión espacial, fecha de evento, cultivo, cronología y observaciones aportadas.",
+      "Validar lat/lon, fechas, consentimiento y entradas no válidas; permitir editar sin perder versiones.",
+      "Implementar workflow draft → investigating → reviewed → published y su historial.",
+      "Conectar primera pantalla web a API persistente, sin fixtures ocultos."
+    ],
+    "acceptance": [
+      "Crear, reabrir y actualizar un caso desde UI persiste tras reinicio.",
+      "Un usuario sin acceso no puede listar ni obtener un caso privado.",
+      "Toda edición conserva autor, fecha, revisión y procedencia."
+    ],
+    "paths": [
+      "backend/agroblackbox/",
+      "frontend/src/"
+    ],
+    "impact": "Local Impact",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-06 -->\n## Objetivo\nGestión completa de investigaciones y parcelas. Contribución a **Local Impact**. Fase **F1**, prioridad **P0**.\n\n**Responsable sugerido:** C (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-03, ABB-05. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Implementar CRUD de caso con zona, precisión espacial, fecha de evento, cultivo, cronología y observaciones aportadas.\n- [ ] Validar lat/lon, fechas, consentimiento y entradas no válidas; permitir editar sin perder versiones.\n- [ ] Implementar workflow draft → investigating → reviewed → published y su historial.\n- [ ] Conectar primera pantalla web a API persistente, sin fixtures ocultos.\n\n## Criterios de aceptación\n- [ ] Crear, reabrir y actualizar un caso desde UI persiste tras reinicio.\n- [ ] Un usuario sin acceso no puede listar ni obtener un caso privado.\n- [ ] Toda edición conserva autor, fecha, revisión y procedencia.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/`\n- `frontend/src/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-07",
+    "title": "Robustecer NASA POWER y registrar procedencia",
+    "phase": "F1",
+    "lead": "A",
+    "deps": [
+      "ABB-02"
+    ],
+    "steps": [
+      "Auditar `services/power.py`: parámetros, cobertura temporal, unidades, fill values y validación de coordenadas.",
+      "Añadir timeouts, retries con backoff, caché, rate limits y estados de error claros.",
+      "Guardar hash SHA-256, fecha de acceso, versión del producto, URL y resoluciones espaciales/temporales.",
+      "Probar respuesta real autorizada y fixtures versionados por separado."
+    ],
+    "acceptance": [
+      "El mismo caso recupera variables con unidades y procedencia.",
+      "Errores de NASA no devuelven valores simulados como observados.",
+      "Existen tests de éxito, ausencia de datos, timeout y respuesta incompleta."
+    ],
+    "paths": [
+      "backend/agroblackbox/services/power.py",
+      "backend/tests/"
+    ],
+    "impact": "Best Use of Data",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-07 -->\n## Objetivo\nRobustecer NASA POWER y registrar procedencia. Contribución a **Best Use of Data**. Fase **F1**, prioridad **P0**.\n\n**Responsable sugerido:** A (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-02. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Auditar `services/power.py`: parámetros, cobertura temporal, unidades, fill values y validación de coordenadas.\n- [ ] Añadir timeouts, retries con backoff, caché, rate limits y estados de error claros.\n- [ ] Guardar hash SHA-256, fecha de acceso, versión del producto, URL y resoluciones espaciales/temporales.\n- [ ] Probar respuesta real autorizada y fixtures versionados por separado.\n\n## Criterios de aceptación\n- [ ] El mismo caso recupera variables con unidades y procedencia.\n- [ ] Errores de NASA no devuelven valores simulados como observados.\n- [ ] Existen tests de éxito, ausencia de datos, timeout y respuesta incompleta.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/services/power.py`\n- `backend/tests/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-08",
+    "title": "Motor de anomalías y control de calidad científico",
+    "phase": "F1",
+    "lead": "A",
+    "deps": [
+      "ABB-07"
+    ],
+    "steps": [
+      "Definir climatología de referencia, tratamiento de años incompletos, umbrales, fechas y unidades.",
+      "Distinguir datos diarios/mensuales y evitar mezclar productos a distinta resolución sin documentar transformación.",
+      "Registrar máscaras de calidad, faltantes y método empleado por indicador.",
+      "Validar contra cálculos independientes y casos con datos sintéticos de resultado conocido."
+    ],
+    "acceptance": [
+      "Las anomalías reproducen resultados esperados de fixtures con tolerancias explícitas.",
+      "Se etiquetan lagunas, incertidumbre y años sin cobertura suficiente.",
+      "El informe puede explicar qué periodo y método generó cada indicador."
+    ],
+    "paths": [
+      "backend/agroblackbox/services/metrics.py",
+      "backend/tests/",
+      "docs/science/"
+    ],
+    "impact": "Best Use of Data",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-08 -->\n## Objetivo\nMotor de anomalías y control de calidad científico. Contribución a **Best Use of Data**. Fase **F1**, prioridad **P0**.\n\n**Responsable sugerido:** A (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-07. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Definir climatología de referencia, tratamiento de años incompletos, umbrales, fechas y unidades.\n- [ ] Distinguir datos diarios/mensuales y evitar mezclar productos a distinta resolución sin documentar transformación.\n- [ ] Registrar máscaras de calidad, faltantes y método empleado por indicador.\n- [ ] Validar contra cálculos independientes y casos con datos sintéticos de resultado conocido.\n\n## Criterios de aceptación\n- [ ] Las anomalías reproducen resultados esperados de fixtures con tolerancias explícitas.\n- [ ] Se etiquetan lagunas, incertidumbre y años sin cobertura suficiente.\n- [ ] El informe puede explicar qué periodo y método generó cada indicador.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/services/metrics.py`\n- `backend/tests/`\n- `docs/science/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-09",
+    "title": "Integrar GPM IMERG con armonización espacial y temporal",
+    "phase": "F1",
+    "lead": "A",
+    "deps": [
+      "ABB-07",
+      "ABB-08"
+    ],
+    "steps": [
+      "Seleccionar producto/servicio GPM y documentar condiciones de acceso, resolución, unidades y latencia.",
+      "Implementar adaptador de precipitación con descarga/acceso estable y metadatos.",
+      "Comparar temporalmente con POWER sin confundir series/rejillas o interpolaciones.",
+      "Ofrecer errores honestos y caché local; añadir datos para un episodio real."
+    ],
+    "acceptance": [
+      "Al menos un caso obtiene una serie GPM real, reproducible y documentada.",
+      "La interfaz diferencia claramente producto GPM de POWER.",
+      "Tests comprueban unidades, agregación, huecos y fallo de red."
+    ],
+    "paths": [
+      "backend/agroblackbox/services/",
+      "backend/tests/",
+      "docs/science/"
+    ],
+    "impact": "Best Use of Data",
+    "priority": "P1",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-09 -->\n## Objetivo\nIntegrar GPM IMERG con armonización espacial y temporal. Contribución a **Best Use of Data**. Fase **F1**, prioridad **P1**.\n\n**Responsable sugerido:** A (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-07, ABB-08. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Seleccionar producto/servicio GPM y documentar condiciones de acceso, resolución, unidades y latencia.\n- [ ] Implementar adaptador de precipitación con descarga/acceso estable y metadatos.\n- [ ] Comparar temporalmente con POWER sin confundir series/rejillas o interpolaciones.\n- [ ] Ofrecer errores honestos y caché local; añadir datos para un episodio real.\n\n## Criterios de aceptación\n- [ ] Al menos un caso obtiene una serie GPM real, reproducible y documentada.\n- [ ] La interfaz diferencia claramente producto GPM de POWER.\n- [ ] Tests comprueban unidades, agregación, huecos y fallo de red.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/services/`\n- `backend/tests/`\n- `docs/science/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-10",
+    "title": "Construir línea temporal forense e hipótesis rivales",
+    "phase": "F1",
+    "lead": "A",
+    "deps": [
+      "ABB-06",
+      "ABB-08"
+    ],
+    "steps": [
+      "Generar eventos observacionales con fecha, fuente, variable, severidad definida y confianza en el dato.",
+      "Separar hechos observados de inferencias, hipótesis y ausencia de evidencia.",
+      "Definir hipótesis alternativas y preguntas de verificación local; no calcular falsos porcentajes de causalidad.",
+      "Publicar API de timeline e hipótesis para frontend."
+    ],
+    "acceptance": [
+      "Timeline contiene observaciones reales, procedencia y límites.",
+      "Se puede marcar una hipótesis como compatible, contradicha o no evaluable.",
+      "Ninguna inferencia se etiqueta automáticamente como causa demostrada."
+    ],
+    "paths": [
+      "backend/agroblackbox/",
+      "docs/science/"
+    ],
+    "impact": "Best Use of Data; Local Impact",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-10 -->\n## Objetivo\nConstruir línea temporal forense e hipótesis rivales. Contribución a **Best Use of Data; Local Impact**. Fase **F1**, prioridad **P0**.\n\n**Responsable sugerido:** A (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-06, ABB-08. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Generar eventos observacionales con fecha, fuente, variable, severidad definida y confianza en el dato.\n- [ ] Separar hechos observados de inferencias, hipótesis y ausencia de evidencia.\n- [ ] Definir hipótesis alternativas y preguntas de verificación local; no calcular falsos porcentajes de causalidad.\n- [ ] Publicar API de timeline e hipótesis para frontend.\n\n## Criterios de aceptación\n- [ ] Timeline contiene observaciones reales, procedencia y límites.\n- [ ] Se puede marcar una hipótesis como compatible, contradicha o no evaluable.\n- [ ] Ninguna inferencia se etiqueta automáticamente como causa demostrada.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/`\n- `docs/science/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-11",
+    "title": "Registrar suelos, cultivos y calendario local del agricultor",
+    "phase": "F1",
+    "lead": "B",
+    "deps": [
+      "ABB-02",
+      "ABB-06"
+    ],
+    "steps": [
+      "Permitir propiedades de suelo locales, unidades, profundidad y fuente de medida.",
+      "Modelar cultivos, sistema de secano/regadío, fechas, restricciones de equipos y mercados.",
+      "Usar catálogo inicial revisado con origen científico, no inventar parámetros.",
+      "Definir advertencias por dato ausente y validaciones agronómicas."
+    ],
+    "acceptance": [
+      "Se puede distinguir medición local de estimación regional.",
+      "El usuario puede registrar historial de cultivos, suelo y restricciones.",
+      "Datos no disponibles provocan resultados limitados, no certezas simuladas."
+    ],
+    "paths": [
+      "backend/agroblackbox/",
+      "docs/science/",
+      "frontend/src/"
+    ],
+    "impact": "Local Impact",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-11 -->\n## Objetivo\nRegistrar suelos, cultivos y calendario local del agricultor. Contribución a **Local Impact**. Fase **F1**, prioridad **P0**.\n\n**Responsable sugerido:** B (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-02, ABB-06. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Permitir propiedades de suelo locales, unidades, profundidad y fuente de medida.\n- [ ] Modelar cultivos, sistema de secano/regadío, fechas, restricciones de equipos y mercados.\n- [ ] Usar catálogo inicial revisado con origen científico, no inventar parámetros.\n- [ ] Definir advertencias por dato ausente y validaciones agronómicas.\n\n## Criterios de aceptación\n- [ ] Se puede distinguir medición local de estimación regional.\n- [ ] El usuario puede registrar historial de cultivos, suelo y restricciones.\n- [ ] Datos no disponibles provocan resultados limitados, no certezas simuladas.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/`\n- `docs/science/`\n- `frontend/src/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-12",
+    "title": "Integrar HLS como observación de cobertura vegetal",
+    "phase": "F1",
+    "lead": "A",
+    "deps": [
+      "ABB-07",
+      "ABB-09"
+    ],
+    "steps": [
+      "Seleccionar colecciones HLS, autorización, búsqueda y manejo de nubes/QA.",
+      "Calcular o recuperar indicadores de vegetación por fechas y geometría autorizada.",
+      "Documentar resolución de 30 m y escala de interpretación; no igualar NDVI con salud del suelo.",
+      "Mostrar periodos de observación válidos y ausentes."
+    ],
+    "acceptance": [
+      "Un caso muestra imágenes/índices observados con QA y metadatos verificables.",
+      "Las fechas sin escenas útiles aparecen como falta de dato.",
+      "Existe test del pipeline con fixtures y una verificación real documentada."
+    ],
+    "paths": [
+      "backend/agroblackbox/services/",
+      "docs/science/"
+    ],
+    "impact": "Best Use of Data",
+    "priority": "P1",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-12 -->\n## Objetivo\nIntegrar HLS como observación de cobertura vegetal. Contribución a **Best Use of Data**. Fase **F1**, prioridad **P1**.\n\n**Responsable sugerido:** A (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-07, ABB-09. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Seleccionar colecciones HLS, autorización, búsqueda y manejo de nubes/QA.\n- [ ] Calcular o recuperar indicadores de vegetación por fechas y geometría autorizada.\n- [ ] Documentar resolución de 30 m y escala de interpretación; no igualar NDVI con salud del suelo.\n- [ ] Mostrar periodos de observación válidos y ausentes.\n\n## Criterios de aceptación\n- [ ] Un caso muestra imágenes/índices observados con QA y metadatos verificables.\n- [ ] Las fechas sin escenas útiles aparecen como falta de dato.\n- [ ] Existe test del pipeline con fixtures y una verificación real documentada.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/services/`\n- `docs/science/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-13",
+    "title": "OpenAlex + Crossref: búsqueda y verificación bibliográfica",
+    "phase": "F2",
+    "lead": "B",
+    "deps": [
+      "ABB-02"
+    ],
+    "steps": [
+      "Extender búsqueda existente y combinar metadatos mediante DOI con Crossref.",
+      "Normalizar autores, título, año, DOI, licencia, fecha de consulta y URL.",
+      "Separar coincidencia bibliográfica de evidencia confirmada en el texto.",
+      "Probar errores de API, DOI faltante, duplicados y límites de uso."
+    ],
+    "acceptance": [
+      "Cada artículo tiene referencia verificable y procedencia.",
+      "Un artículo sin DOI no se inventa.",
+      "Búsqueda fallida no devuelve contenido científico fabricado."
+    ],
+    "paths": [
+      "backend/agroblackbox/services/literature.py",
+      "backend/tests/"
+    ],
+    "impact": "Best Use of Data; Galactic Impact",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-13 -->\n## Objetivo\nOpenAlex + Crossref: búsqueda y verificación bibliográfica. Contribución a **Best Use of Data; Galactic Impact**. Fase **F2**, prioridad **P0**.\n\n**Responsable sugerido:** B (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-02. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Extender búsqueda existente y combinar metadatos mediante DOI con Crossref.\n- [ ] Normalizar autores, título, año, DOI, licencia, fecha de consulta y URL.\n- [ ] Separar coincidencia bibliográfica de evidencia confirmada en el texto.\n- [ ] Probar errores de API, DOI faltante, duplicados y límites de uso.\n\n## Criterios de aceptación\n- [ ] Cada artículo tiene referencia verificable y procedencia.\n- [ ] Un artículo sin DOI no se inventa.\n- [ ] Búsqueda fallida no devuelve contenido científico fabricado.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/services/literature.py`\n- `backend/tests/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-14",
+    "title": "Registro estructurado de claims científicos con revisión humana",
+    "phase": "F2",
+    "lead": "B",
+    "deps": [
+      "ABB-03",
+      "ABB-13"
+    ],
+    "steps": [
+      "Crear entidad EvidenceClaim: afirmación, población/cultivos/suelos, diseño, resultado, incertidumbre, DOI, página/fragmento y estatus.",
+      "Implementar flujo unverified → reviewed/rejected y mantener historial.",
+      "Exigir licencia y acceso legítimo para procesar contenido completo.",
+      "Añadir fichas verificadas para el caso piloto y avisos cuando solo haya metadatos."
+    ],
+    "acceptance": [
+      "Ningún abstract se presenta automáticamente como resultado de un ensayo.",
+      "La UI distingue claims revisados y no revisados.",
+      "Se conserva qué persona revisó y qué fuente se consultó."
+    ],
+    "paths": [
+      "backend/agroblackbox/",
+      "docs/science/"
+    ],
+    "impact": "Best Use of Data",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-14 -->\n## Objetivo\nRegistro estructurado de claims científicos con revisión humana. Contribución a **Best Use of Data**. Fase **F2**, prioridad **P0**.\n\n**Responsable sugerido:** B (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-03, ABB-13. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Crear entidad EvidenceClaim: afirmación, población/cultivos/suelos, diseño, resultado, incertidumbre, DOI, página/fragmento y estatus.\n- [ ] Implementar flujo unverified → reviewed/rejected y mantener historial.\n- [ ] Exigir licencia y acceso legítimo para procesar contenido completo.\n- [ ] Añadir fichas verificadas para el caso piloto y avisos cuando solo haya metadatos.\n\n## Criterios de aceptación\n- [ ] Ningún abstract se presenta automáticamente como resultado de un ensayo.\n- [ ] La UI distingue claims revisados y no revisados.\n- [ ] Se conserva qué persona revisó y qué fuente se consultó.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/`\n- `docs/science/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-15",
+    "title": "Detector de contradicciones y aplicabilidad de estudios",
+    "phase": "F2",
+    "lead": "B",
+    "deps": [
+      "ABB-11",
+      "ABB-14"
+    ],
+    "steps": [
+      "Definir reglas comparables por intervención, resultado y condiciones del estudio.",
+      "Detectar desacuerdos entre claims sin afirmar que siempre se contradigan metodológicamente.",
+      "Comparar clima, suelo, cultivos y prácticas del paper con las del caso; producir notas de transferibilidad.",
+      "Integrar revisión humana y estado no concluyente."
+    ],
+    "acceptance": [
+      "Una contradicción real/revisada se muestra con sus dos referencias.",
+      "Ausencia de datos impide un score de aplicabilidad falsamente preciso.",
+      "Al menos un ejemplo de transferencia limitada documenta las diferencias."
+    ],
+    "paths": [
+      "backend/agroblackbox/",
+      "docs/science/"
+    ],
+    "impact": "Best Use of Data; Galactic Impact",
+    "priority": "P1",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-15 -->\n## Objetivo\nDetector de contradicciones y aplicabilidad de estudios. Contribución a **Best Use of Data; Galactic Impact**. Fase **F2**, prioridad **P1**.\n\n**Responsable sugerido:** B (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-11, ABB-14. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Definir reglas comparables por intervención, resultado y condiciones del estudio.\n- [ ] Detectar desacuerdos entre claims sin afirmar que siempre se contradigan metodológicamente.\n- [ ] Comparar clima, suelo, cultivos y prácticas del paper con las del caso; producir notas de transferibilidad.\n- [ ] Integrar revisión humana y estado no concluyente.\n\n## Criterios de aceptación\n- [ ] Una contradicción real/revisada se muestra con sus dos referencias.\n- [ ] Ausencia de datos impide un score de aplicabilidad falsamente preciso.\n- [ ] Al menos un ejemplo de transferencia limitada documenta las diferencias.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/`\n- `docs/science/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-16",
+    "title": "Modelo de grafo de evidencia y trazabilidad",
+    "phase": "F2",
+    "lead": "B",
+    "deps": [
+      "ABB-10",
+      "ABB-14"
+    ],
+    "steps": [
+      "Diseñar nodos observación, hipótesis, estudio, claim, limitación y conclusión.",
+      "Registrar aristas con tipo y estado de revisión; prohibir referencias huérfanas.",
+      "Exponer endpoint navegable por caso con fuente verificable y control de permisos.",
+      "Probar que toda conclusión científica remite a datos y/o revisión humana."
+    ],
+    "acceptance": [
+      "Cada conclusión importante se rastrea hasta su evidencia original.",
+      "Grafo no crea enlaces inexistentes y soporta hipótesis contradictorias.",
+      "El endpoint respeta permisos privados de caso."
+    ],
+    "paths": [
+      "backend/agroblackbox/",
+      "docs/architecture/API_CONTRACTS.md"
+    ],
+    "impact": "Best Use of Data; Global Connection",
+    "priority": "P1",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-16 -->\n## Objetivo\nModelo de grafo de evidencia y trazabilidad. Contribución a **Best Use of Data; Global Connection**. Fase **F2**, prioridad **P1**.\n\n**Responsable sugerido:** B (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-10, ABB-14. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Diseñar nodos observación, hipótesis, estudio, claim, limitación y conclusión.\n- [ ] Registrar aristas con tipo y estado de revisión; prohibir referencias huérfanas.\n- [ ] Exponer endpoint navegable por caso con fuente verificable y control de permisos.\n- [ ] Probar que toda conclusión científica remite a datos y/o revisión humana.\n\n## Criterios de aceptación\n- [ ] Cada conclusión importante se rastrea hasta su evidencia original.\n- [ ] Grafo no crea enlaces inexistentes y soporta hipótesis contradictorias.\n- [ ] El endpoint respeta permisos privados de caso.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/`\n- `docs/architecture/API_CONTRACTS.md`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-17",
+    "title": "Motor de rotaciones con restricciones y tres estrategias",
+    "phase": "F2",
+    "lead": "B",
+    "deps": [
+      "ABB-08",
+      "ABB-11",
+      "ABB-14"
+    ],
+    "steps": [
+      "Implementar secuencias multianuales y calendarios por cultivo, con rotación actual obligatoria.",
+      "Construir dos alternativas viables bajo suelo, clima, agua, equipo, cultivos y prioridades declaradas.",
+      "Excluir combinaciones imposibles y documentar reglas y referencias agrícolas.",
+      "Ejecutar comparación basada en exposición, cobertura potencial y restricciones; evitar predicción no validada de rendimiento."
+    ],
+    "acceptance": [
+      "Siempre se comparan >=3 estrategias, incluida la actual, o se explica por qué no son factibles.",
+      "Cada recomendación indica beneficios posibles, riesgos y condiciones que requieren revisión.",
+      "Los casos de calendario incompatible se rechazan en tests."
+    ],
+    "paths": [
+      "backend/agroblackbox/services/rotations.py",
+      "backend/tests/"
+    ],
+    "impact": "Local Impact; Galactic Impact",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-17 -->\n## Objetivo\nMotor de rotaciones con restricciones y tres estrategias. Contribución a **Local Impact; Galactic Impact**. Fase **F2**, prioridad **P0**.\n\n**Responsable sugerido:** B (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-08, ABB-11, ABB-14. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Implementar secuencias multianuales y calendarios por cultivo, con rotación actual obligatoria.\n- [ ] Construir dos alternativas viables bajo suelo, clima, agua, equipo, cultivos y prioridades declaradas.\n- [ ] Excluir combinaciones imposibles y documentar reglas y referencias agrícolas.\n- [ ] Ejecutar comparación basada en exposición, cobertura potencial y restricciones; evitar predicción no validada de rendimiento.\n\n## Criterios de aceptación\n- [ ] Siempre se comparan >=3 estrategias, incluida la actual, o se explica por qué no son factibles.\n- [ ] Cada recomendación indica beneficios posibles, riesgos y condiciones que requieren revisión.\n- [ ] Los casos de calendario incompatible se rechazan en tests.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/services/rotations.py`\n- `backend/tests/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-18",
+    "title": "Análisis de escenarios, prioridades y sensibilidad",
+    "phase": "F2",
+    "lead": "B",
+    "deps": [
+      "ABB-17"
+    ],
+    "steps": [
+      "Permitir modificar prioridades del agricultor, agua disponible y escenarios climáticos etiquetados.",
+      "Comparar alternativas bajo episodios históricos comunes y escenarios hipotéticos diferenciados.",
+      "Aplicar reglas de multicriterio transparentes y mostrar tradeoffs, sin prometer ahorros específicos.",
+      "Probar estabilidad, ordenación y explicación de cambios."
+    ],
+    "acceptance": [
+      "La misma entrada obtiene la misma comparación reproducible.",
+      "Al cambiar una prioridad se muestra qué criterio cambia y por qué.",
+      "No se confunden simulación, observación y resultado validado de campo."
+    ],
+    "paths": [
+      "backend/agroblackbox/",
+      "backend/tests/"
+    ],
+    "impact": "Galactic Impact; Local Impact",
+    "priority": "P1",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-18 -->\n## Objetivo\nAnálisis de escenarios, prioridades y sensibilidad. Contribución a **Galactic Impact; Local Impact**. Fase **F2**, prioridad **P1**.\n\n**Responsable sugerido:** B (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-17. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Permitir modificar prioridades del agricultor, agua disponible y escenarios climáticos etiquetados.\n- [ ] Comparar alternativas bajo episodios históricos comunes y escenarios hipotéticos diferenciados.\n- [ ] Aplicar reglas de multicriterio transparentes y mostrar tradeoffs, sin prometer ahorros específicos.\n- [ ] Probar estabilidad, ordenación y explicación de cambios.\n\n## Criterios de aceptación\n- [ ] La misma entrada obtiene la misma comparación reproducible.\n- [ ] Al cambiar una prioridad se muestra qué criterio cambia y por qué.\n- [ ] No se confunden simulación, observación y resultado validado de campo.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/`\n- `backend/tests/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-19",
+    "title": "Uncertainty Hunter: carencias y comprobaciones útiles",
+    "phase": "F2",
+    "lead": "B",
+    "deps": [
+      "ABB-10",
+      "ABB-15",
+      "ABB-18"
+    ],
+    "steps": [
+      "Localizar datos que faltan o son poco fiables para decidir entre rotaciones.",
+      "Definir preguntas locales concretas (suelo, riego, etapa fenológica, manejo) con justificación.",
+      "Mostrar qué conclusión podría cambiar al introducir esa observación, sin prometer cálculo de valor de información sin modelo.",
+      "Añadir estado de resolución por agricultor o experto."
+    ],
+    "acceptance": [
+      "Cada pregunta propuesta explica qué incertidumbre abordaría.",
+      "La interfaz permite registrar una respuesta local revisable.",
+      "Si no hay base para priorizar una medición, se dice explícitamente."
+    ],
+    "paths": [
+      "backend/agroblackbox/",
+      "frontend/src/"
+    ],
+    "impact": "Best Use of Data; Local Impact",
+    "priority": "P1",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-19 -->\n## Objetivo\nUncertainty Hunter: carencias y comprobaciones útiles. Contribución a **Best Use of Data; Local Impact**. Fase **F2**, prioridad **P1**.\n\n**Responsable sugerido:** B (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-10, ABB-15, ABB-18. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Localizar datos que faltan o son poco fiables para decidir entre rotaciones.\n- [ ] Definir preguntas locales concretas (suelo, riego, etapa fenológica, manejo) con justificación.\n- [ ] Mostrar qué conclusión podría cambiar al introducir esa observación, sin prometer cálculo de valor de información sin modelo.\n- [ ] Añadir estado de resolución por agricultor o experto.\n\n## Criterios de aceptación\n- [ ] Cada pregunta propuesta explica qué incertidumbre abordaría.\n- [ ] La interfaz permite registrar una respuesta local revisable.\n- [ ] Si no hay base para priorizar una medición, se dice explícitamente.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/`\n- `frontend/src/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-20",
+    "title": "Sistema de diseño, navegación, accesibilidad e idioma EN/ES",
+    "phase": "F3",
+    "lead": "C",
+    "deps": [
+      "ABB-02"
+    ],
+    "steps": [
+      "Definir layout, estados vacíos, skeleton, error, componente de fuentes y avisos de simulación.",
+      "Crear rutas principales: Dashboard, Cases, Investigation, Evidence, Rotations, Collaboration, Report.",
+      "Incorporar internacionalización EN/ES, responsive y navegación teclado.",
+      "Probar build TS y accesibilidad de interacciones críticas."
+    ],
+    "acceptance": [
+      "Frontend navega entre pantallas con estados definidos.",
+      "Los textos principales están disponibles en español e inglés.",
+      "No hay errores TS y los flujos críticos son utilizables con teclado."
+    ],
+    "paths": [
+      "frontend/src/",
+      "frontend/package.json"
+    ],
+    "impact": "Global Connection; Local Impact",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-20 -->\n## Objetivo\nSistema de diseño, navegación, accesibilidad e idioma EN/ES. Contribución a **Global Connection; Local Impact**. Fase **F3**, prioridad **P0**.\n\n**Responsable sugerido:** C (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-02. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Definir layout, estados vacíos, skeleton, error, componente de fuentes y avisos de simulación.\n- [ ] Crear rutas principales: Dashboard, Cases, Investigation, Evidence, Rotations, Collaboration, Report.\n- [ ] Incorporar internacionalización EN/ES, responsive y navegación teclado.\n- [ ] Probar build TS y accesibilidad de interacciones críticas.\n\n## Criterios de aceptación\n- [ ] Frontend navega entre pantallas con estados definidos.\n- [ ] Los textos principales están disponibles en español e inglés.\n- [ ] No hay errores TS y los flujos críticos son utilizables con teclado.\n\n## Archivos o dominios afectados\n- `frontend/src/`\n- `frontend/package.json`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-21",
+    "title": "Wizard de incidente y mapa geoespacial con privacidad",
+    "phase": "F3",
+    "lead": "C",
+    "deps": [
+      "ABB-05",
+      "ABB-06",
+      "ABB-20"
+    ],
+    "steps": [
+      "Crear formulario guiado de incidente y selección espacial, con precisión configurable.",
+      "Mostrar datos introducidos y alertas de variables/campos faltantes.",
+      "Integrar guardado/autosave y control de autorización.",
+      "Ocultar coordenadas exactas al compartir externamente, salvo consentimiento explícito."
+    ],
+    "acceptance": [
+      "Un usuario crea un caso desde cero y vuelve a editarlo.",
+      "Datos incorrectos reciben mensajes útiles, sin perder información.",
+      "Un invitado no ve la ubicación exacta de la parcela privada."
+    ],
+    "paths": [
+      "frontend/src/",
+      "docs/product/UX_FLOWS.md"
+    ],
+    "impact": "Local Impact; Global Connection",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-21 -->\n## Objetivo\nWizard de incidente y mapa geoespacial con privacidad. Contribución a **Local Impact; Global Connection**. Fase **F3**, prioridad **P0**.\n\n**Responsable sugerido:** C (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-05, ABB-06, ABB-20. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Crear formulario guiado de incidente y selección espacial, con precisión configurable.\n- [ ] Mostrar datos introducidos y alertas de variables/campos faltantes.\n- [ ] Integrar guardado/autosave y control de autorización.\n- [ ] Ocultar coordenadas exactas al compartir externamente, salvo consentimiento explícito.\n\n## Criterios de aceptación\n- [ ] Un usuario crea un caso desde cero y vuelve a editarlo.\n- [ ] Datos incorrectos reciben mensajes útiles, sin perder información.\n- [ ] Un invitado no ve la ubicación exacta de la parcela privada.\n\n## Archivos o dominios afectados\n- `frontend/src/`\n- `docs/product/UX_FLOWS.md`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-22",
+    "title": "Visualización avanzada de timeline, anomalías y fuentes NASA",
+    "phase": "F3",
+    "lead": "C",
+    "deps": [
+      "ABB-08",
+      "ABB-10",
+      "ABB-20"
+    ],
+    "steps": [
+      "Añadir gráfico de series y anomalías con selección temporal y capas disponibles.",
+      "Mostrar unidad, periodo base, QA, procedencia y resolución por variable.",
+      "Diferenciar NASA real, datos locales y escenarios simulados en leyenda permanente.",
+      "Diseñar estados de carga, sin datos, error externo y datos parciales."
+    ],
+    "acceptance": [
+      "El usuario puede inspeccionar cada hallazgo hasta su origen.",
+      "Los gráficos no interpolan silenciosamente huecos de datos.",
+      "La UI representa errores NASA sin inventar valores."
+    ],
+    "paths": [
+      "frontend/src/"
+    ],
+    "impact": "Best Use of Data",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-22 -->\n## Objetivo\nVisualización avanzada de timeline, anomalías y fuentes NASA. Contribución a **Best Use of Data**. Fase **F3**, prioridad **P0**.\n\n**Responsable sugerido:** C (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-08, ABB-10, ABB-20. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Añadir gráfico de series y anomalías con selección temporal y capas disponibles.\n- [ ] Mostrar unidad, periodo base, QA, procedencia y resolución por variable.\n- [ ] Diferenciar NASA real, datos locales y escenarios simulados en leyenda permanente.\n- [ ] Diseñar estados de carga, sin datos, error externo y datos parciales.\n\n## Criterios de aceptación\n- [ ] El usuario puede inspeccionar cada hallazgo hasta su origen.\n- [ ] Los gráficos no interpolan silenciosamente huecos de datos.\n- [ ] La UI representa errores NASA sin inventar valores.\n\n## Archivos o dominios afectados\n- `frontend/src/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-23",
+    "title": "Explorador visual de papers y Evidence Graph",
+    "phase": "F3",
+    "lead": "C",
+    "deps": [
+      "ABB-14",
+      "ABB-16",
+      "ABB-20"
+    ],
+    "steps": [
+      "Mostrar búsqueda, ficha de artículo, claim revisado/no revisado, contexto y limitaciones.",
+      "Construir grafo navegable desde observación hasta conclusión y DOI.",
+      "Visualizar contradicciones, transferibilidad y anotaciones de revisión.",
+      "Asegurar legibilidad sin depender de color y respeto de permisos."
+    ],
+    "acceptance": [
+      "Desde una conclusión se abre el conjunto de evidencias pertinentes.",
+      "El sistema muestra claramente evidencias no revisadas.",
+      "Los enlaces DOI resuelven a sus URL originales sin inventar bibliografía."
+    ],
+    "paths": [
+      "frontend/src/"
+    ],
+    "impact": "Best Use of Data; Global Connection",
+    "priority": "P1",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-23 -->\n## Objetivo\nExplorador visual de papers y Evidence Graph. Contribución a **Best Use of Data; Global Connection**. Fase **F3**, prioridad **P1**.\n\n**Responsable sugerido:** C (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-14, ABB-16, ABB-20. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Mostrar búsqueda, ficha de artículo, claim revisado/no revisado, contexto y limitaciones.\n- [ ] Construir grafo navegable desde observación hasta conclusión y DOI.\n- [ ] Visualizar contradicciones, transferibilidad y anotaciones de revisión.\n- [ ] Asegurar legibilidad sin depender de color y respeto de permisos.\n\n## Criterios de aceptación\n- [ ] Desde una conclusión se abre el conjunto de evidencias pertinentes.\n- [ ] El sistema muestra claramente evidencias no revisadas.\n- [ ] Los enlaces DOI resuelven a sus URL originales sin inventar bibliografía.\n\n## Archivos o dominios afectados\n- `frontend/src/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-24",
+    "title": "Constructor y comparador interactivo de rotaciones",
+    "phase": "F3",
+    "lead": "C",
+    "deps": [
+      "ABB-17",
+      "ABB-18",
+      "ABB-20"
+    ],
+    "steps": [
+      "Crear editor de secuencia actual y dos alternativas, con años y estaciones.",
+      "Añadir preferencias del agricultor y restricciones con formularios validados.",
+      "Mostrar calendario, criterios, riesgos, explicaciones y por qué cada estrategia entra o se descarta.",
+      "Incluir accesibilidad, estados de cálculo/error y guardado de selección."
+    ],
+    "acceptance": [
+      "Se pueden evaluar tres estrategias desde la UI.",
+      "Cambiar las prioridades recalcula el resultado autorizado desde backend.",
+      "No se presentan ahorros numéricos sin un modelo y fuente verificados."
+    ],
+    "paths": [
+      "frontend/src/"
+    ],
+    "impact": "Galactic Impact; Local Impact",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-24 -->\n## Objetivo\nConstructor y comparador interactivo de rotaciones. Contribución a **Galactic Impact; Local Impact**. Fase **F3**, prioridad **P0**.\n\n**Responsable sugerido:** C (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-17, ABB-18, ABB-20. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Crear editor de secuencia actual y dos alternativas, con años y estaciones.\n- [ ] Añadir preferencias del agricultor y restricciones con formularios validados.\n- [ ] Mostrar calendario, criterios, riesgos, explicaciones y por qué cada estrategia entra o se descarta.\n- [ ] Incluir accesibilidad, estados de cálculo/error y guardado de selección.\n\n## Criterios de aceptación\n- [ ] Se pueden evaluar tres estrategias desde la UI.\n- [ ] Cambiar las prioridades recalcula el resultado autorizado desde backend.\n- [ ] No se presentan ahorros numéricos sin un modelo y fuente verificados.\n\n## Archivos o dominios afectados\n- `frontend/src/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-25",
+    "title": "Invitaciones, revisión y colaboración entre comunidades",
+    "phase": "F3",
+    "lead": "C",
+    "deps": [
+      "ABB-05",
+      "ABB-06",
+      "ABB-14",
+      "ABB-20"
+    ],
+    "steps": [
+      "Permitir invitación revocable a personas identificadas, con permisos definidos.",
+      "Registrar comentarios, revisión de hipótesis/claims, decisiones y marca de autoría.",
+      "Ofrecer vista pública anonimizada/compartida solo con consentimiento.",
+      "Prevenir XSS, acceso no autorizado y cambios de revisión sin auditoría."
+    ],
+    "acceptance": [
+      "Dos usuarios distintos colaboran en un caso sin exposición de información privada.",
+      "Un invitado puede comentar y otro revisar o revocar permisos.",
+      "El registro de revisiones conserva autor, instante y evidencia."
+    ],
+    "paths": [
+      "backend/agroblackbox/",
+      "frontend/src/"
+    ],
+    "impact": "Global Connection",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-25 -->\n## Objetivo\nInvitaciones, revisión y colaboración entre comunidades. Contribución a **Global Connection**. Fase **F3**, prioridad **P0**.\n\n**Responsable sugerido:** C (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-05, ABB-06, ABB-14, ABB-20. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Permitir invitación revocable a personas identificadas, con permisos definidos.\n- [ ] Registrar comentarios, revisión de hipótesis/claims, decisiones y marca de autoría.\n- [ ] Ofrecer vista pública anonimizada/compartida solo con consentimiento.\n- [ ] Prevenir XSS, acceso no autorizado y cambios de revisión sin auditoría.\n\n## Criterios de aceptación\n- [ ] Dos usuarios distintos colaboran en un caso sin exposición de información privada.\n- [ ] Un invitado puede comentar y otro revisar o revocar permisos.\n- [ ] El registro de revisiones conserva autor, instante y evidencia.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/`\n- `frontend/src/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-26",
+    "title": "Informe de caso completo y exportación verificable",
+    "phase": "F3",
+    "lead": "B",
+    "deps": [
+      "ABB-10",
+      "ABB-14",
+      "ABB-16",
+      "ABB-17",
+      "ABB-25"
+    ],
+    "steps": [
+      "Ampliar Markdown existente con contexto, fuentes, periodos, métodos, hipótesis rivales, 3 rotaciones, claims/DOIs y limitaciones.",
+      "Crear snapshot inmutable o versionado del informe y registrar hash de fuentes.",
+      "Ofrecer descarga desde UI en Markdown y HTML, y PDF si es viable técnicamente.",
+      "Probar el informe con un caso que combine NASA real, evidencias revisadas y colaboración."
+    ],
+    "acceptance": [
+      "Descarga contiene resultados auténticos y los IDs/DOIs rastreables.",
+      "Un informe regenerado identifica fecha, versión y cambios relevantes.",
+      "Se evita filtrar coordenadas personales en exportaciones compartidas."
+    ],
+    "paths": [
+      "backend/agroblackbox/services/report.py",
+      "frontend/src/",
+      "docs/science/"
+    ],
+    "impact": "Best Use of Data; Local Impact",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-26 -->\n## Objetivo\nInforme de caso completo y exportación verificable. Contribución a **Best Use of Data; Local Impact**. Fase **F3**, prioridad **P0**.\n\n**Responsable sugerido:** B (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-10, ABB-14, ABB-16, ABB-17, ABB-25. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Ampliar Markdown existente con contexto, fuentes, periodos, métodos, hipótesis rivales, 3 rotaciones, claims/DOIs y limitaciones.\n- [ ] Crear snapshot inmutable o versionado del informe y registrar hash de fuentes.\n- [ ] Ofrecer descarga desde UI en Markdown y HTML, y PDF si es viable técnicamente.\n- [ ] Probar el informe con un caso que combine NASA real, evidencias revisadas y colaboración.\n\n## Criterios de aceptación\n- [ ] Descarga contiene resultados auténticos y los IDs/DOIs rastreables.\n- [ ] Un informe regenerado identifica fecha, versión y cambios relevantes.\n- [ ] Se evita filtrar coordenadas personales en exportaciones compartidas.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/services/report.py`\n- `frontend/src/`\n- `docs/science/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-27",
+    "title": "Caché, tareas asíncronas y resiliencia ante APIs externas",
+    "phase": "F4",
+    "lead": "A",
+    "deps": [
+      "ABB-03",
+      "ABB-07",
+      "ABB-13"
+    ],
+    "steps": [
+      "Definir tareas con identificador, estado, timeout, reintento, cancelación y deduplicación.",
+      "Integrar Redis/worker si se justifica mediante ADR y límites claros; evitar bloquear peticiones largas.",
+      "Registrar cuota de upstream y política de caché por recurso y fecha.",
+      "Probar caída de POWER/OpenAlex, reintentos limitados y recuperación."
+    ],
+    "acceptance": [
+      "Solicitudes repetidas no disparan descargas innecesarias.",
+      "Un upstream caído produce error recuperable y nunca dato ficticio.",
+      "Tareas largas reportan progreso/estado y pueden retomarse."
+    ],
+    "paths": [
+      "backend/agroblackbox/",
+      "compose.yaml"
+    ],
+    "impact": "Best Use of Data",
+    "priority": "P1",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-27 -->\n## Objetivo\nCaché, tareas asíncronas y resiliencia ante APIs externas. Contribución a **Best Use of Data**. Fase **F4**, prioridad **P1**.\n\n**Responsable sugerido:** A (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-03, ABB-07, ABB-13. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Definir tareas con identificador, estado, timeout, reintento, cancelación y deduplicación.\n- [ ] Integrar Redis/worker si se justifica mediante ADR y límites claros; evitar bloquear peticiones largas.\n- [ ] Registrar cuota de upstream y política de caché por recurso y fecha.\n- [ ] Probar caída de POWER/OpenAlex, reintentos limitados y recuperación.\n\n## Criterios de aceptación\n- [ ] Solicitudes repetidas no disparan descargas innecesarias.\n- [ ] Un upstream caído produce error recuperable y nunca dato ficticio.\n- [ ] Tareas largas reportan progreso/estado y pueden retomarse.\n\n## Archivos o dominios afectados\n- `backend/agroblackbox/`\n- `compose.yaml`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-28",
+    "title": "Seguridad, privacidad y operaciones de datos",
+    "phase": "F4",
+    "lead": "C",
+    "deps": [
+      "ABB-05",
+      "ABB-25",
+      "ABB-26"
+    ],
+    "steps": [
+      "Definir minimización de datos, retención, borrado/exportación, consentimiento y perfiles de acceso.",
+      "Auditar secretos, tokens, CORS, rate limit, logs y datos sensibles de ubicación.",
+      "Añadir pruebas negativas de permisos para endpoints y descargas.",
+      "Documentar aviso legal, descargo agronómico y política para datos de terceros."
+    ],
+    "acceptance": [
+      "Un usuario puede exportar y solicitar borrar sus datos según política definida.",
+      "Ninguna coordenada ni token aparece en logs/PRs por defecto.",
+      "Suite de permisos y compartición cubre denegación y revocación."
+    ],
+    "paths": [
+      "backend/",
+      "frontend/",
+      "docs/operations/"
+    ],
+    "impact": "Global Connection; Local Impact",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-28 -->\n## Objetivo\nSeguridad, privacidad y operaciones de datos. Contribución a **Global Connection; Local Impact**. Fase **F4**, prioridad **P0**.\n\n**Responsable sugerido:** C (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-05, ABB-25, ABB-26. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Definir minimización de datos, retención, borrado/exportación, consentimiento y perfiles de acceso.\n- [ ] Auditar secretos, tokens, CORS, rate limit, logs y datos sensibles de ubicación.\n- [ ] Añadir pruebas negativas de permisos para endpoints y descargas.\n- [ ] Documentar aviso legal, descargo agronómico y política para datos de terceros.\n\n## Criterios de aceptación\n- [ ] Un usuario puede exportar y solicitar borrar sus datos según política definida.\n- [ ] Ninguna coordenada ni token aparece en logs/PRs por defecto.\n- [ ] Suite de permisos y compartición cubre denegación y revocación.\n\n## Archivos o dominios afectados\n- `backend/`\n- `frontend/`\n- `docs/operations/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-29",
+    "title": "Suite E2E y contratos entre backend y frontend",
+    "phase": "F4",
+    "lead": "C",
+    "deps": [
+      "ABB-06",
+      "ABB-10",
+      "ABB-14",
+      "ABB-17",
+      "ABB-21",
+      "ABB-22",
+      "ABB-24",
+      "ABB-26"
+    ],
+    "steps": [
+      "Preparar fixtures explícitas, marcadas como sintéticas, y casos de red real separados.",
+      "Añadir tests end-to-end de creación → NASA → evidencia → 3 rotaciones → revisión → informe.",
+      "Comprobar contrato OpenAPI frente a tipos de frontend; fallos, nulos y permisos.",
+      "Automatizar ejecución de pruebas en CI y documentar evidencia reproducible."
+    ],
+    "acceptance": [
+      "Pasa el recorrido principal completo en CI con fixtures controladas.",
+      "Existe un smoke test de fuentes reales ejecutado manualmente y documentado.",
+      "Los fallos conocidos del recorrido principal quedan detectados y documentados por las pruebas."
+    ],
+    "paths": [
+      "backend/tests/",
+      "frontend/",
+      ".github/workflows/ci.yml"
+    ],
+    "impact": "Transversal",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-29 -->\n## Objetivo\nSuite E2E y contratos entre backend y frontend. Contribución a **Transversal**. Fase **F4**, prioridad **P0**.\n\n**Responsable sugerido:** C (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-06, ABB-10, ABB-14, ABB-17, ABB-21, ABB-22, ABB-24, ABB-26. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Preparar fixtures explícitas, marcadas como sintéticas, y casos de red real separados.\n- [ ] Añadir tests end-to-end de creación → NASA → evidencia → 3 rotaciones → revisión → informe.\n- [ ] Comprobar contrato OpenAPI frente a tipos de frontend; fallos, nulos y permisos.\n- [ ] Automatizar ejecución de pruebas en CI y documentar evidencia reproducible.\n\n## Criterios de aceptación\n- [ ] Pasa el recorrido principal completo en CI con fixtures controladas.\n- [ ] Existe un smoke test de fuentes reales ejecutado manualmente y documentado.\n- [ ] Los fallos conocidos del recorrido principal quedan detectados y documentados por las pruebas.\n\n## Archivos o dominios afectados\n- `backend/tests/`\n- `frontend/`\n- `.github/workflows/ci.yml`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-30",
+    "title": "Despliegue seguro, monitorización y recuperación",
+    "phase": "F4",
+    "lead": "A",
+    "deps": [
+      "ABB-01",
+      "ABB-03",
+      "ABB-05",
+      "ABB-27",
+      "ABB-29"
+    ],
+    "steps": [
+      "Elegir plataforma y registrar costes, variables y controles de acceso.",
+      "Configurar entornos de demo y release con migraciones, healthcheck, logs y seguimiento de errores.",
+      "Definir backup/restauración de PostgreSQL y rollback de releases.",
+      "Probar despliegue desde tag y recuperación ante una migración fallida simulada."
+    ],
+    "acceptance": [
+      "Hay URL de demo funcional accesible con el mínimo dato privado.",
+      "El equipo puede repetir deploy, restaurar backup y revertir versión.",
+      "Errores de fuentes externas son visibles en monitoreo sin exponer datos sensibles."
+    ],
+    "paths": [
+      ".github/workflows/",
+      "compose.yaml",
+      "docs/operations/"
+    ],
+    "impact": "Galactic Impact; transversal",
+    "priority": "P1",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-30 -->\n## Objetivo\nDespliegue seguro, monitorización y recuperación. Contribución a **Galactic Impact; transversal**. Fase **F4**, prioridad **P1**.\n\n**Responsable sugerido:** A (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-01, ABB-03, ABB-05, ABB-27, ABB-29. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Elegir plataforma y registrar costes, variables y controles de acceso.\n- [ ] Configurar entornos de demo y release con migraciones, healthcheck, logs y seguimiento de errores.\n- [ ] Definir backup/restauración de PostgreSQL y rollback de releases.\n- [ ] Probar despliegue desde tag y recuperación ante una migración fallida simulada.\n\n## Criterios de aceptación\n- [ ] Hay URL de demo funcional accesible con el mínimo dato privado.\n- [ ] El equipo puede repetir deploy, restaurar backup y revertir versión.\n- [ ] Errores de fuentes externas son visibles en monitoreo sin exponer datos sensibles.\n\n## Archivos o dominios afectados\n- `.github/workflows/`\n- `compose.yaml`\n- `docs/operations/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-31",
+    "title": "Piloto agrícola local con revisión externa documentada",
+    "phase": "F4",
+    "lead": "B",
+    "deps": [
+      "ABB-10",
+      "ABB-17",
+      "ABB-21",
+      "ABB-24",
+      "ABB-26"
+    ],
+    "steps": [
+      "Seleccionar un caso situado en zona agrícola concreta; documentar disponibilidad de observaciones.",
+      "Recoger necesidades reales de un agricultor o agrónomo, con consentimiento y sin divulgar datos privados.",
+      "Presentar las 3 alternativas y pedir corrección sobre restricciones y explicaciones.",
+      "Registrar feedback, cambios y límites sin inventar resultados de cosecha."
+    ],
+    "acceptance": [
+      "Existe caso piloto trazable y evaluación cualitativa de un humano relevante.",
+      "Se documenta qué feedback cambió el producto.",
+      "No se afirman beneficios medidos sin ensayo real."
+    ],
+    "paths": [
+      "docs/operations/",
+      "fixtures/",
+      "docs/science/"
+    ],
+    "impact": "Local Impact; Galactic Impact",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-31 -->\n## Objetivo\nPiloto agrícola local con revisión externa documentada. Contribución a **Local Impact; Galactic Impact**. Fase **F4**, prioridad **P0**.\n\n**Responsable sugerido:** B (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-10, ABB-17, ABB-21, ABB-24, ABB-26. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Seleccionar un caso situado en zona agrícola concreta; documentar disponibilidad de observaciones.\n- [ ] Recoger necesidades reales de un agricultor o agrónomo, con consentimiento y sin divulgar datos privados.\n- [ ] Presentar las 3 alternativas y pedir corrección sobre restricciones y explicaciones.\n- [ ] Registrar feedback, cambios y límites sin inventar resultados de cosecha.\n\n## Criterios de aceptación\n- [ ] Existe caso piloto trazable y evaluación cualitativa de un humano relevante.\n- [ ] Se documenta qué feedback cambió el producto.\n- [ ] No se afirman beneficios medidos sin ensayo real.\n\n## Archivos o dominios afectados\n- `docs/operations/`\n- `fixtures/`\n- `docs/science/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-32",
+    "title": "Colaboración internacional real y prueba de intercambio",
+    "phase": "F4",
+    "lead": "B",
+    "deps": [
+      "ABB-25",
+      "ABB-31"
+    ],
+    "steps": [
+      "Contactar a una segunda comunidad/persona voluntaria de otro contexto regional.",
+      "Solicitar revisión de un caso anonimizado o una hipótesis usando el flujo de colaboración.",
+      "Guardar evidencia de la interacción con consentimiento, fecha y contribución real.",
+      "Recoger barreras idiomáticas y mejorar EN/ES si procede."
+    ],
+    "acceptance": [
+      "Existe al menos una aportación humana real y verificable al caso.",
+      "No se confunde un perfil ficticio con colaboración real.",
+      "Se respeta privacidad y se puede retirar consentimiento."
+    ],
+    "paths": [
+      "docs/operations/",
+      "frontend/src/"
+    ],
+    "impact": "Global Connection",
+    "priority": "P1",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-32 -->\n## Objetivo\nColaboración internacional real y prueba de intercambio. Contribución a **Global Connection**. Fase **F4**, prioridad **P1**.\n\n**Responsable sugerido:** B (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-25, ABB-31. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Contactar a una segunda comunidad/persona voluntaria de otro contexto regional.\n- [ ] Solicitar revisión de un caso anonimizado o una hipótesis usando el flujo de colaboración.\n- [ ] Guardar evidencia de la interacción con consentimiento, fecha y contribución real.\n- [ ] Recoger barreras idiomáticas y mejorar EN/ES si procede.\n\n## Criterios de aceptación\n- [ ] Existe al menos una aportación humana real y verificable al caso.\n- [ ] No se confunde un perfil ficticio con colaboración real.\n- [ ] Se respeta privacidad y se puede retirar consentimiento.\n\n## Archivos o dominios afectados\n- `docs/operations/`\n- `frontend/src/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-33",
+    "title": "Validación de release 1.0 y cierre técnico",
+    "phase": "F4",
+    "lead": "A",
+    "deps": [
+      "ABB-09",
+      "ABB-12",
+      "ABB-15",
+      "ABB-19",
+      "ABB-23",
+      "ABB-25",
+      "ABB-26",
+      "ABB-28",
+      "ABB-29",
+      "ABB-30",
+      "ABB-31",
+      "ABB-32"
+    ],
+    "steps": [
+      "Pasar la checklist completa de `RELEASE_1_0.md`, módulos F-01 a F-12.",
+      "Revisar resultados de CI, pruebas de permisos, pruebas en Linux/WSL/Omarchy y smoke externo.",
+      "Actualizar CURRENT_STATE, changelog, contratos, limitaciones y manual de operación.",
+      "Obtener validación humana de los tres y etiquetar release v1.0.0 solo si todos los gates pasan."
+    ],
+    "acceptance": [
+      "Cada criterio F-01...F-12 tiene prueba/PR o incidencia sin resolver; si falta, no llamar release final.",
+      "La demo puede completarse sin operaciones manuales sobre la API.",
+      "El tag está asociado a versión desplegada y reproducible."
+    ],
+    "paths": [
+      "docs/product/RELEASE_1_0.md",
+      "docs/operations/",
+      ".github/"
+    ],
+    "impact": "Transversal",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-33 -->\n## Objetivo\nValidación de release 1.0 y cierre técnico. Contribución a **Transversal**. Fase **F4**, prioridad **P0**.\n\n**Responsable sugerido:** A (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-09, ABB-12, ABB-15, ABB-19, ABB-23, ABB-25, ABB-26, ABB-28, ABB-29, ABB-30, ABB-31, ABB-32. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Pasar la checklist completa de `RELEASE_1_0.md`, módulos F-01 a F-12.\n- [ ] Revisar resultados de CI, pruebas de permisos, pruebas en Linux/WSL/Omarchy y smoke externo.\n- [ ] Actualizar CURRENT_STATE, changelog, contratos, limitaciones y manual de operación.\n- [ ] Obtener validación humana de los tres y etiquetar release v1.0.0 solo si todos los gates pasan.\n\n## Criterios de aceptación\n- [ ] Cada criterio F-01...F-12 tiene prueba/PR o incidencia sin resolver; si falta, no llamar release final.\n- [ ] La demo puede completarse sin operaciones manuales sobre la API.\n- [ ] El tag está asociado a versión desplegada y reproducible.\n\n## Archivos o dominios afectados\n- `docs/product/RELEASE_1_0.md`\n- `docs/operations/`\n- `.github/`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  },
+  {
+    "id": "ABB-34",
+    "title": "Narrativa NASA Space Apps, vídeo y envío oficial",
+    "phase": "F4",
+    "lead": "C",
+    "deps": [
+      "ABB-22",
+      "ABB-24",
+      "ABB-26",
+      "ABB-31"
+    ],
+    "steps": [
+      "Redactar demo de 2 minutos basada en incidentes y datos realmente verificados.",
+      "Explicar claramente cuatro awards: data provenance, impacto potencial, colaboración real y caso local.",
+      "Preparar captura de pantalla, vídeo, repositorio y lista exacta de funciones implementadas.",
+      "Verificar requisitos y plazo de la plataforma de entrega vigente; enviar sin atribuir aval NASA."
+    ],
+    "acceptance": [
+      "Vídeo y materiales muestran únicamente funcionalidades que funcionan.",
+      "Enlaces de repo y demo válidos; referencias NASA y permisos correctos.",
+      "No se atribuyen ahorros ni causalidades sin evidencia."
+    ],
+    "paths": [
+      "docs/operations/",
+      "README.md"
+    ],
+    "impact": "Todos los awards",
+    "priority": "P0",
+    "body": "<!-- AGRO-ISSUE-ID: ABB-34 -->\n## Objetivo\nNarrativa NASA Space Apps, vídeo y envío oficial. Contribución a **Todos los awards**. Fase **F4**, prioridad **P0**.\n\n**Responsable sugerido:** C (A = Codex/ChatGPT; B = Claude ciencia/agronomía; C = Claude interfaz/producto). La asignación es flexible: cualquier integrante o agente puede avanzar esta tarea.\n\n**Dependencias técnicas orientativas:** ABB-22, ABB-24, ABB-26, ABB-31. No son bloqueos de aprobación: se puede trabajar en componentes independientes, tests, prototipos o contratos provisionales mientras se integran dependencias.\n\n## Pasos de implementación\n- [ ] Redactar demo de 2 minutos basada en incidentes y datos realmente verificados.\n- [ ] Explicar claramente cuatro awards: data provenance, impacto potencial, colaboración real y caso local.\n- [ ] Preparar captura de pantalla, vídeo, repositorio y lista exacta de funciones implementadas.\n- [ ] Verificar requisitos y plazo de la plataforma de entrega vigente; enviar sin atribuir aval NASA.\n\n## Criterios de aceptación\n- [ ] Vídeo y materiales muestran únicamente funcionalidades que funcionan.\n- [ ] Enlaces de repo y demo válidos; referencias NASA y permisos correctos.\n- [ ] No se atribuyen ahorros ni causalidades sin evidencia.\n\n## Archivos o dominios afectados\n- `docs/operations/`\n- `README.md`\n\n## Comprobaciones y entrega\n- [ ] Ejecutar las pruebas que correspondan y registrar resultados reales; indicar claramente las no ejecutadas.\n- [ ] Mantener contratos y documentación sincronizados con los cambios implementados.\n- [ ] Dejar una nota breve de integración o handoff si otro agente utiliza este módulo.\n\n**Flujo de trabajo:** la Issue está lista para implementarse. Coordinad únicamente las interfaces y los archivos compartidos cuando sea necesario. El equipo decidirá cuándo crear ramas, commits o PRs.\n"
+  }
+]
